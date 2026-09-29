@@ -1,0 +1,90 @@
+{
+  "evaluation_timestamp": "2026-09-29T11:26:21.415639+00:00",
+  "model_architecture": "ResNet50",
+  "model_path": "D:\\MINOR NEW 1\\models\\experiments\\resnet50_step5_best.keras",
+  "test_manifest_path": "D:\\MINOR NEW 1\\dataset\\clean\\test.csv",
+  "class_order": [
+    "COVID",
+    "Lung_Opacity",
+    "Normal",
+    "Pneumonia",
+    "Tuberculosis"
+  ],
+  "overall_metrics": {
+    "total_test_samples": 3276,
+    "accuracy": 0.9304,
+    "macro_precision": 0.9459,
+    "macro_recall": 0.9467,
+    "macro_f1": 0.946,
+    "weighted_f1": 0.93
+  },
+  "class_metrics": {
+    "COVID": {
+      "precision": 0.9577,
+      "recall": 0.9684,
+      "f1_score": 0.963,
+      "support": 538
+    },
+    "Lung_Opacity": {
+      "precision": 0.919,
+      "recall": 0.8681,
+      "f1_score": 0.8928,
+      "support": 895
+    },
+    "Normal": {
+      "precision": 0.9205,
+      "recall": 0.9464,
+      "f1_score": 0.9332,
+      "support": 1530
+    },
+    "Pneumonia": {
+      "precision": 0.96,
+      "recall": 0.9505,
+      "f1_score": 0.9552,
+      "support": 202
+    },
+    "Tuberculosis": {
+      "precision": 0.9722,
+      "recall": 1.0,
+      "f1_score": 0.9859,
+      "support": 111
+    }
+  },
+  "confusion_matrix_raw": [
+    [
+      521,
+      7,
+      5,
+      3,
+      2
+    ],
+    [
+      8,
+      783,
+      111,
+      0,
+      0
+    ],
+    [
+      14,
+      62,
+      1447,
+      5,
+      1
+    ],
+    [
+      1,
+      0,
+      9,
+      192,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      105
+    ]
+  ]
+}

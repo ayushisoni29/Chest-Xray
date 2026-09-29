@@ -1,0 +1,40 @@
+# Version Control
+.git
+.gitignore
+
+# Environment & Secrets (Never bake into images)
+.env
+.env.*
+!.env.example
+
+# Python Cache & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local IDEs & Editor Configuration
+.vscode/
+.idea/
+.gemini/
+*.swp
+*.swo
+
+# Large Offline Training Dataset (Not needed at runtime for inference)
+dataset/
+
+# Documentation & Scratch Files
+docs/
+scratch/
+*.md
+!README.md
+
+# Log Files & Temporary Files
+*.log
+static/uploads/*
+!static/uploads/.gitkeep
+static/heatmaps/*
+!static/heatmaps/.gitkeep

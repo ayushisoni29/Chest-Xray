@@ -1,0 +1,2036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chest X-Ray Multi-Disease Detection & Grad-CAM Explainability</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0b0f19;
+            --card-bg: rgba(18, 24, 38, 0.85);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --primary: #3b82f6;
+            --primary-glow: rgba(59, 130, 246, 0.35);
+            --accent: #10b981;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --purple: #a855f7;
+            --cyan: #06b6d4;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.12) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.08) 0px, transparent 50%);
+            padding: 25px 20px;
+        }
+
+        .container {
+            max-width: 1240px;
+            margin: 0 auto;
+        }
+
+        /* Top Nav & Clinician Auth Bar */
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+            padding: 5px 12px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 600;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .badge span {
+            width: 8px;
+            height: 8px;
+            background: #3b82f6;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 8px #3b82f6;
+        }
+
+        .auth-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-nav {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.35);
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-nav:hover {
+            background: rgba(59, 130, 246, 0.25);
+            border-color: #3b82f6;
+            color: #93c5fd;
+            transform: translateY(-1px);
+        }
+
+        .btn-history {
+            background: rgba(139, 92, 246, 0.15);
+            color: #c084fc;
+            border-color: rgba(139, 92, 246, 0.35);
+        }
+
+        .btn-history:hover {
+            background: rgba(139, 92, 246, 0.25);
+            border-color: #a855f7;
+            color: #d8b4fe;
+        }
+
+        .user-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(16, 185, 129, 0.12);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 5px 14px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .btn-logout {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-left: 6px;
+        }
+
+        .btn-logout:hover {
+            background: rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        h1 {
+            font-size: 30px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #ffffff 40%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 6px;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 1fr 1.35fr;
+            gap: 25px;
+        }
+
+        @media (max-width: 960px) {
+            .grid-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(16px);
+            border-radius: 18px;
+            padding: 22px;
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 10px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Upload Area */
+        .drop-zone {
+            border: 2px dashed rgba(59, 130, 246, 0.4);
+            border-radius: 14px;
+            padding: 30px 20px;
+            text-align: center;
+            background: rgba(59, 130, 246, 0.03);
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: var(--primary);
+            background: rgba(59, 130, 246, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .upload-icon {
+            font-size: 36px;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .drop-zone h3 {
+            font-size: 15px;
+            margin-bottom: 4px;
+        }
+
+        .drop-zone p {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        .btn-browse {
+            background: var(--primary);
+            color: white;
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            display: inline-block;
+            cursor: pointer;
+            box-shadow: 0 4px 12px var(--primary-glow);
+            transition: all 0.2s;
+        }
+
+        .btn-browse:hover {
+            opacity: 0.9;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        /* Image Preview Box */
+        .preview-container {
+            margin-top: 16px;
+            display: none;
+        }
+
+        .preview-box {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--card-border);
+            background: #000;
+            height: 240px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .preview-box img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .btn-analyze {
+            width: 100%;
+            margin-top: 14px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            padding: 13px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-analyze:hover {
+            opacity: 0.95;
+            transform: translateY(-1px);
+        }
+
+        .btn-analyze:disabled {
+            background: #475569;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Diagnostic Empty State */
+        .result-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 380px;
+            text-align: center;
+            color: var(--text-muted);
+            padding: 30px;
+        }
+
+        .result-empty svg {
+            width: 56px;
+            height: 56px;
+            margin-bottom: 14px;
+            opacity: 0.3;
+        }
+
+        .result-content {
+            display: none;
+            animation: fadeIn 0.35s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 1. Main Diagnosis Card */
+        .diagnosis-hero-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .diagnosis-hero-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--primary);
+        }
+
+        .diagnosis-hero-card.COVID::before { background: var(--danger); }
+        .diagnosis-hero-card.Lung_Opacity::before { background: var(--primary); }
+        .diagnosis-hero-card.Normal::before { background: var(--accent); }
+        .diagnosis-hero-card.Pneumonia::before { background: var(--warning); }
+        .diagnosis-hero-card.Tuberculosis::before { background: var(--purple); }
+
+        .hero-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .hero-title-area {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .hero-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .hero-icon.Normal { background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.35); }
+        .hero-icon.COVID { background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.35); }
+        .hero-icon.Pneumonia { background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.35); }
+        .hero-icon.Tuberculosis { background: rgba(168, 85, 247, 0.15); border-color: rgba(168, 85, 247, 0.35); }
+        .hero-icon.Lung_Opacity { background: rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.35); }
+
+        .hero-title-area h5 {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--text-muted);
+            margin-bottom: 2px;
+        }
+
+        .hero-title-area h2 {
+            font-size: 24px;
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: -0.3px;
+        }
+
+        .hero-conf-box {
+            text-align: right;
+        }
+
+        .hero-conf-num {
+            font-size: 28px;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            color: #34d399;
+            line-height: 1;
+        }
+
+        .hero-conf-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* Confidence Progress Bar & Badge */
+        .conf-meter-wrapper {
+            margin-top: 10px;
+        }
+
+        .conf-meter-track {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 999px;
+            height: 8px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .conf-meter-fill {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #10b981, #34d399);
+            transition: width 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .conf-meta-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .conf-tier-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .hero-interpretation {
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            font-size: 13px;
+            color: #cbd5e1;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* 2. Probability Distribution Section */
+        .prob-section {
+            margin-bottom: 22px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 16px;
+        }
+
+        .prob-section-title {
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .prob-bar-item {
+            margin-bottom: 10px;
+        }
+
+        .prob-bar-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .prob-bar-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+
+        .prob-class-name {
+            font-weight: 500;
+            color: #cbd5e1;
+        }
+
+        .prob-bar-item.selected .prob-class-name {
+            font-weight: 700;
+            color: #60a5fa;
+        }
+
+        .prob-bar-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .prob-bar-item.selected .prob-bar-val {
+            color: #93c5fd;
+            font-weight: 700;
+        }
+
+        .prob-bar-track {
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 999px;
+            height: 8px;
+            overflow: hidden;
+        }
+
+        .prob-bar-fill {
+            height: 100%;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.25);
+            transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .prob-bar-item.selected .prob-bar-fill {
+            background: linear-gradient(90deg, #3b82f6, #60a5fa);
+            box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+        }
+
+        /* 3. Grad-CAM & Original Comparison */
+        .comparison-section {
+            margin-bottom: 22px;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        @media (max-width: 600px) {
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .comparison-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .comparison-card p {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .comparison-img-box {
+            border-radius: 10px;
+            overflow: hidden;
+            background: #000;
+            border: 1px solid var(--card-border);
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .comparison-img-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .img-fallback {
+            color: var(--text-muted);
+            font-size: 12px;
+            padding: 20px;
+        }
+
+        /* 4. Grad-CAM Educational Note */
+        .gradcam-info-panel {
+            background: rgba(59, 130, 246, 0.05);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 20px;
+        }
+
+        .gradcam-info-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #60a5fa;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .gradcam-info-text {
+            font-size: 12px;
+            color: #94a3b8;
+            line-height: 1.5;
+        }
+
+        /* 5. Prediction Technical Summary */
+        .summary-panel {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 14px 16px;
+            margin-bottom: 20px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 12px;
+        }
+
+        .summary-item h6 {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-bottom: 2px;
+        }
+
+        .summary-item p {
+            font-size: 13px;
+            font-weight: 600;
+            color: #e2e8f0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* 6. Medical Disclaimer */
+        .disclaimer-card {
+            background: rgba(245, 158, 11, 0.05);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-radius: 12px;
+            padding: 12px 14px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .disclaimer-icon {
+            font-size: 16px;
+            line-height: 1;
+            margin-top: 2px;
+        }
+
+        .disclaimer-text {
+            font-size: 11px;
+            color: #cbd5e1;
+            line-height: 1.4;
+        }
+
+        /* Spinner Loader */
+        .spinner {
+            display: none;
+            width: 18px;
+            height: 18px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Modal Overlays (Auth & History) */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-card {
+            background: #111827;
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 440px;
+            padding: 28px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.75);
+            position: relative;
+            animation: modalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .modal-card-large {
+            max-width: 800px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.95) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 22px;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            color: var(--text);
+        }
+
+        .modal-tabs {
+            display: flex;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 4px;
+            margin-bottom: 22px;
+            gap: 4px;
+        }
+
+        .modal-tab {
+            flex: 1;
+            padding: 8px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 7px;
+            border: none;
+            background: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .modal-tab.active {
+            background: var(--primary);
+            color: #ffffff;
+            box-shadow: 0 2px 8px var(--primary-glow);
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 10px 14px;
+            color: var(--text);
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus {
+            border-color: var(--primary);
+            background: rgba(59, 130, 246, 0.04);
+        }
+
+        .btn-submit {
+            width: 100%;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 6px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-submit:hover {
+            opacity: 0.95;
+            transform: translateY(-1px);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .auth-msg {
+            display: none;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            margin-bottom: 14px;
+            line-height: 1.4;
+        }
+
+        .auth-msg.error {
+            display: block;
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+        }
+
+        .auth-msg.success {
+            display: block;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #6ee7b7;
+        }
+
+        /* History Modal Elements */
+        .history-header {
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .history-list {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding-right: 4px;
+        }
+
+        .history-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .history-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        .history-item-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .history-thumb {
+            width: 46px;
+            height: 46px;
+            border-radius: 8px;
+            object-fit: cover;
+            background: #000;
+            border: 1px solid var(--card-border);
+        }
+
+        .history-info h4 {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .history-info p {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .history-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-right: 6px;
+        }
+
+        .history-badge.Normal { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+        .history-badge.COVID { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+        .history-badge.Pneumonia { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+        .history-badge.Tuberculosis { background: rgba(217, 70, 239, 0.2); color: #e879f9; }
+        .history-badge.Lung_Opacity { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+
+        .btn-view-hist {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .btn-view-hist:hover {
+            background: #3b82f6;
+            color: #fff;
+        }
+
+        .history-empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+        }
+
+        .history-pagination {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 12px;
+            border-top: 1px solid var(--card-border);
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .btn-page {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text);
+            border: 1px solid var(--card-border);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .btn-page:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .btn-page:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* Model Performance / Metrics Modal Elements */
+        .metrics-grid-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .metric-summary-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 12px 14px;
+            text-align: center;
+        }
+
+        .metric-summary-card h5 {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .metric-summary-card .metric-val {
+            font-size: 20px;
+            font-weight: 800;
+            color: #34d399;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .metric-summary-card.accent-blue .metric-val {
+            color: #60a5fa;
+        }
+
+        .metric-summary-card.accent-purple .metric-val {
+            color: #c084fc;
+        }
+
+        .metric-summary-card.accent-yellow .metric-val {
+            color: #fbbf24;
+        }
+
+        .metrics-table-wrapper {
+            overflow-x: auto;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+        }
+
+        .metrics-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            text-align: left;
+        }
+
+        .metrics-table th {
+            background: rgba(255, 255, 255, 0.04);
+            padding: 10px 14px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .metrics-table td {
+            padding: 10px 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+        }
+
+        .metrics-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .metrics-table td.class-label {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+
+        .cm-img-container {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .cm-img-container img {
+            max-width: 100%;
+            max-height: 380px;
+            border-radius: 8px;
+            object-fit: contain;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Top Nav & Clinician Auth Bar -->
+        <div class="header-top">
+            <div class="badge"><span></span> AI Medical Diagnostic System</div>
+            <div class="auth-bar" id="authBar">
+                <button class="btn-nav" id="btnMetricsOpen" onclick="openMetricsModal()" style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.35); color: #34d399;">📊 Model Performance</button>
+                <button class="btn-nav" id="btnLoginOpen" onclick="openAuthModal('login')">🔐 Clinician Sign In</button>
+                <button class="btn-nav" id="btnRegisterOpen" onclick="openAuthModal('register')" style="background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.15); color: #e2e8f0;">Register</button>
+                
+                <div class="user-pill" id="userPill" style="display: none;">
+                    <span>👨‍⚕️</span>
+                    <span id="userNameLabel">Clinician</span>
+                    <button class="btn-nav btn-history" onclick="openHistoryModal()">📋 Scan History</button>
+                    <button class="btn-logout" onclick="logout()">Sign Out</button>
+                </div>
+            </div>
+        </div>
+
+        <header>
+            <h1>Chest X-Ray Multi-Disease Detection</h1>
+            <p class="subtitle">Classifies scans into Normal, COVID-19, Pneumonia, Tuberculosis, or Lung Opacity with Grad-CAM Explainability.</p>
+        </header>
+
+        <div class="grid-layout">
+            <!-- Left Card: Upload & Live Controls -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">📁 Upload Chest X-Ray</div>
+                    <span style="font-size: 12px; color: var(--text-muted);">PNG, JPG, JPEG</span>
+                </div>
+
+                <div class="drop-zone" id="dropZone">
+                    <span class="upload-icon">🩻</span>
+                    <h3>Drag & Drop Chest X-Ray scan here</h3>
+                    <p>or click to select an image from your computer</p>
+                    <label class="btn-browse" for="fileInput">Choose Image</label>
+                    <input type="file" id="fileInput" accept="image/png, image/jpeg, image/jpg">
+                </div>
+
+                <div class="preview-container" id="previewContainer">
+                    <div class="preview-box">
+                        <img id="imagePreview" alt="X-ray Preview">
+                    </div>
+                    <button class="btn-analyze" id="btnAnalyze" onclick="analyzeImage()">
+                        <div class="spinner" id="spinner"></div>
+                        <span id="btnText">⚡ Run Disease Diagnosis</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Card: Professional Diagnostic Result Dashboard -->
+            <div class="card" id="diagnosticsCard">
+                <div class="card-header">
+                    <div class="card-title">🧠 Diagnostic Result & Explainability</div>
+                    <span id="statusTag" style="font-size: 12px; color: #34d399; font-weight: 600;">System Ready</span>
+                </div>
+
+                <!-- Empty State -->
+                <div class="result-empty" id="resultEmpty">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <rect x="3" y="3" width="18" height="18" rx="4"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                    <h3 style="font-size: 16px; margin-bottom: 6px; color: #e2e8f0;">No scan analyzed yet</h3>
+                    <p style="font-size: 13px; max-width: 400px; line-height: 1.5;">Upload or drag & drop a clinical Chest X-Ray (PNG, JPG, JPEG) to generate deep learning predictions and Grad-CAM attention heatmaps.</p>
+                </div>
+
+                <!-- Loaded Result Content -->
+                <div class="result-content" id="resultContent">
+                    <!-- 1. Main Diagnosis Card -->
+                    <div class="diagnosis-hero-card" id="diagHeroCard">
+                        <div class="hero-top">
+                            <div class="hero-title-area">
+                                <div class="hero-icon" id="diagIcon">🫁</div>
+                                <div>
+                                    <h5>AI-Predicted Condition</h5>
+                                    <h2 id="diagClass">-</h2>
+                                </div>
+                            </div>
+                            <div class="hero-conf-box">
+                                <div class="hero-conf-num" id="diagConf">0%</div>
+                                <div class="hero-conf-label">Model Confidence</div>
+                            </div>
+                        </div>
+
+                        <!-- Confidence Bar & Tier Indicator -->
+                        <div class="conf-meter-wrapper">
+                            <div class="conf-meter-track">
+                                <div class="conf-meter-fill" id="confMeterFill" style="width: 0%;"></div>
+                            </div>
+                            <div class="conf-meta-row">
+                                <span id="confTierBadge" class="conf-tier-badge">High Model Confidence</span>
+                                <span id="confExactText" style="font-family: 'JetBrains Mono'; font-size: 11px;">0.00 / 1.00</span>
+                            </div>
+                        </div>
+
+                        <div class="hero-interpretation" id="heroInterpretation">
+                            <span>ℹ️</span>
+                            <span id="heroInterpretationText">Model prediction based on the uploaded chest X-ray.</span>
+                        </div>
+
+                        <!-- Non-standalone decision making concise notice -->
+                        <div style="font-size: 11px; color: #94a3b8; margin-top: 10px; display: flex; align-items: center; gap: 6px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06);">
+                            <span>🔬</span>
+                            <span>Research/Educational Use Only — This AI prediction is not a substitute for professional medical evaluation.</span>
+                        </div>
+                    </div>
+
+                    <!-- 2. Five-Class Probability Distribution -->
+                    <div class="prob-section">
+                        <div class="prob-section-title">
+                            <span>All Class Probability Distribution</span>
+                            <span style="font-size: 11px; text-transform: none; color: var(--text-muted);">ResNet50 Softmax Output</span>
+                        </div>
+                        <div id="probContainer">
+                            <!-- Populated dynamically in exact class order -->
+                        </div>
+                    </div>
+
+                    <!-- 3. Original X-Ray vs Grad-CAM Comparison -->
+                    <div class="comparison-section">
+                        <div class="comparison-grid">
+                            <div class="comparison-card">
+                                <p>Original Chest X-Ray</p>
+                                <div class="comparison-img-box">
+                                    <img id="originalView" alt="Original Chest X-Ray" onerror="this.parentElement.innerHTML='<div class=\'img-fallback\'>Scan preview unavailable</div>'">
+                                </div>
+                            </div>
+                            <div class="comparison-card">
+                                <p>Grad-CAM Heatmap Overlay</p>
+                                <div class="comparison-img-box">
+                                    <img id="heatmapView" alt="Grad-CAM Activation Map" onerror="this.parentElement.innerHTML='<div class=\'img-fallback\'>Grad-CAM visualization is currently unavailable</div>'">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. Grad-CAM Educational / Explanatory Note -->
+                    <div class="gradcam-info-panel">
+                        <div class="gradcam-info-title">
+                            <span>💡</span>
+                            <span>What does the Grad-CAM show?</span>
+                        </div>
+                        <p class="gradcam-info-text">
+                            Grad-CAM highlights image regions that contributed more strongly to the model's prediction. These regions represent model attention and should not be interpreted as definitive anatomical lesions or a clinical diagnosis.
+                        </p>
+                    </div>
+
+                    <!-- 5. Prediction Metadata & Technical Summary -->
+                    <div class="summary-panel">
+                        <div class="summary-grid">
+                            <div class="summary-item">
+                                <h6>Predicted Condition</h6>
+                                <p id="sumCondition">-</p>
+                            </div>
+                            <div class="summary-item">
+                                <h6>Model Confidence</h6>
+                                <p id="sumConfidence">-</p>
+                            </div>
+                            <div class="summary-item">
+                                <h6>Model Architecture</h6>
+                                <p>ResNet50</p>
+                            </div>
+                            <div class="summary-item">
+                                <h6>Explainability Layer</h6>
+                                <p>conv_1</p>
+                            </div>
+                            <div class="summary-item">
+                                <h6>Scan Filename</h6>
+                                <p id="sumFilename">Scan</p>
+                            </div>
+                            <div class="summary-item">
+                                <h6>Record Timestamp</h6>
+                                <p id="sumTimestamp">Just now</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 6. Medical Disclaimer -->
+                    <div class="disclaimer-card">
+                        <span class="disclaimer-icon">⚠️</span>
+                        <p class="disclaimer-text">
+                            <strong>Medical Disclaimer:</strong> This application provides AI-generated predictions for research and educational purposes. Results are not a definitive medical diagnosis and should not replace evaluation by a qualified healthcare professional. Do not make medical decisions based solely on this result.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auth Modal -->
+    <div class="modal-overlay" id="authModal" onclick="handleModalBackdropClick(event, 'authModal')">
+        <div class="modal-card">
+            <button class="modal-close" onclick="closeAuthModal()" title="Close">&times;</button>
+            <div class="modal-tabs">
+                <button class="modal-tab active" id="tabLogin" onclick="switchAuthTab('login')">Clinician Sign In</button>
+                <button class="modal-tab" id="tabRegister" onclick="switchAuthTab('register')">Create Account</button>
+            </div>
+
+            <div class="auth-msg" id="authMsg"></div>
+
+            <!-- Login Form -->
+            <form id="formLogin" onsubmit="handleLoginSubmit(event)">
+                <div class="form-group">
+                    <label class="form-label" for="loginEmail">Email Address</label>
+                    <input class="form-input" type="email" id="loginEmail" placeholder="doctor@hospital.org" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="loginPassword">Password</label>
+                    <input class="form-input" type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password">
+                </div>
+                <button class="btn-submit" type="submit" id="btnLoginSubmit">Sign In</button>
+            </form>
+
+            <!-- Register Form -->
+            <form id="formRegister" style="display: none;" onsubmit="handleRegisterSubmit(event)">
+                <div class="form-group">
+                    <label class="form-label" for="regName">Full Name / Clinical Role</label>
+                    <input class="form-input" type="text" id="regName" placeholder="Dr. John Doe, Radiologist" required autocomplete="name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="regEmail">Work Email Address</label>
+                    <input class="form-input" type="email" id="regEmail" placeholder="doctor@hospital.org" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="regPassword">Password (Min. 8 characters)</label>
+                    <input class="form-input" type="password" id="regPassword" placeholder="••••••••" minlength="8" required autocomplete="new-password">
+                </div>
+                <button class="btn-submit" type="submit" id="btnRegSubmit">Register Account</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- History Modal -->
+    <div class="modal-overlay" id="historyModal" onclick="handleModalBackdropClick(event, 'historyModal')">
+        <div class="modal-card modal-card-large">
+            <button class="modal-close" onclick="closeHistoryModal()" title="Close">&times;</button>
+            
+            <div class="history-header">
+                <h3 style="font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+                    📋 My Prediction History
+                </h3>
+                <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">
+                    Previous diagnostic scans and Grad-CAM results stored securely in your MongoDB profile.
+                </p>
+            </div>
+
+            <div class="history-list" id="historyList">
+                <!-- Dynamically populated -->
+            </div>
+
+            <div class="history-pagination" id="historyPagination" style="display: none;">
+                <span id="pageInfo">Showing 0 of 0</span>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn-page" id="btnPrevPage" onclick="changeHistoryPage(-1)">← Previous</button>
+                    <button class="btn-page" id="btnNextPage" onclick="changeHistoryPage(1)">Next →</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Model Performance / Metrics Modal -->
+    <div class="modal-overlay" id="metricsModal" onclick="handleModalBackdropClick(event, 'metricsModal')">
+        <div class="modal-card modal-card-large">
+            <button class="modal-close" onclick="closeMetricsModal()" title="Close">&times;</button>
+            
+            <div class="history-header">
+                <h3 style="font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+                    📊 ResNet50 Model Performance & Benchmark
+                </h3>
+                <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">
+                    Performance metrics evaluated on the persistent held-out test split (N = 3,280 scans).
+                </p>
+            </div>
+
+            <div style="overflow-y: auto; flex: 1; padding-right: 4px;">
+                <!-- Summary Metrics Grid -->
+                <div class="metrics-grid-summary">
+                    <div class="metric-summary-card">
+                        <h5>Test Accuracy</h5>
+                        <div class="metric-val" id="metAcc">76.86%</div>
+                    </div>
+                    <div class="metric-summary-card accent-blue">
+                        <h5>Macro F1-Score</h5>
+                        <div class="metric-val" id="metMacroF1">75.91%</div>
+                    </div>
+                    <div class="metric-summary-card accent-purple">
+                        <h5>Macro Precision</h5>
+                        <div class="metric-val" id="metMacroPrec">77.58%</div>
+                    </div>
+                    <div class="metric-summary-card accent-yellow">
+                        <h5>Macro Recall</h5>
+                        <div class="metric-val" id="metMacroRec">76.01%</div>
+                    </div>
+                    <div class="metric-summary-card">
+                        <h5>Test Samples</h5>
+                        <div class="metric-val" id="metTotal">3,280</div>
+                    </div>
+                </div>
+
+                <!-- Class-wise Performance Table -->
+                <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 8px; color: #cbd5e1;">Class-Wise Performance Breakdown</h4>
+                <div class="metrics-table-wrapper">
+                    <table class="metrics-table">
+                        <thead>
+                            <tr>
+                                <th>Disease Condition</th>
+                                <th>Precision</th>
+                                <th>Recall (Sensitivity)</th>
+                                <th>F1-Score</th>
+                                <th>Support</th>
+                            </tr>
+                        </thead>
+                        <tbody id="metricsTableBody">
+                            <tr>
+                                <td class="class-label">COVID</td>
+                                <td>70.41%</td>
+                                <td>54.43%</td>
+                                <td>61.39%</td>
+                                <td>542</td>
+                            </tr>
+                            <tr>
+                                <td class="class-label">Lung Opacity</td>
+                                <td>77.98%</td>
+                                <td>71.06%</td>
+                                <td>74.36%</td>
+                                <td>902</td>
+                            </tr>
+                            <tr>
+                                <td class="class-label">Normal</td>
+                                <td>78.95%</td>
+                                <td>86.33%</td>
+                                <td>82.47%</td>
+                                <td>1,529</td>
+                            </tr>
+                            <tr>
+                                <td class="class-label">Pneumonia</td>
+                                <td>65.25%</td>
+                                <td>91.09%</td>
+                                <td>76.03%</td>
+                                <td>202</td>
+                            </tr>
+                            <tr>
+                                <td class="class-label">Tuberculosis</td>
+                                <td>95.29%</td>
+                                <td>77.14%</td>
+                                <td>85.26%</td>
+                                <td>105</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Confusion Matrix View -->
+                <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 8px; color: #cbd5e1;">Confusion Matrix (Held-out Test Set)</h4>
+                <div class="cm-img-container">
+                    <img src="/static/confusion_matrix.png" alt="ResNet50 Confusion Matrix" onerror="this.src='confusion_matrix.png'">
+                    <p style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">
+                        X-axis: Predicted Class | Y-axis: True Ground Truth Class. Diagonal entries indicate correct classifications.
+                    </p>
+                </div>
+
+                <!-- Neutral Clinical Scope Notice -->
+                <div class="disclaimer-card" style="margin-bottom: 10px;">
+                    <span class="disclaimer-icon">ℹ️</span>
+                    <p class="disclaimer-text">
+                        <strong>Evaluation Notice:</strong> These metrics describe performance on the held-out test dataset (N = 3,280) and should not be interpreted as clinical validation or medical diagnosis. Performance on external healthcare populations may differ due to hospital-specific equipment and demographic variations.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const previewContainer = document.getElementById('previewContainer');
+        const imagePreview = document.getElementById('imagePreview');
+        const btnAnalyze = document.getElementById('btnAnalyze');
+        const spinner = document.getElementById('spinner');
+        const btnText = document.getElementById('btnText');
+        const resultEmpty = document.getElementById('resultEmpty');
+        const resultContent = document.getElementById('resultContent');
+
+        let selectedFile = null;
+        let historySkip = 0;
+        const historyLimit = 10;
+        let historyTotal = 0;
+
+        // Fixed 5 classes in order
+        const CLASS_ORDER = ["COVID", "Lung_Opacity", "Normal", "Pneumonia", "Tuberculosis"];
+
+        // --- AUTH LOGIC ---
+        function getAuthToken() {
+            return localStorage.getItem('cxr_token');
+        }
+
+        function setAuthToken(token) {
+            localStorage.setItem('cxr_token', token);
+        }
+
+        function removeAuthToken() {
+            localStorage.removeItem('cxr_token');
+        }
+
+        async function checkAuthState() {
+            const token = getAuthToken();
+            const btnLoginOpen = document.getElementById('btnLoginOpen');
+            const btnRegisterOpen = document.getElementById('btnRegisterOpen');
+            const userPill = document.getElementById('userPill');
+            const userNameLabel = document.getElementById('userNameLabel');
+
+            if (!token) {
+                btnLoginOpen.style.display = 'inline-flex';
+                btnRegisterOpen.style.display = 'inline-flex';
+                userPill.style.display = 'none';
+                return;
+            }
+
+            try {
+                const res = await fetch('/auth/me', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (res.ok) {
+                    const user = await res.json();
+                    btnLoginOpen.style.display = 'none';
+                    btnRegisterOpen.style.display = 'none';
+                    userPill.style.display = 'inline-flex';
+                    userNameLabel.innerText = user.name || user.email;
+                } else {
+                    removeAuthToken();
+                    btnLoginOpen.style.display = 'inline-flex';
+                    btnRegisterOpen.style.display = 'inline-flex';
+                    userPill.style.display = 'none';
+                }
+            } catch (err) {
+                console.warn('Auth state check error:', err);
+            }
+        }
+
+        function openAuthModal(tab = 'login') {
+            document.getElementById('authModal').classList.add('active');
+            switchAuthTab(tab);
+            clearAuthMessage();
+        }
+
+        function closeAuthModal() {
+            document.getElementById('authModal').classList.remove('active');
+            clearAuthMessage();
+        }
+
+        function handleModalBackdropClick(e, modalId) {
+            if (e.target.id === modalId) {
+                document.getElementById(modalId).classList.remove('active');
+            }
+        }
+
+        function switchAuthTab(tab) {
+            const tabLogin = document.getElementById('tabLogin');
+            const tabRegister = document.getElementById('tabRegister');
+            const formLogin = document.getElementById('formLogin');
+            const formRegister = document.getElementById('formRegister');
+
+            clearAuthMessage();
+
+            if (tab === 'login') {
+                tabLogin.classList.add('active');
+                tabRegister.classList.remove('active');
+                formLogin.style.display = 'block';
+                formRegister.style.display = 'none';
+            } else {
+                tabRegister.classList.add('active');
+                tabLogin.classList.remove('active');
+                formLogin.style.display = 'none';
+                formRegister.style.display = 'block';
+            }
+        }
+
+        function showAuthMessage(msg, isError = true) {
+            const el = document.getElementById('authMsg');
+            el.className = 'auth-msg ' + (isError ? 'error' : 'success');
+            el.innerText = msg;
+        }
+
+        function clearAuthMessage() {
+            const el = document.getElementById('authMsg');
+            el.className = 'auth-msg';
+            el.innerText = '';
+        }
+
+        async function handleLoginSubmit(e) {
+            e.preventDefault();
+            clearAuthMessage();
+            const btn = document.getElementById('btnLoginSubmit');
+            btn.disabled = true;
+            btn.innerText = 'Signing in...';
+
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const res = await fetch('/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.detail || 'Sign in failed');
+                }
+
+                setAuthToken(data.access_token);
+                closeAuthModal();
+                await checkAuthState();
+            } catch (err) {
+                showAuthMessage(err.message, true);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Sign In';
+            }
+        }
+
+        async function handleRegisterSubmit(e) {
+            e.preventDefault();
+            clearAuthMessage();
+            const btn = document.getElementById('btnRegSubmit');
+            btn.disabled = true;
+            btn.innerText = 'Creating account...';
+
+            const name = document.getElementById('regName').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value;
+
+            try {
+                const res = await fetch('/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, password })
+                });
+
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.detail || 'Registration failed');
+                }
+
+                setAuthToken(data.access_token);
+                closeAuthModal();
+                await checkAuthState();
+            } catch (err) {
+                showAuthMessage(err.message, true);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Register Account';
+            }
+        }
+
+        function logout() {
+            removeAuthToken();
+            checkAuthState();
+            closeHistoryModal();
+        }
+
+        // --- HISTORY LOGIC ---
+        function openHistoryModal() {
+            document.getElementById('historyModal').classList.add('active');
+            historySkip = 0;
+            loadHistory();
+        }
+
+        function closeHistoryModal() {
+            document.getElementById('historyModal').classList.remove('active');
+        }
+
+        async function loadHistory() {
+            const listEl = document.getElementById('historyList');
+            const pagEl = document.getElementById('historyPagination');
+            const token = getAuthToken();
+
+            if (!token) {
+                listEl.innerHTML = `<div class="history-empty-state">Please sign in to view your scan history.</div>`;
+                pagEl.style.display = 'none';
+                return;
+            }
+
+            listEl.innerHTML = `<div style="text-align: center; padding: 30px; color: var(--text-muted);">Loading diagnostic history...</div>`;
+
+            try {
+                const res = await fetch(`/predictions/history?limit=${historyLimit}&skip=${historySkip}`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || 'Failed to load history');
+                }
+
+                const data = await res.json();
+                historyTotal = data.total;
+
+                if (!data.items || data.items.length === 0) {
+                    listEl.innerHTML = `
+                        <div class="history-empty-state">
+                            <div style="font-size: 32px; margin-bottom: 8px;">🩻</div>
+                            <h4 style="font-size: 15px; margin-bottom: 4px; color: #fff;">No prediction history yet</h4>
+                            <p>Upload or drag & drop a chest X-Ray scan to start building your diagnostic history.</p>
+                        </div>
+                    `;
+                    pagEl.style.display = 'none';
+                    return;
+                }
+
+                listEl.innerHTML = '';
+                data.items.forEach(item => {
+                    const dt = item.timestamp ? new Date(item.timestamp).toLocaleString() : 'N/A';
+                    const confPct = (item.confidence * 100).toFixed(1) + '%';
+                    const cleanClass = item.predicted_class.replace('_', ' ');
+
+                    const row = document.createElement('div');
+                    row.className = 'history-item';
+                    row.innerHTML = `
+                        <div class="history-item-left">
+                            <img class="history-thumb" src="${item.heatmap_url || item.image_url || ''}" alt="Scan" onerror="this.style.display='none';">
+                            <div class="history-info">
+                                <h4>
+                                    <span class="history-badge ${item.predicted_class}">${cleanClass}</span>
+                                    <span style="font-family: 'JetBrains Mono'; color: #34d399;">${confPct}</span>
+                                </h4>
+                                <p>${dt} • ${item.image_filename || 'Scan'}</p>
+                            </div>
+                        </div>
+                        <button class="btn-view-hist" onclick='viewHistoricalRecord(${JSON.stringify(item)})'>
+                            🔍 View Report
+                        </button>
+                    `;
+                    listEl.appendChild(row);
+                });
+
+                // Update pagination
+                pagEl.style.display = 'flex';
+                const startNum = historySkip + 1;
+                const endNum = Math.min(historySkip + historyLimit, historyTotal);
+                document.getElementById('pageInfo').innerText = `Showing ${startNum} - ${endNum} of ${historyTotal}`;
+
+                document.getElementById('btnPrevPage').disabled = historySkip === 0;
+                document.getElementById('btnNextPage').disabled = endNum >= historyTotal;
+
+            } catch (err) {
+                listEl.innerHTML = `
+                    <div class="history-empty-state" style="color: #fca5a5;">
+                        <div style="font-size: 28px; margin-bottom: 6px;">⚠️</div>
+                        <h4>History Unavailable</h4>
+                        <p>${err.message}</p>
+                    </div>
+                `;
+                pagEl.style.display = 'none';
+            }
+        }
+
+        function changeHistoryPage(direction) {
+            historySkip += direction * historyLimit;
+            if (historySkip < 0) historySkip = 0;
+            loadHistory();
+        }
+
+        // Load historical prediction directly from MongoDB record WITHOUT re-running inference
+        function viewHistoricalRecord(item) {
+            closeHistoryModal();
+
+            renderResults(
+                {
+                    predicted_class: item.predicted_class,
+                    confidence: item.confidence,
+                    all_class_probabilities: item.probabilities,
+                    heatmap_url: item.heatmap_url
+                },
+                {
+                    image_url: item.image_url,
+                    filename: item.image_filename || 'Stored Scan',
+                    timestamp: item.timestamp ? new Date(item.timestamp).toLocaleString() : 'Archived Record',
+                    isHistorical: true
+                }
+            );
+
+            // Smooth scroll to the diagnostic result card
+            document.getElementById('diagnosticsCard').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Initialize auth check on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuthState();
+        });
+
+        // --- FILE UPLOAD & PREDICTION ---
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) handleFile(e.target.files[0]);
+        });
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+        });
+
+        function handleFile(file) {
+            selectedFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                imagePreview.src = e.target.result;
+                previewContainer.style.display = 'block';
+                document.getElementById('originalView').src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function analyzeImage() {
+            if (!selectedFile) return;
+
+            btnAnalyze.disabled = true;
+            spinner.style.display = 'block';
+            btnText.innerText = 'Analyzing X-Ray...';
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            const headers = {};
+            const token = getAuthToken();
+            if (token) {
+                headers['Authorization'] = 'Bearer ' + token;
+            }
+
+            try {
+                const res = await fetch('/predict', {
+                    method: 'POST',
+                    headers: headers,
+                    body: formData
+                });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || 'Unable to analyze this image. Please try another valid chest X-ray.');
+                }
+
+                const data = await res.json();
+                renderResults(data, {
+                    filename: selectedFile.name,
+                    timestamp: new Date().toLocaleString(),
+                    isHistorical: false
+                });
+            } catch (err) {
+                alert('Analysis Error: ' + err.message);
+            } finally {
+                btnAnalyze.disabled = false;
+                spinner.style.display = 'none';
+                btnText.innerText = '⚡ Run Disease Diagnosis';
+            }
+        }
+
+        // Renders complete Diagnostic Dashboard (used by both live prediction and historical report viewing)
+        function renderResults(data, metadata = {}) {
+            resultEmpty.style.display = 'none';
+            resultContent.style.display = 'block';
+
+            const diagHeroCard = document.getElementById('diagHeroCard');
+            const diagClass = document.getElementById('diagClass');
+            const diagConf = document.getElementById('diagConf');
+            const diagIcon = document.getElementById('diagIcon');
+            const confMeterFill = document.getElementById('confMeterFill');
+            const confTierBadge = document.getElementById('confTierBadge');
+            const confExactText = document.getElementById('confExactText');
+
+            const cleanClass = data.predicted_class.replace('_', ' ');
+            const confVal = parseFloat(data.confidence);
+            const confPct = (confVal * 100).toFixed(2) + '%';
+
+            // 1. Main Diagnosis Card Styling
+            diagHeroCard.className = 'diagnosis-hero-card ' + data.predicted_class;
+            diagClass.innerText = cleanClass;
+            diagConf.innerText = confPct;
+
+            diagIcon.className = 'hero-icon ' + data.predicted_class;
+            diagIcon.innerText = data.predicted_class === 'Normal' ? '✅' : '⚠️';
+
+            // Confidence meter bar & tier text (transparent model confidence label)
+            confMeterFill.style.width = (confVal * 100).toFixed(1) + '%';
+            confExactText.innerText = `${confVal.toFixed(4)} / 1.0000`;
+
+            const heroInterpText = document.getElementById('heroInterpretationText');
+
+            if (confVal >= 0.80) {
+                confTierBadge.innerText = 'High Model Confidence';
+                confTierBadge.style.color = '#34d399';
+                confTierBadge.style.borderColor = 'rgba(16, 185, 129, 0.35)';
+                confTierBadge.style.background = 'rgba(16, 185, 129, 0.15)';
+                if (heroInterpText) {
+                    heroInterpText.innerText = "High model confidence. This reflects the model's output distribution and does not establish a medical diagnosis.";
+                }
+            } else if (confVal >= 0.50) {
+                confTierBadge.innerText = 'Moderate Model Confidence';
+                confTierBadge.style.color = '#fbbf24';
+                confTierBadge.style.borderColor = 'rgba(245, 158, 11, 0.35)';
+                confTierBadge.style.background = 'rgba(245, 158, 11, 0.15)';
+                if (heroInterpText) {
+                    heroInterpText.innerText = "Moderate model confidence. The prediction may be less reliable and should be interpreted cautiously.";
+                }
+            } else {
+                confTierBadge.innerText = 'Lower Model Confidence';
+                confTierBadge.style.color = '#f87171';
+                confTierBadge.style.borderColor = 'rgba(239, 68, 68, 0.35)';
+                confTierBadge.style.background = 'rgba(239, 68, 68, 0.15)';
+                if (heroInterpText) {
+                    heroInterpText.innerText = "Lower model confidence. Consider the result uncertain and do not rely on it for medical decision-making.";
+                }
+            }
+
+            // 2. Render Probability Bars in Exact Fixed Order
+            const probContainer = document.getElementById('probContainer');
+            probContainer.innerHTML = '';
+
+            const probs = data.all_class_probabilities || {};
+            CLASS_ORDER.forEach(cls => {
+                const prob = probs[cls] !== undefined ? probs[cls] : 0.0;
+                const pct = (prob * 100).toFixed(2);
+                const isSelected = cls === data.predicted_class;
+                const displayName = cls.replace('_', ' ');
+
+                probContainer.innerHTML += `
+                    <div class="prob-bar-item ${isSelected ? 'selected' : ''}">
+                        <div class="prob-bar-labels">
+                            <span class="prob-class-name">${isSelected ? '👉 ' : ''}${displayName}</span>
+                            <span class="prob-bar-val">${pct}%</span>
+                        </div>
+                        <div class="prob-bar-track">
+                            <div class="prob-bar-fill" style="width: ${pct}%;"></div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // 3. Render Original X-Ray & Grad-CAM Heatmap
+            const originalView = document.getElementById('originalView');
+            const heatmapView = document.getElementById('heatmapView');
+
+            if (metadata.image_url) {
+                originalView.src = metadata.image_url;
+            } else if (imagePreview.src && imagePreview.src.length > 0) {
+                originalView.src = imagePreview.src;
+            }
+
+            if (data.heatmap_url) {
+                heatmapView.src = data.heatmap_url + (data.heatmap_url.includes('?') ? '&' : '?') + 't=' + new Date().getTime();
+            }
+
+            // 4. Update Prediction Summary Panel
+            document.getElementById('sumCondition').innerText = cleanClass;
+            document.getElementById('sumConfidence').innerText = confPct;
+            document.getElementById('sumFilename').innerText = metadata.filename || 'Chest X-Ray Scan';
+            document.getElementById('sumTimestamp').innerText = metadata.timestamp || 'Real-time inference';
+
+            // Status Tag update
+            const statusTag = document.getElementById('statusTag');
+            statusTag.innerText = metadata.isHistorical ? 'Archived Report' : 'Diagnosis Complete';
+            statusTag.style.color = metadata.isHistorical ? '#c084fc' : '#34d399';
+        }
+
+        // Metrics Modal Handlers
+        function openMetricsModal() {
+            document.getElementById('metricsModal').classList.add('active');
+            fetchModelMetrics();
+        }
+
+        function closeMetricsModal() {
+            document.getElementById('metricsModal').classList.remove('active');
+        }
+
+        async function fetchModelMetrics() {
+            try {
+                const res = await fetch('/model/metrics');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.overall_metrics) {
+                        const om = data.overall_metrics;
+                        document.getElementById('metAcc').innerText = (om.accuracy * 100).toFixed(2) + '%';
+                        document.getElementById('metMacroF1').innerText = (om.macro_f1 * 100).toFixed(2) + '%';
+                        document.getElementById('metMacroPrec').innerText = (om.macro_precision * 100).toFixed(2) + '%';
+                        document.getElementById('metMacroRec').innerText = (om.macro_recall * 100).toFixed(2) + '%';
+                        document.getElementById('metTotal').innerText = om.total_test_samples.toLocaleString();
+                    }
+                    if (data.class_metrics) {
+                        const tbody = document.getElementById('metricsTableBody');
+                        tbody.innerHTML = '';
+                        CLASS_ORDER.forEach(cls => {
+                            const cm = data.class_metrics[cls];
+                            if (cm) {
+                                tbody.innerHTML += `
+                                    <tr>
+                                        <td class="class-label">${cls.replace('_', ' ')}</td>
+                                        <td>${(cm.precision * 100).toFixed(2)}%</td>
+                                        <td>${(cm.recall * 100).toFixed(2)}%</td>
+                                        <td>${(cm.f1_score * 100).toFixed(2)}%</td>
+                                        <td>${cm.support.toLocaleString()}</td>
+                                    </tr>
+                                `;
+                            }
+                        });
+                    }
+                }
+            } catch (err) {
+                console.warn('Metrics endpoint fetch failed, using pre-rendered benchmark data:', err);
+            }
+        }
+    </script>
+</body>
+</html>

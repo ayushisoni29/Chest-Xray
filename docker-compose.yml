@@ -1,0 +1,64 @@
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: chest_xray_mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - chest_xray_net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chest_xray_api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017
+      - MONGODB_DATABASE=chest_xray_ai
+      - MONGODB_COLLECTION=predictions
+      - MONGODB_USERS_COLLECTION=users
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-chest-xray-ai-production-jwt-secret-key-change-me}
+      - JWT_ALGORITHM=HS256
+      - JWT_ACCESS_TOKEN_EXPIRE_MINUTES=1440
+      - CLEANUP_ORPHAN_RETENTION_HOURS=24
+      - CLEANUP_TEMP_RETENTION_HOURS=24
+      - CLEANUP_INTERVAL_MINUTES=60
+      - CLEANUP_ENABLED=true
+    volumes:
+      - app_uploads:/app/static/uploads
+      - app_heatmaps:/app/static/heatmaps
+    networks:
+      - chest_xray_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  mongodb_data:
+    driver: local
+  app_uploads:
+    driver: local
+  app_heatmaps:
+    driver: local
+
+networks:
+  chest_xray_net:
+    driver: bridge
