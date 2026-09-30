@@ -157,13 +157,16 @@ def preprocess_image(image_path: str) -> np.ndarray:
     img = cv2.imread(image_path)
     if img is not None:
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        img = cv2.resize(img, IMG_SIZE)
+        # Fix A: Two-step resize to prevent interpolation artifact shortcuts
+        img = cv2.resize(img, (256, 256), interpolation=cv2.INTER_AREA)
+        img = cv2.resize(img, IMG_SIZE, interpolation=cv2.INTER_AREA)
     else:
         # Fallback to PIL if OpenCV fails on certain color formats
         try:
             with Image.open(image_path) as pil_img:
                 pil_img = pil_img.convert("RGB")
-                pil_img = pil_img.resize(IMG_SIZE)
+                pil_img = pil_img.resize((256, 256), resample=Image.LANCZOS)
+                pil_img = pil_img.resize(IMG_SIZE, resample=Image.LANCZOS)
                 img = np.array(pil_img)
         except Exception as e:
             raise ValueError(f"Could not decode image at {image_path}: {e}")
