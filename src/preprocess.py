@@ -144,7 +144,7 @@ def apply_clahe_enhancement(img_rgb: np.ndarray) -> np.ndarray:
 def preprocess_image(image_path: str) -> np.ndarray:
     """
     Loads an image from disk, converts to 3-channel RGB, resizes to (224, 224),
-    applies CLAHE medical contrast enhancement, and normalizes using MobileNetV3 ImageNet statistics.
+    applies CLAHE medical contrast enhancement, and normalizes using ResNet50 ImageNet statistics.
     
     Returns a numpy array of shape (1, 224, 224, 3) ready for model inference.
     """

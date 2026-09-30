@@ -1,0 +1,7 @@
+
+FINAL MODEL FROZEN
+--------------------
+ResNet50 is the final selected model.
+The model is frozen for the current project implementation.
+The verified held-out test results are locked.
+No further training or model replacement should be performed unless explicitly requested.

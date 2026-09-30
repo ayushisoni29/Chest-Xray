@@ -30,10 +30,10 @@ def find_conv_layer(model_or_layer, layer_name: str = None):
     return None
 
 
-def generate_gradcam(image_path: str, save_path: str, alpha: float = 0.45) -> str:
+def generate_gradcam(image_path: str, save_path: str, alpha: float = 0.45, return_heatmap: bool = False):
     """
     Generates a Grad-CAM heatmap overlay for the given image and saves it to save_path.
-    Returns the absolute path to the generated heatmap image.
+    Returns the absolute path to the generated heatmap image, or (path, heatmap) if return_heatmap is True.
     """
     model = get_model()
     img_array = preprocess_image(image_path)
@@ -109,4 +109,7 @@ def generate_gradcam(image_path: str, save_path: str, alpha: float = 0.45) -> st
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     cv2.imwrite(save_path, overlaid)
 
+    if return_heatmap:
+        return save_path, heatmap_resized
     return save_path
+

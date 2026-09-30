@@ -137,7 +137,7 @@ def health_check():
 
 @app.get("/model/metrics")
 def get_model_metrics():
-    """Returns the verified evaluation metrics and confusion matrix data for the trained MobileNetV3Large model."""
+    """Returns the verified evaluation metrics and confusion matrix data for the trained ResNet50 model."""
     metrics_path = os.path.join(BASE_DIR, "evaluation", "metrics.json")
     if os.path.exists(metrics_path):
         try:
