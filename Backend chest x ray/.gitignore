@@ -1,0 +1,27 @@
+# Environment variables (Never commit secrets)
+.env
+.env.local
+.env.*.local
+
+# Python bytecode & caching
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# User uploads and runtime heatmaps
+static/uploads/*
+!static/uploads/.gitkeep
+static/heatmaps/*
+!static/heatmaps/.gitkeep
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Heavy Data & Models
+models/
+dataset/
+venv/
+.venv/
+

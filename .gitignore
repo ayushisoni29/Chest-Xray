@@ -2,6 +2,7 @@
 .env
 .env.local
 .env.*.local
+*.env
 
 # Python bytecode & caching
 __pycache__/
@@ -9,19 +10,30 @@ __pycache__/
 *$py.class
 .pytest_cache/
 
-# User uploads and runtime heatmaps
-static/uploads/*
-!static/uploads/.gitkeep
-static/heatmaps/*
-!static/heatmaps/.gitkeep
+# Node / Frontend
+node_modules/
+dist/
+.dist/
+.vite/
+npm-debug.log*
+
+# Ignore duplicate backend inside frontend
+Frontend chest x ray/backend/
+
+# User uploads and runtime heatmaps in Backend
+Backend chest x ray/static/uploads/*
+!Backend chest x ray/static/uploads/.gitkeep
+Backend chest x ray/static/heatmaps/*
+!Backend chest x ray/static/heatmaps/.gitkeep
 
 # OS generated files
 .DS_Store
 Thumbs.db
+desktop.ini
 
-# Heavy Data & Models
-models/
-dataset/
-venv/
-.venv/
-
+# Heavy Data & Models in Backend
+Backend chest x ray/models/
+Backend chest x ray/dataset/
+Backend chest x ray/venv/
+Backend chest x ray/.venv/
+*.zip
