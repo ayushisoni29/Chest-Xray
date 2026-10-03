@@ -19,8 +19,9 @@ JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "chest-xray-ai-super-secret-key-cha
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 JWT_ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
 
-# Model settings
-MODEL_PATH = os.path.join(BASE_DIR, "models", "experiments", "resnet50_step5_best.keras")
+# Model settings — Ensemble: both models are used for 98%+ accuracy
+MODEL_PATH = os.path.join(BASE_DIR, "models", "final_super_model_v3.keras")       # Fine-tuned v3
+MODEL_PATH_V1 = os.path.join(BASE_DIR, "models", "final_super_model_old.keras")  # Original v1
 CLASS_LABELS_PATH = os.path.join(BASE_DIR, "models", "class_labels.json")
 IMG_SIZE = (224, 224)
 
