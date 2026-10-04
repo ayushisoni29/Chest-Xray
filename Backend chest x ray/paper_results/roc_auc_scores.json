@@ -1,0 +1,10 @@
+{
+  "per_class_auc": {
+    "COVID": 0.4023,
+    "Lung_Opacity": 0.6671,
+    "Normal": 0.6217,
+    "Pneumonia": 0.4804,
+    "Tuberculosis": 0.2383
+  },
+  "macro_auc": 0.482
+}

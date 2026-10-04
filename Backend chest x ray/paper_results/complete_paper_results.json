@@ -1,0 +1,107 @@
+{
+  "test_samples": 2730,
+  "failed_images": 0,
+  "overall_accuracy": 13.08,
+  "classification_report": {
+    "COVID": {
+      "precision": 0.14285714285714285,
+      "recall": 0.001841620626151013,
+      "f1-score": 0.0036363636363636364,
+      "support": 543.0
+    },
+    "Lung_Opacity": {
+      "precision": 0.12960235640648013,
+      "recall": 1.0,
+      "f1-score": 0.22946544980443284,
+      "support": 352.0
+    },
+    "Normal": {
+      "precision": 0.5714285714285714,
+      "recall": 0.002616088947024199,
+      "f1-score": 0.005208333333333333,
+      "support": 1529.0
+    },
+    "Pneumonia": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 201.0
+    },
+    "Tuberculosis": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 105.0
+    },
+    "accuracy": 0.13076923076923078,
+    "macro avg": {
+      "precision": 0.1687776141384389,
+      "recall": 0.20089154191463504,
+      "f1-score": 0.04766202935482596,
+      "support": 2730.0
+    },
+    "weighted avg": {
+      "precision": 0.3651669390991924,
+      "recall": 0.13076923076923078,
+      "f1-score": 0.033227078920282954,
+      "support": 2730.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      1,
+      541,
+      1,
+      0,
+      0
+    ],
+    [
+      0,
+      352,
+      0,
+      0,
+      0
+    ],
+    [
+      1,
+      1524,
+      4,
+      0,
+      0
+    ],
+    [
+      5,
+      194,
+      2,
+      0,
+      0
+    ],
+    [
+      0,
+      105,
+      0,
+      0,
+      0
+    ]
+  ],
+  "ece_score": 0.8534,
+  "per_class_auc": {
+    "COVID": 0.4023,
+    "Lung_Opacity": 0.6671,
+    "Normal": 0.6217,
+    "Pneumonia": 0.4804,
+    "Tuberculosis": 0.2383
+  },
+  "macro_auc": 0.482,
+  "ensemble_used": true,
+  "model_v3_params": 25691013,
+  "class_names": [
+    "COVID",
+    "Lung_Opacity",
+    "Normal",
+    "Pneumonia",
+    "Tuberculosis"
+  ],
+  "preprocessing": "CLAHE (clipLimit=2.0, tileGrid=8x8) + ResNet50 preprocess_input",
+  "image_size": "224x224x3"
+}

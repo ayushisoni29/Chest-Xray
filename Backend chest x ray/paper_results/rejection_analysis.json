@@ -1,0 +1,71 @@
+{
+  "total_samples": 2730,
+  "total_errors_no_rejection": 2373,
+  "baseline_accuracy": 13.08,
+  "thresholds": [
+    {
+      "threshold": 0.5,
+      "accepted": 2722,
+      "rejected": 8,
+      "acceptance_rate": 99.71,
+      "accuracy_on_accepted": 13.12,
+      "errors_caught_percent": 0.34
+    },
+    {
+      "threshold": 0.6,
+      "accepted": 2673,
+      "rejected": 57,
+      "acceptance_rate": 97.91,
+      "accuracy_on_accepted": 13.21,
+      "errors_caught_percent": 2.23
+    },
+    {
+      "threshold": 0.7,
+      "accepted": 2657,
+      "rejected": 73,
+      "acceptance_rate": 97.33,
+      "accuracy_on_accepted": 13.25,
+      "errors_caught_percent": 2.87
+    },
+    {
+      "threshold": 0.75,
+      "accepted": 2649,
+      "rejected": 81,
+      "acceptance_rate": 97.03,
+      "accuracy_on_accepted": 13.29,
+      "errors_caught_percent": 3.2
+    },
+    {
+      "threshold": 0.8,
+      "accepted": 2642,
+      "rejected": 88,
+      "acceptance_rate": 96.78,
+      "accuracy_on_accepted": 13.32,
+      "errors_caught_percent": 3.5
+    },
+    {
+      "threshold": 0.85,
+      "accepted": 2633,
+      "rejected": 97,
+      "acceptance_rate": 96.45,
+      "accuracy_on_accepted": 13.37,
+      "errors_caught_percent": 3.88
+    },
+    {
+      "threshold": 0.9,
+      "accepted": 2620,
+      "rejected": 110,
+      "acceptance_rate": 95.97,
+      "accuracy_on_accepted": 13.44,
+      "errors_caught_percent": 4.42
+    },
+    {
+      "threshold": 0.95,
+      "accepted": 2595,
+      "rejected": 135,
+      "acceptance_rate": 95.05,
+      "accuracy_on_accepted": 13.56,
+      "errors_caught_percent": 5.48
+    }
+  ]
+}

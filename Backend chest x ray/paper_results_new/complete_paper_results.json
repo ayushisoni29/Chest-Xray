@@ -1,0 +1,107 @@
+{
+  "test_samples": 2730,
+  "failed_images": 0,
+  "overall_accuracy": 97.4,
+  "classification_report": {
+    "COVID": {
+      "precision": 0.944954128440367,
+      "recall": 0.9484346224677717,
+      "f1-score": 0.9466911764705882,
+      "support": 543.0
+    },
+    "Lung_Opacity": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 352.0
+    },
+    "Normal": {
+      "precision": 0.9822950819672132,
+      "recall": 0.9797253106605625,
+      "f1-score": 0.9810085134250164,
+      "support": 1529.0
+    },
+    "Pneumonia": {
+      "precision": 0.9653465346534653,
+      "recall": 0.9701492537313433,
+      "f1-score": 0.967741935483871,
+      "support": 201.0
+    },
+    "Tuberculosis": {
+      "precision": 0.9339622641509434,
+      "recall": 0.9428571428571428,
+      "f1-score": 0.9383886255924171,
+      "support": 105.0
+    },
+    "accuracy": 0.973992673992674,
+    "macro avg": {
+      "precision": 0.9653116018423977,
+      "recall": 0.9682332659433641,
+      "f1-score": 0.9667660501943786,
+      "support": 2730.0
+    },
+    "weighted avg": {
+      "precision": 0.9740439425905433,
+      "recall": 0.973992673992674,
+      "f1-score": 0.9740154800622127,
+      "support": 2730.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      515,
+      0,
+      23,
+      0,
+      5
+    ],
+    [
+      0,
+      352,
+      0,
+      0,
+      0
+    ],
+    [
+      22,
+      0,
+      1498,
+      7,
+      2
+    ],
+    [
+      3,
+      0,
+      3,
+      195,
+      0
+    ],
+    [
+      5,
+      0,
+      1,
+      0,
+      99
+    ]
+  ],
+  "ece_score": 0.0159,
+  "per_class_auc": {
+    "COVID": 0.9969,
+    "Lung_Opacity": 1.0,
+    "Normal": 0.9981,
+    "Pneumonia": 0.9992,
+    "Tuberculosis": 0.999
+  },
+  "macro_auc": 0.9986,
+  "ensemble_used": true,
+  "model_v3_params": 25691013,
+  "class_names": [
+    "COVID",
+    "Lung_Opacity",
+    "Normal",
+    "Pneumonia",
+    "Tuberculosis"
+  ],
+  "preprocessing": "CLAHE (clipLimit=2.0, tileGrid=8x8) + ResNet50 preprocess_input",
+  "image_size": "224x224x3"
+}

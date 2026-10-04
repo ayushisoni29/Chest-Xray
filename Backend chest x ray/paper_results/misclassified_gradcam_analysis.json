@@ -1,0 +1,231 @@
+{
+  "total_misclassified": 2373,
+  "analyzed_top_n": 15,
+  "details": [
+    {
+      "rank": 1,
+      "filepath": "COVID-82.png",
+      "true_class": "COVID",
+      "predicted_class": "Lung_Opacity",
+      "confidence": 1.0,
+      "all_probs": {
+        "COVID": 0.0,
+        "Lung_Opacity": 1.0,
+        "Normal": 0.0,
+        "Pneumonia": 0.0,
+        "Tuberculosis": 0.0
+      },
+      "gradcam_file": "mis_1_COVID_as_Lung_Opacity.png"
+    },
+    {
+      "rank": 2,
+      "filepath": "covid_ds_Normal-2429.png",
+      "true_class": "Normal",
+      "predicted_class": "Lung_Opacity",
+      "confidence": 1.0,
+      "all_probs": {
+        "COVID": 0.0,
+        "Lung_Opacity": 1.0,
+        "Normal": 0.0,
+        "Pneumonia": 0.0,
+        "Tuberculosis": 0.0
+      },
+      "gradcam_file": "mis_2_Normal_as_Lung_Opacity.png"
+    },
+    {
+      "rank": 3,
+      "filepath": "COVID-1862.png",
+      "true_class": "COVID",
+      "predicted_class": "Lung_Opacity",
+      "confidence": 1.0,
+      "all_probs": {
+        "COVID": 0.0,
+        "Lung_Opacity": 1.0,
+        "Normal": 0.0,
+        "Pneumonia": 0.0,
+        "Tuberculosis": 0.0
+      },
+      "gradcam_file": "mis_3_COVID_as_Lung_Opacity.png"
+    },
+    {
+      "rank": 4,
+      "filepath": "tb_ds_Tuberculosis-368.png",
+      "true_class": "Tuberculosis",
+      "predicted_class": "Lung_Opacity",
+      "confidence": 1.0,
+      "all_probs": {
+        "COVID": 0.0,
+        "Lung_Opacity": 1.0,
+        "Normal": 0.0,
+        "Pneumonia": 0.0,
+        "Tuberculosis": 0.0
+      },
+      "gradcam_file": "mis_4_Tuberculosis_as_Lung_Opacity.png"
+    },
+    {
+      "rank": 5,
+      "filepath": "covid_ds_Normal-10191.png",
+      "true_class": "Normal",
+      "predicted_class": "Lung_Opacity",
+      "confidence": 1.0,
+      "all_probs": {
+        "COVID": 0.0,
+        "Lung_Opacity": 1.0,
+        "Normal": 0.0,
+        "Pneumonia": 0.0,
+        "Tuberculosis": 0.0
+      },
+      "gradcam_file": "mis_5_Normal_as_Lung_Opacity.png"
+    },
+    {
+      "rank": 6,
+      "filepath": "covid_ds_Normal-2611.png",
+      "true_class": "Normal",
+      "predicted_class": "Lung_Opacity",
+      "confidence": 1.0,
+      "all_probs": {
+        "COVID": 0.0,
+        "Lung_Opacity": 1.0,
+        "Normal": 0.0,
+        "Pneumonia": 0.0,
+        "Tuberculosis": 0.0
+      },
+      "gradcam_file": "mis_6_Normal_as_Lung_Opacity.png"
+    },
+    {
+      "rank": 7,
+      "filepath": "tb_ds_Tuberculosis-44.png",
+      "true_class": "Tuberculosis",
+      "predicted_class": "Lung_Opacity",
+      "confidence": 1.0,
+      "all_probs": {
+        "COVID": 0.0,
+        "Lung_Opacity": 1.0,
+        "Normal": 0.0,
+        "Pneumonia": 0.0,
+        "Tuberculosis": 0.0
+      },
+      "gradcam_file": "mis_7_Tuberculosis_as_Lung_Opacity.png"
+    },
+    {
+      "rank": 8,
+      "filepath": "covid_ds_Normal-6649.png",
+      "true_class": "Normal",
+      "predicted_class": "Lung_Opacity",
+      "confidence": 1.0,
+      "all_probs": {
+        "COVID": 0.0,
+        "Lung_Opacity": 1.0,
+        "Normal": 0.0,
+        "Pneumonia": 0.0,
+        "Tuberculosis": 0.0
+      },
+      "gradcam_file": "mis_8_Normal_as_Lung_Opacity.png"
+    },
+    {
+      "rank": 9,
+      "filepath": "covid_ds_Normal-6534.png",
+      "true_class": "Normal",
+      "predicted_class": "Lung_Opacity",
+      "confidence": 1.0,
+      "all_probs": {
+        "COVID": 0.0,
+        "Lung_Opacity": 1.0,
+        "Normal": 0.0,
+        "Pneumonia": 0.0,
+        "Tuberculosis": 0.0
+      },
+      "gradcam_file": "mis_9_Normal_as_Lung_Opacity.png"
+    },
+    {
+      "rank": 10,
+      "filepath": "COVID-3039.png",
+      "true_class": "COVID",
+      "predicted_class": "Lung_Opacity",
+      "confidence": 1.0,
+      "all_probs": {
+        "COVID": 0.0,
+        "Lung_Opacity": 1.0,
+        "Normal": 0.0,
+        "Pneumonia": 0.0,
+        "Tuberculosis": 0.0
+      },
+      "gradcam_file": "mis_10_COVID_as_Lung_Opacity.png"
+    },
+    {
+      "rank": 11,
+      "filepath": "COVID-2399.png",
+      "true_class": "COVID",
+      "predicted_class": "Lung_Opacity",
+      "confidence": 1.0,
+      "all_probs": {
+        "COVID": 0.0,
+        "Lung_Opacity": 1.0,
+        "Normal": 0.0,
+        "Pneumonia": 0.0,
+        "Tuberculosis": 0.0
+      },
+      "gradcam_file": "mis_11_COVID_as_Lung_Opacity.png"
+    },
+    {
+      "rank": 12,
+      "filepath": "COVID-2129.png",
+      "true_class": "COVID",
+      "predicted_class": "Lung_Opacity",
+      "confidence": 1.0,
+      "all_probs": {
+        "COVID": 0.0,
+        "Lung_Opacity": 1.0,
+        "Normal": 0.0,
+        "Pneumonia": 0.0,
+        "Tuberculosis": 0.0
+      },
+      "gradcam_file": "mis_12_COVID_as_Lung_Opacity.png"
+    },
+    {
+      "rank": 13,
+      "filepath": "COVID-756.png",
+      "true_class": "COVID",
+      "predicted_class": "Lung_Opacity",
+      "confidence": 1.0,
+      "all_probs": {
+        "COVID": 0.0,
+        "Lung_Opacity": 1.0,
+        "Normal": 0.0,
+        "Pneumonia": 0.0,
+        "Tuberculosis": 0.0
+      },
+      "gradcam_file": "mis_13_COVID_as_Lung_Opacity.png"
+    },
+    {
+      "rank": 14,
+      "filepath": "COVID-1592.png",
+      "true_class": "COVID",
+      "predicted_class": "Lung_Opacity",
+      "confidence": 1.0,
+      "all_probs": {
+        "COVID": 0.0,
+        "Lung_Opacity": 1.0,
+        "Normal": 0.0,
+        "Pneumonia": 0.0,
+        "Tuberculosis": 0.0
+      },
+      "gradcam_file": "mis_14_COVID_as_Lung_Opacity.png"
+    },
+    {
+      "rank": 15,
+      "filepath": "covid_ds_Normal-2630.png",
+      "true_class": "Normal",
+      "predicted_class": "Lung_Opacity",
+      "confidence": 1.0,
+      "all_probs": {
+        "COVID": 0.0,
+        "Lung_Opacity": 1.0,
+        "Normal": 0.0,
+        "Pneumonia": 0.0,
+        "Tuberculosis": 0.0
+      },
+      "gradcam_file": "mis_15_Normal_as_Lung_Opacity.png"
+    }
+  ]
+}

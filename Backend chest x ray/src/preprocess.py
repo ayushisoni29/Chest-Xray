@@ -171,11 +171,8 @@ def preprocess_image(image_path: str) -> np.ndarray:
         except Exception as e:
             raise ValueError(f"Could not decode image at {image_path}: {e}")
 
-    # 1. Apply CLAHE Medical Radiography Enhancement
-    img_enhanced = apply_clahe_enhancement(img)
-
-    # 2. ResNet50 / ImageNet Standardization (zero-centered mean/std)
-    img_processed = tf.keras.applications.resnet50.preprocess_input(img_enhanced.astype("float32"))
+    # 1. Simple 1/255 rescaling (matching how the model was ACTUALLY trained)
+    img_processed = img.astype("float32") / 255.0
     img_batch = np.expand_dims(img_processed, axis=0)  # Add batch dimension -> (1, 224, 224, 3)
     return img_batch
 
