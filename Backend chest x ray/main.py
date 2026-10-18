@@ -543,13 +543,7 @@ async def download_prediction_report(
                 fill=1, stroke=0,
             )
 
-            canvas_obj.setFont("Helvetica-Bold", 8)
-            canvas_obj.setFillColor(blue)
-            canvas_obj.drawString(
-                17 * mm, page_height - 16 * mm,
-                "CHEST X-RAY AI | ANALYSIS REPORT",
-            )
-
+           
             # Footer
             canvas_obj.setStrokeColor(border)
             canvas_obj.line(
@@ -641,22 +635,64 @@ async def download_prediction_report(
         except (TypeError, ValueError):
             confidence_text = "N/A"
 
-        # Title and subtitle
-        story.append(Paragraph(
-            "Chest X-ray AI Analysis Report",
-            styles["ReportTitle"],
-        ))
-        story.append(Paragraph(
-            "Multi-disease classification with AI-generated visual explanation",
-            styles["BodySmall"],
-        ))
+        
+       
+        # Title and subtitle inside a blue box
+        header_label_style = ParagraphStyle(
+            "ReportHeaderLabel",
+            parent=styles["BodySmall"],
+            fontName="Helvetica-Bold",
+            fontSize=8,
+            leading=11,
+            textColor=blue,
+            spaceAfter=0,
+        )
+
+        report_title_style = ParagraphStyle(
+            "ReportTitleInBox",
+            parent=styles["ReportTitle"],
+            fontSize=17,
+            leading=21,
+            spaceAfter=0,
+        )
+
+        subtitle_style = ParagraphStyle(
+            "ReportSubtitleInBox",
+            parent=styles["BodySmall"],
+            fontSize=8.5,
+            leading=12,
+        )
+
+        header_content = [
+            [Paragraph(
+                "Chest X-ray AI Analysis Report",
+                report_title_style,
+            )],
+            [Paragraph(
+                "Multi-disease classification with AI-generated visual explanation",
+                subtitle_style,
+            )],
+        ]
+
+        header_table = Table(
+            header_content,
+            colWidths=[176 * mm],
+            hAlign="LEFT",
+        )
+
+        header_table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, -1), light_blue),
+            ("BOX", (0, 0), (-1, -1), 1.2, blue),
+            ("LEFTPADDING", (0, 0), (-1, -1), 10),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+            ("TOPPADDING", (0, 0), (-1, -1), 6),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ]))
+
+        story.append(header_table)
         story.append(Spacer(1, 5 * mm))
-        story.append(HRFlowable(
-            width="100%",
-            thickness=1,
-            color=border,
-            spaceAfter=4 * mm,
-        ))
+
 
         
         # Patient Information
