@@ -1,7 +1,7 @@
+
 import React, { useEffect, useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
-  ArrowLeft,
   ScanLine,
   CheckCircle2,
   AlertCircle,
@@ -19,9 +19,12 @@ import {
   XCircle,
 } from "lucide-react";
 import Navbar from "../components/Navbar";
-import { getPredictionById, getStaticUrl } from "../api.js";
+import {
+  getPredictionById,
+  getStaticUrl,
+  downloadPredictionReport,
+} from "../api.js";
 
-// Map class names to accent colors
 const CLASS_COLORS = {
   COVID: "#ef4444",
   Lung_Opacity: "#f97316",
@@ -32,147 +35,145 @@ const CLASS_COLORS = {
 
 function Results() {
   const location = useLocation();
-  const navigate = useNavigate();
 
   const [analysisData, setAnalysisData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isHistoryView, setIsHistoryView] = useState(false);
   const [showHeatmap, setShowHeatmap] = useState(false);
-  const [reviewStatus, setReviewStatus] = useState(null); // 'confirmed' or 'overridden'
+  const [reviewStatus, setReviewStatus] = useState(null);
+  const [downloadingReport, setDownloadingReport] = useState(false);
+  const [downloadError, setDownloadError] = useState("");
 
-  // ==========================================================
-  // LOAD ANALYSIS DATA
-  // ==========================================================
   useEffect(() => {
+    let cancelled = false;
+
     const loadAnalysis = async () => {
       setLoading(true);
+      setDownloadError("");
+
       const params = new URLSearchParams(location.search);
       const predictionId = params.get("id");
 
-      // ------- Try loading a history prediction from backend -------
       if (predictionId) {
         try {
           const data = await getPredictionById(predictionId);
+
+          if (cancelled) return;
+
           setAnalysisData({
-            id: data.id,
+            id: data.id || predictionId,
             fileName: data.image_filename,
             fileType: "Image",
-            date: new Date(data.timestamp).toLocaleDateString("en-IN", {
-              day: "2-digit",
-              month: "short",
-              year: "numeric",
-            }),
-            time: new Date(data.timestamp).toLocaleTimeString("en-IN", {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
+            date: data.timestamp
+              ? new Date(data.timestamp).toLocaleDateString("en-IN", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                })
+              : "—",
+            time: data.timestamp
+              ? new Date(data.timestamp).toLocaleTimeString("en-IN", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "—",
             predicted_class: data.predicted_class,
             confidence: data.confidence,
-            all_class_probabilities: data.probabilities,
+            all_class_probabilities:
+              data.probabilities || data.all_class_probabilities || {},
             heatmap_url: data.heatmap_url,
             image_url: data.image_url,
             status: "Completed",
           });
+
           setIsHistoryView(true);
           setLoading(false);
           return;
-        } catch {
-          // Fall through to sessionStorage
+        } catch (error) {
+          if (cancelled) return;
+
+          // Do not silently replace a failed history lookup with another scan.
+          setAnalysisData(null);
+          setLoading(false);
+          return;
         }
       }
 
-      // ------- Try sessionStorage (freshly analyzed result) -------
       try {
         const raw = sessionStorage.getItem("currentXRayAnalysis");
+
         if (raw) {
           const data = JSON.parse(raw);
+
+          if (cancelled) return;
+
           setAnalysisData(data);
           setIsHistoryView(false);
           setLoading(false);
           return;
         }
       } catch {
-        // ignore
+        // Invalid session data
       }
 
-      setAnalysisData(null);
-      setLoading(false);
+      if (!cancelled) {
+        setAnalysisData(null);
+        setLoading(false);
+      }
     };
 
     loadAnalysis();
+
+    return () => {
+      cancelled = true;
+    };
   }, [location.search]);
 
-  // ==========================================================
-  // DOWNLOAD REPORT
-  // ==========================================================
-  const handleDownloadReport = () => {
-    if (!analysisData) return;
+  
+const handleDownloadReport = async () => {
+  if (!analysisData || downloadingReport) return;
 
-    const probs = analysisData.all_class_probabilities || {};
-    const probLines = Object.entries(probs)
-      .map(([cls, val]) => `  ${cls}: ${(val * 100).toFixed(2)}%`)
-      .join("\n");
+  if (!analysisData.id) {
+    setDownloadError(
+      "This analysis has no saved report ID. Open a saved prediction from History."
+    );
+    return;
+  }
 
-    const report = `
-CHEST X-RAY AI
-MULTI-DISEASE DETECTION REPORT
-========================================
+  try {
+    setDownloadingReport(true);
+    setDownloadError("");
 
-ANALYSIS INFORMATION
-----------------------------------------
-Analysis ID  : ${analysisData.id || "N/A"}
-File Name    : ${analysisData.fileName || "N/A"}
-Date         : ${analysisData.date || "N/A"}
-Time         : ${analysisData.time || "N/A"}
+    // Patient details were saved when the X-ray was uploaded.
+    const patient = analysisData.patient || {};
 
-AI PREDICTION RESULT
-----------------------------------------
-Predicted Class : ${analysisData.predicted_class || "N/A"}
-Confidence      : ${((analysisData.confidence || 0) * 100).toFixed(2)}%
+    await downloadPredictionReport(analysisData.id, {
+      name: patient.patientName || patient.name || "",
+      email: patient.patientEmail || patient.email || "",
+      age: patient.patientAge ?? patient.age ?? "",
+      gender: patient.patientGender || patient.gender || "",
+    });
+  } catch (error) {
+    setDownloadError(
+      error.message || "Unable to download the PDF report."
+    );
+  } finally {
+    setDownloadingReport(false);
+  }
+};
 
-CLASS PROBABILITIES
-----------------------------------------
-${probLines}
 
-IMPORTANT NOTICE
-----------------------------------------
-This report is generated by an AI model (ResNet50)
-trained on chest X-ray datasets. It is intended for
-research and educational purposes only.
-This does NOT replace professional medical diagnosis.
-
-========================================
-Chest X-ray AI | Medical Imaging Interface
-`;
-
-    const blob = new Blob([report], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "ChestXRay-AI-Report.txt";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
-  // ==========================================================
-  // DOCTOR REVIEW LOGGING
-  // ==========================================================
   const handleDoctorReview = (decision) => {
-    // In a real system, we'd log this via API, e.g. apiFetch("/review", { method: "POST", ... })
-    console.log("Logged Review:", {
+    console.log("Review feedback (not saved to backend):", {
       scan_id: analysisData?.id,
       original_prediction: analysisData?.predicted_class,
-      decision: decision,
-      timestamp: new Date().toISOString()
+      decision,
+      timestamp: new Date().toISOString(),
     });
+
     setReviewStatus(decision);
   };
 
-  // ==========================================================
-  // LOADING STATE
-  // ==========================================================
   if (loading) {
     return (
       <div className="app-shell">
@@ -190,9 +191,6 @@ Chest X-ray AI | Medical Imaging Interface
     );
   }
 
-  // ==========================================================
-  // EMPTY STATE
-  // ==========================================================
   if (!analysisData) {
     return (
       <div className="app-shell">
@@ -204,42 +202,47 @@ Chest X-ray AI | Medical Imaging Interface
             </div>
             <span className="section-label">ANALYSIS RESULT</span>
             <h1>No Analysis Available</h1>
-            <p>Upload a chest X-ray image to view the analysis results.</p>
+            <p>
+              This analysis could not be loaded. Open a saved result from
+              History or upload a new chest X-ray.
+            </p>
             <Link to="/detection" className="primary-result-btn">
               <ScanLine size={17} />
               Start New Analysis
             </Link>
+            <p>
+              <Link to="/history">Open Analysis History</Link>
+            </p>
           </div>
         </main>
       </div>
     );
   }
 
-  const confidence = analysisData.confidence || 0;
+  const confidence = Number(analysisData.confidence) || 0;
   const confidencePct = (confidence * 100).toFixed(1);
   const predictedClass = analysisData.predicted_class || "Unknown";
   const probs = analysisData.all_class_probabilities || {};
-  const accentColor = CLASS_COLORS[predictedClass] || "#06b6d4";
+  const accentColor = CLASS_COLORS[predictedClass] || "#1769aa";
 
   const heatmapSrc = getStaticUrl(analysisData.heatmap_url);
-  const imageSrc = analysisData.preview || getStaticUrl(analysisData.image_url);
+  const imageSrc =
+    analysisData.preview || getStaticUrl(analysisData.image_url);
 
   const isNormal = predictedClass === "Normal";
-  const isLowConfidence = confidence < 0.70;
+  const isLowConfidence = confidence < 0.7;
 
-  // ==========================================================
-  // MAIN RESULTS PAGE
-  // ==========================================================
   return (
     <div className="app-shell">
       <Navbar />
 
       <main className="final-results-page">
-
-        {/* PAGE HEADER */}
         <section className="final-results-header">
           <div className="final-results-heading">
-            <div className="final-result-check" style={{ color: accentColor }}>
+            <div
+              className="final-result-check"
+              style={{ color: accentColor }}
+            >
               <CheckCircle2 size={22} />
             </div>
             <div>
@@ -256,7 +259,6 @@ Chest X-ray AI | Medical Imaging Interface
           </Link>
         </section>
 
-        {/* ANALYSIS INFO STRIP */}
         <section className="final-analysis-strip">
           <div>
             <span>ANALYSIS ID</span>
@@ -278,10 +280,7 @@ Chest X-ray AI | Medical Imaging Interface
           </div>
         </section>
 
-        {/* SOURCE IMAGE + PREDICTION */}
         <section className="final-analysis-grid">
-
-          {/* SOURCE IMAGE */}
           <article className="final-image-section">
             <div className="final-section-heading">
               <div className="final-section-number">01</div>
@@ -291,7 +290,10 @@ Chest X-ray AI | Medical Imaging Interface
               </div>
               <div className="final-image-toggle-btns">
                 <button
-                  className={`heatmap-toggle-btn ${!showHeatmap ? "active" : ""}`}
+                  type="button"
+                  className={`heatmap-toggle-btn ${
+                    !showHeatmap ? "active" : ""
+                  }`}
                   onClick={() => setShowHeatmap(false)}
                 >
                   <Eye size={14} />
@@ -299,7 +301,10 @@ Chest X-ray AI | Medical Imaging Interface
                 </button>
                 {heatmapSrc && (
                   <button
-                    className={`heatmap-toggle-btn ${showHeatmap ? "active" : ""}`}
+                    type="button"
+                    className={`heatmap-toggle-btn ${
+                      showHeatmap ? "active" : ""
+                    }`}
                     onClick={() => setShowHeatmap(true)}
                   >
                     <Brain size={14} />
@@ -320,12 +325,15 @@ Chest X-ray AI | Medical Imaging Interface
                   <span>Image preview unavailable</span>
                 </div>
               )}
+
               <div className="final-image-overlay">
                 <span>
                   <ScanLine size={13} />
                   {showHeatmap ? "GRAD-CAM" : "SOURCE IMAGE"}
                 </span>
-                <span>{showHeatmap ? "EXPLAINABILITY" : "ORIGINAL INPUT"}</span>
+                <span>
+                  {showHeatmap ? "EXPLAINABILITY" : "ORIGINAL INPUT"}
+                </span>
               </div>
             </div>
 
@@ -334,7 +342,9 @@ Chest X-ray AI | Medical Imaging Interface
                 <FileImage size={17} />
                 <div>
                   <span>FILE NAME</span>
-                  <strong>{analysisData.fileName || "Uploaded X-ray"}</strong>
+                  <strong>
+                    {analysisData.fileName || "Uploaded X-ray"}
+                  </strong>
                 </div>
               </div>
               <div>
@@ -347,7 +357,6 @@ Chest X-ray AI | Medical Imaging Interface
             </div>
           </article>
 
-          {/* PREDICTION RESULT */}
           <article className="final-summary-section">
             <div className="final-section-heading">
               <div className="final-section-number">02</div>
@@ -357,27 +366,30 @@ Chest X-ray AI | Medical Imaging Interface
               </div>
             </div>
 
-            {/* Low Confidence Warning */}
             {isLowConfidence && (
               <div className="final-low-confidence-warning">
                 <MessageSquareWarning size={20} />
                 <div>
                   <strong>Low Confidence ({confidencePct}%)</strong>
-                  <p>Uncertain prediction. Radiologist review highly recommended.</p>
+                  <p>
+                    Uncertain prediction. Radiologist review is recommended.
+                  </p>
                 </div>
               </div>
             )}
 
-            {/* Simple Indicator */}
-            <div className={`final-simple-indicator ${isNormal ? 'normal' : 'abnormal'}`}>
+            <div
+              className={`final-simple-indicator ${
+                isNormal ? "normal" : "abnormal"
+              }`}
+            >
               <strong>{isNormal ? "NORMAL" : "ABNORMAL"}</strong>
               <span>INITIAL SCREENING RESULT</span>
             </div>
 
-            {/* Predicted Class Box */}
             <div
               className="final-overall-box"
-              style={{ borderColor: accentColor + "44" }}
+              style={{ borderColor: `${accentColor}44` }}
             >
               <div
                 className="final-overall-icon"
@@ -393,14 +405,12 @@ Chest X-ray AI | Medical Imaging Interface
                 <span>PREDICTED CONDITION</span>
                 <h3 style={{ color: accentColor }}>{predictedClass}</h3>
                 <p>
-                  {isNormal
-                    ? "No significant pathology detected in the X-ray."
-                    : `The model detected patterns consistent with ${predictedClass}.`}
+                  AI model output only. This is not a confirmed clinical
+                  diagnosis.
                 </p>
               </div>
             </div>
 
-            {/* Confidence Bar */}
             <div className="final-confidence">
               <div className="final-confidence-top">
                 <span>MODEL CONFIDENCE</span>
@@ -409,14 +419,13 @@ Chest X-ray AI | Medical Imaging Interface
               <div className="final-confidence-bar">
                 <span
                   style={{
-                    width: `${confidencePct}%`,
+                    width: `${Math.min(100, Math.max(0, confidence * 100))}%`,
                     background: accentColor,
                   }}
                 ></span>
               </div>
             </div>
 
-            {/* Summary Stats */}
             <div className="final-summary-stats">
               <div>
                 <Activity size={18} />
@@ -450,7 +459,6 @@ Chest X-ray AI | Medical Imaging Interface
           </article>
         </section>
 
-        {/* CONDITION-WISE PROBABILITIES */}
         <section className="final-condition-section">
           <div className="final-condition-heading">
             <div className="final-heading-left">
@@ -464,16 +472,25 @@ Chest X-ray AI | Medical Imaging Interface
 
           <div className="final-condition-grid">
             {Object.entries(probs)
-              .sort(([, a], [, b]) => b - a)
+              .sort(([, a], [, b]) => Number(b) - Number(a))
               .map(([cls, prob]) => {
-                const pct = (prob * 100).toFixed(1);
-                const color = CLASS_COLORS[cls] || "#06b6d4";
+                const probability = Math.min(
+                  100,
+                  Math.max(0, Number(prob) * 100 || 0)
+                );
+                const pct = probability.toFixed(1);
+                const color = CLASS_COLORS[cls] || "#1769aa";
                 const isTopClass = cls === predictedClass;
+
                 return (
                   <article
-                    className={`final-condition-card ${isTopClass ? "top-class" : ""}`}
+                    className={`final-condition-card ${
+                      isTopClass ? "top-class" : ""
+                    }`}
                     key={cls}
-                    style={isTopClass ? { borderColor: color + "66" } : {}}
+                    style={
+                      isTopClass ? { borderColor: `${color}66` } : {}
+                    }
                   >
                     <div className="final-condition-top">
                       <div
@@ -493,19 +510,21 @@ Chest X-ray AI | Medical Imaging Interface
                             marginRight: 6,
                           }}
                         ></i>
-                        {isTopClass ? "Top prediction" : "Low indication"}
+                        {isTopClass ? "Top prediction" : "Model output"}
                       </span>
                     </div>
                     <h3>{cls.replace("_", " ")}</h3>
                     <div className="final-condition-value">
-                      <strong style={{ color: isTopClass ? color : undefined }}>
+                      <strong
+                        style={{ color: isTopClass ? color : undefined }}
+                      >
                         {pct}%
                       </strong>
-                      <span>probability</span>
+                      <span>model probability</span>
                     </div>
                     <div className="final-condition-bar">
                       <span
-                        style={{ width: `${pct}%`, background: color }}
+                        style={{ width: `${probability}%`, background: color }}
                       ></span>
                     </div>
                   </article>
@@ -514,7 +533,6 @@ Chest X-ray AI | Medical Imaging Interface
           </div>
         </section>
 
-        {/* GRAD-CAM SECTION */}
         {heatmapSrc && (
           <section className="final-gradcam-section">
             <div className="final-condition-heading">
@@ -528,7 +546,7 @@ Chest X-ray AI | Medical Imaging Interface
             </div>
             <div className="final-gradcam-grid">
               <div className="final-gradcam-img-wrap">
-                <img src={imageSrc} alt="Original X-ray" />
+                {imageSrc && <img src={imageSrc} alt="Original X-ray" />}
                 <span className="final-gradcam-label">ORIGINAL</span>
               </div>
               <div className="final-gradcam-img-wrap">
@@ -537,13 +555,20 @@ Chest X-ray AI | Medical Imaging Interface
               </div>
             </div>
             <p className="final-gradcam-note">
-              <Brain size={15} style={{ display: "inline", verticalAlign: "middle", marginRight: "6px" }} />
-              Heatmap shows regions influencing prediction — verify with clinical judgment. Warmer colors indicate higher attention.
+              <Brain
+                size={15}
+                style={{
+                  display: "inline",
+                  verticalAlign: "middle",
+                  marginRight: 6,
+                }}
+              />
+              Heatmap visualization of model attention. It is not a
+              standalone clinical finding.
             </p>
           </section>
         )}
 
-        {/* RADIOLOGIST REVIEW SECTION */}
         <section className="final-review-section">
           <div className="final-review-content">
             <div className="final-review-icon">
@@ -551,32 +576,44 @@ Chest X-ray AI | Medical Imaging Interface
             </div>
             <div>
               <h3>Radiologist Verification</h3>
-              <p>Please confirm or override the AI prediction to improve future model accuracy.</p>
+              <p>
+                Review the original X-ray and AI output with qualified
+                clinical judgment.
+              </p>
             </div>
           </div>
-          
+
           <div className="final-review-actions">
-            <button 
-              className={`review-btn confirm ${reviewStatus === 'confirmed' ? 'active' : ''}`}
-              onClick={() => handleDoctorReview('confirmed')}
+            <button
+              type="button"
+              className={`review-btn confirm ${
+                reviewStatus === "confirmed" ? "active" : ""
+              }`}
+              onClick={() => handleDoctorReview("confirmed")}
             >
               <CheckCircle2 size={16} />
               Confirm AI Result
             </button>
-            <button 
-              className={`review-btn override ${reviewStatus === 'overridden' ? 'active' : ''}`}
-              onClick={() => handleDoctorReview('overridden')}
+            <button
+              type="button"
+              className={`review-btn override ${
+                reviewStatus === "overridden" ? "active" : ""
+              }`}
+              onClick={() => handleDoctorReview("overridden")}
             >
               <XCircle size={16} />
               Override Result
             </button>
           </div>
+
           {reviewStatus && (
-            <div className="review-thankyou">Review logged successfully. Thank you for your feedback!</div>
+            <div className="review-thankyou">
+              Feedback recorded in this page only; it has not been saved to
+              the backend.
+            </div>
           )}
         </section>
 
-        {/* RECORD INFORMATION */}
         <section className="final-details-section">
           <div className="final-details-heading">
             <div className="final-section-number">{heatmapSrc ? "05" : "04"}</div>
@@ -585,19 +622,20 @@ Chest X-ray AI | Medical Imaging Interface
               <h2>Record Information</h2>
             </div>
           </div>
+
           <div className="final-details-grid">
             <div>
               <CalendarDays size={18} />
               <span>
                 ANALYSIS DATE
-                <strong>{analysisData.date || "Current date"}</strong>
+                <strong>{analysisData.date || "—"}</strong>
               </span>
             </div>
             <div>
               <Clock3 size={18} />
               <span>
                 ANALYSIS TIME
-                <strong>{analysisData.time || "Current time"}</strong>
+                <strong>{analysisData.time || "—"}</strong>
               </span>
             </div>
             <div>
@@ -617,29 +655,44 @@ Chest X-ray AI | Medical Imaging Interface
           </div>
         </section>
 
-        {/* NOTICE + DOWNLOAD */}
         <section className="final-notice-section prominent-disclaimer">
           <div className="final-notice-icon">
             <AlertCircle size={24} />
           </div>
+
           <div className="disclaimer-text-content">
             <h3>Medical Disclaimer</h3>
             <p>
-              This AI system is a screening tool intended to assist radiologists and is for research and educational purposes only. 
-              <strong> The predictions are generated by a deep learning model (ResNet50) and do NOT constitute professional medical diagnosis. </strong>
-              Clinical correlation and professional judgment are required for all final diagnoses.
+              This AI output is for research and educational purposes. It
+              does not constitute a professional medical diagnosis. A
+              qualified medical professional must review the original image
+              and interpret the findings.
             </p>
           </div>
+
           <button
             type="button"
             className="final-download-btn"
             onClick={handleDownloadReport}
+            disabled={downloadingReport}
           >
             <Download size={16} />
-            Download Report
+            {downloadingReport ? "Preparing PDF..." : "Download PDF Report"}
           </button>
-        </section>
 
+          {downloadError && (
+            <p
+              role="alert"
+              style={{
+                color: "#dc2626",
+                marginTop: 8,
+                flexBasis: "100%",
+              }}
+            >
+              {downloadError}
+            </p>
+          )}
+        </section>
       </main>
     </div>
   );

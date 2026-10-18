@@ -211,3 +211,70 @@ export function getStaticUrl(relativePath) {
   if (relativePath.startsWith("http")) return relativePath;
   return `${BASE_URL}${relativePath}`;
 }
+
+
+// -------------------------------------------------------
+// DOWNLOAD PDF REPORT
+// -------------------------------------------------------
+
+
+export async function downloadPredictionReport(predictionId, patient = {}) {
+  const token = getToken();
+
+  if (!token) {
+    throw new Error("Please login again to download the report.");
+  }
+
+  const params = new URLSearchParams();
+
+  if (patient.name) params.set("patient_name", patient.name);
+  if (patient.email) params.set("patient_email", patient.email);
+  if (patient.age) params.set("patient_age", String(patient.age));
+  if (patient.gender) params.set("patient_gender", patient.gender);
+
+  const query = params.toString();
+  const reportUrl =
+    `${BASE_URL}/predictions/${encodeURIComponent(predictionId)}/report` +
+    (query ? `?${query}` : "");
+
+  const response = await fetch(reportUrl, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    let message = `Report download failed (${response.status})`;
+
+    try {
+      const errorData = await response.json();
+      message = errorData.detail || message;
+    } catch {
+      // Keep the default error message
+    }
+
+    throw new Error(message);
+  }
+
+  const blob = await response.blob();
+
+  if (blob.size === 0) {
+    throw new Error("The server returned an empty report.");
+  }
+
+  const pdfBlob = new Blob([blob], { type: "application/pdf" });
+  const pdfUrl = window.URL.createObjectURL(pdfBlob);
+  const link = document.createElement("a");
+
+  link.href = pdfUrl;
+  link.download = `Chest_Xray_Report_${predictionId}.pdf`;
+
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  window.setTimeout(() => {
+    window.URL.revokeObjectURL(pdfUrl);
+  }, 1000);
+}

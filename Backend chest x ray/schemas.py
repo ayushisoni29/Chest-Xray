@@ -4,6 +4,8 @@ from datetime import datetime
 
 
 class PredictionResponse(BaseModel):
+    
+    id: Optional[str] = None
     predicted_class: str
     confidence: float
     all_class_probabilities: Dict[str, float]

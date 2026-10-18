@@ -1,4 +1,5 @@
-﻿import React, { useRef, useState } from "react";
+﻿
+import React, { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Upload,
@@ -13,11 +14,16 @@ import {
   Loader2,
 } from "lucide-react";
 import Navbar from "../components/Navbar";
-import { predictXRay } from "../api.js";
+import { predictXRay, getStoredUser } from "../api.js";
 
 function UploadXRay() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
+  const user = getStoredUser() || {};
+
+  const [patientName, setPatientName] = useState(user.name || "");
+  const [patientAge, setPatientAge] = useState("");
+  const [patientGender, setPatientGender] = useState("");
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [preview, setPreview] = useState("");
@@ -25,34 +31,45 @@ function UploadXRay() {
   const [error, setError] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // =========================================================
-  // VALIDATE FILE
-  // =========================================================
   const validateFile = (file) => {
     if (!file) return false;
-    if (!file.type.startsWith("image/")) {
-      setError("Please select a valid image file.");
+
+    const allowedTypes = [
+      "image/png",
+      "image/jpeg",
+      "image/webp",
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      setError("Please select a PNG, JPG, JPEG or WEBP image.");
       return false;
     }
+
     if (file.size > 10 * 1024 * 1024) {
       setError("File size must be less than 10 MB.");
       return false;
     }
+
     setError("");
     return true;
   };
 
   const handleFile = (file) => {
     if (!validateFile(file)) return;
+
     setSelectedFile(file);
     setError("");
+
     const reader = new FileReader();
+
     reader.onload = (event) => setPreview(event.target.result);
+
     reader.onerror = () => {
       setError("Unable to read this image. Please try another file.");
       setSelectedFile(null);
       setPreview("");
     };
+
     reader.readAsDataURL(file);
   };
 
@@ -65,6 +82,7 @@ function UploadXRay() {
   const handleDrop = (event) => {
     event.preventDefault();
     setIsDragging(false);
+
     const file = event.dataTransfer.files?.[0];
     if (file) handleFile(file);
   };
@@ -78,20 +96,44 @@ function UploadXRay() {
 
   const removeFile = () => {
     if (isAnalyzing) return;
+
     setSelectedFile(null);
     setPreview("");
     setError("");
-    if (fileInputRef.current) fileInputRef.current.value = "";
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
-  // =========================================================
-  // ANALYZE X-RAY — calls real backend API
-  // =========================================================
   const handleAnalyze = async () => {
+    if (!patientName.trim()) {
+      setError("Please enter the patient's name.");
+      return;
+    }
+
+    const age = Number(patientAge);
+
+    if (
+      !patientAge.trim() ||
+      !Number.isInteger(age) ||
+      age < 1 ||
+      age > 120
+    ) {
+      setError("Please enter a valid age between 1 and 120.");
+      return;
+    }
+
+    if (!patientGender) {
+      setError("Please select the patient's gender.");
+      return;
+    }
+
     if (!selectedFile) {
       setError("Please upload a chest X-ray image first.");
       return;
     }
+
     if (isAnalyzing) return;
 
     setError("");
@@ -100,70 +142,172 @@ function UploadXRay() {
     try {
       const result = await predictXRay(selectedFile);
 
-      // Store the prediction result in sessionStorage for Results page
+      const analysis = {
+        id:
+          result.id ||
+          result.prediction_id ||
+          result.predictionId ||
+          null,
+
+        fileName: selectedFile.name,
+        fileType: selectedFile.type || "Image",
+        fileSize: selectedFile.size,
+        preview,
+
+        date: new Date().toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        }),
+
+        time: new Date().toLocaleTimeString("en-IN", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+
+        predicted_class: result.predicted_class,
+        confidence: result.confidence,
+
+        all_class_probabilities:
+          result.all_class_probabilities ||
+          result.probabilities ||
+          {},
+
+        heatmap_url: result.heatmap_url,
+        image_url: result.image_url,
+        status: "Completed",
+
+        // Patient details for the PDF report
+        patient: {
+          patientName: patientName.trim(),
+          patientEmail: user.email || "",
+          patientAge: age,
+          patientGender,
+        },
+      };
+
       sessionStorage.setItem(
         "currentXRayAnalysis",
-        JSON.stringify({
-          // meta
-          fileName: selectedFile.name,
-          fileType: selectedFile.type || "Image",
-          fileSize: selectedFile.size,
-          preview: preview,
-          date: new Date().toLocaleDateString("en-IN", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-          }),
-          time: new Date().toLocaleTimeString("en-IN", {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-          // real backend results
-          predicted_class: result.predicted_class,
-          confidence: result.confidence,
-          all_class_probabilities: result.all_class_probabilities,
-          heatmap_url: result.heatmap_url,
-          status: "Completed",
-        })
+        JSON.stringify(analysis)
       );
 
       navigate("/results");
     } catch (err) {
       setError(
-        err.message || "Analysis failed. Please check the backend is running."
+        err.message ||
+          "Analysis failed. Please check the backend is running."
       );
     } finally {
       setIsAnalyzing(false);
     }
   };
 
-  // =========================================================
-  // UI
-  // =========================================================
+  const fieldStyle = {
+    width: "100%",
+    boxSizing: "border-box",
+    padding: "11px 12px",
+    border: "1px solid #d5e0ec",
+    borderRadius: "8px",
+    background: "#fff",
+    color: "#24364b",
+    fontSize: "14px",
+    outline: "none",
+  };
+
   return (
     <div className="app-shell">
       <Navbar />
 
       <main className="upload-page">
-        {/* HEADER */}
         <section className="upload-page-header">
           <div>
             <span className="section-label">CHEST X-RAY ANALYSIS</span>
             <h1>Upload Chest X-ray</h1>
             <p>
-              Upload a chest X-ray image to begin the multi-condition screening
-              workflow.
+              Enter patient details and upload a chest X-ray to begin
+              the screening workflow.
             </p>
           </div>
+
           <Link to="/" className="upload-back-link">
             <ArrowLeft size={15} />
             Back to Overview
           </Link>
         </section>
 
-        {/* MAIN GRID */}
+        {/* Patient information */}
+        <section
+          className="upload-card"
+          style={{ padding: "24px", marginBottom: "24px" }}
+        >
+          <div className="upload-card-header" style={{ marginBottom: "20px" }}>
+            <div className="upload-step-number">00</div>
+            <div>
+              <span className="section-label">PATIENT INFORMATION</span>
+              <h2>Patient Details</h2>
+              
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+              gap: "18px",
+            }}
+          >
+            <label style={{ display: "block", fontSize: "13px", fontWeight: 600 }}>
+              Patient Name *
+              <input
+                type="text"
+                value={patientName}
+                onChange={(e) => setPatientName(e.target.value)}
+                placeholder="Enter patient name"
+                maxLength={100}
+                autoComplete="name"
+                style={{ ...fieldStyle, marginTop: "8px" }}
+                disabled={isAnalyzing}
+              />
+            </label>
+
+            <label style={{ display: "block", fontSize: "13px", fontWeight: 600 }}>
+              Patient Age *
+              <input
+                type="number"
+                value={patientAge}
+                onChange={(e) => setPatientAge(e.target.value)}
+                placeholder="Age in years"
+                min="1"
+                max="120"
+                step="1"
+                style={{ ...fieldStyle, marginTop: "8px" }}
+                disabled={isAnalyzing}
+              />
+            </label>
+
+            <label style={{ display: "block", fontSize: "13px", fontWeight: 600 }}>
+              Gender *
+              <select
+                value={patientGender}
+                onChange={(e) => setPatientGender(e.target.value)}
+                style={{ ...fieldStyle, marginTop: "8px" }}
+                disabled={isAnalyzing}
+              >
+                <option value="">Select gender</option>
+                <option value="Female">Female</option>
+                <option value="Male">Male</option>
+                <option value="Other">Other</option>
+                <option value="Prefer not to say">Prefer not to say</option>
+              </select>
+            </label>
+          </div>
+
+          <p style={{ margin: "16px 0 0", fontSize: "12px", color: "#64748b" }}>
+            Signed-in account email: {user.email || "Not available"}
+          </p>
+        </section>
+
         <section className="upload-main-grid">
-          {/* LEFT SIDE */}
           <div className="upload-card">
             <div className="upload-card-header">
               <div className="upload-step-number">01</div>
@@ -188,12 +332,15 @@ function UploadXRay() {
                   onChange={handleInputChange}
                   hidden
                 />
+
                 <div className="upload-drop-icon">
                   <Upload size={28} />
                 </div>
+
                 <h3>Drop your X-ray image here</h3>
                 <p>or click to browse files from your computer</p>
                 <span className="upload-browse-label">Browse X-ray</span>
+
                 <div className="upload-format-info">
                   <span>PNG</span>
                   <span>JPG</span>
@@ -213,6 +360,7 @@ function UploadXRay() {
                         : "Ready for analysis"}
                     </h3>
                   </div>
+
                   <button
                     type="button"
                     className="upload-remove-btn"
@@ -226,6 +374,7 @@ function UploadXRay() {
 
                 <div className="upload-preview-box">
                   <img src={preview} alt="Selected chest X-ray" />
+
                   <div className="upload-preview-overlay">
                     <span>
                       <ScanLine size={13} />
@@ -239,6 +388,7 @@ function UploadXRay() {
                   <div className="upload-file-icon">
                     <FileImage size={19} />
                   </div>
+
                   <div className="upload-file-text">
                     <strong>{selectedFile.name}</strong>
                     <span>
@@ -246,6 +396,7 @@ function UploadXRay() {
                       {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
                     </span>
                   </div>
+
                   <CheckCircle2 className="upload-file-check" size={20} />
                 </div>
               </div>
@@ -259,7 +410,6 @@ function UploadXRay() {
             )}
           </div>
 
-          {/* RIGHT SIDE */}
           <aside className="upload-info-panel">
             <div className="upload-info-heading">
               <div className="upload-info-icon">
@@ -278,54 +428,51 @@ function UploadXRay() {
                   <p>Select a clear chest X-ray image in a supported format.</p>
                 </div>
               </div>
+
               <div className="upload-workflow-line"></div>
+
               <div className="upload-workflow-item">
                 <span>02</span>
                 <div>
                   <strong>AI inference</strong>
                   <p>
-                    ResNet50 model classifies the image and generates Grad-CAM
-                    heatmap.
+                    ResNet50 model classifies the image and generates
+                    Grad-CAM heatmap.
                   </p>
                 </div>
               </div>
+
               <div className="upload-workflow-line"></div>
+
               <div className="upload-workflow-item">
                 <span>03</span>
                 <div>
                   <strong>Review results</strong>
-                  <p>View condition-wise probabilities and explainability map.</p>
+                  <p>
+                    View condition-wise probabilities and explainability map.
+                  </p>
                 </div>
               </div>
             </div>
 
             <div className="upload-condition-box">
               <span className="section-label">DETECTABLE CONDITIONS</span>
+
               <div className="upload-condition-list">
-                <span>
-                  <i></i>COVID-19
-                </span>
-                <span>
-                  <i></i>Lung Opacity
-                </span>
-                <span>
-                  <i></i>Normal
-                </span>
-                <span>
-                  <i></i>Pneumonia
-                </span>
-                <span>
-                  <i></i>Tuberculosis
-                </span>
+                <span><i></i>COVID-19</span>
+                <span><i></i>Lung Opacity</span>
+                <span><i></i>Normal</span>
+                <span><i></i>Pneumonia</span>
+                <span><i></i>Tuberculosis</span>
               </div>
             </div>
           </aside>
         </section>
 
-        {/* ACTION BAR */}
         <section className="upload-action-bar">
           <div className="upload-action-status">
             <div className="upload-status-dot"></div>
+
             <div>
               <strong>
                 {isAnalyzing
@@ -334,6 +481,7 @@ function UploadXRay() {
                   ? "Image ready for analysis"
                   : "Waiting for image"}
               </strong>
+
               <span>
                 {isAnalyzing
                   ? "ResNet50 model is processing your X-ray..."
