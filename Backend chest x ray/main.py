@@ -46,9 +46,11 @@ from config import (
     CLEANUP_ENABLED,
 )
 
+
 from src.preprocess import (
     is_valid_image_file,
     validate_image_file_content,
+    calculate_blur_score,
 )
 from src.predict import predict_image, get_model
 from src.gradcam import generate_gradcam
@@ -1185,6 +1187,7 @@ async def predict(
         with open(upload_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
+        
         # 5. Validate actual image content
         try:
             validate_image_file_content(
@@ -1197,8 +1200,31 @@ async def predict(
                 detail=str(exc),
             )
 
-        # 6. Run model inference
+        # 6. Reject blurry images before model inference
+        try:
+            blur_score = calculate_blur_score(upload_path)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(exc),
+            )
+
+        BLUR_THRESHOLD = 20.0
+
+        if blur_score < BLUR_THRESHOLD:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    "The uploaded X-ray image is too blurry. "
+                    "Please upload a clearer chest X-ray image."
+                ),
+            )
+
+        print(f"[INFO] Image blur score: {blur_score:.2f}")
+
+        # 7. Run model inference
         result = predict_image(upload_path)
+
 
         # 7. Generate Grad-CAM heatmap
         generate_gradcam(upload_path, heatmap_path)
