@@ -143,9 +143,11 @@ def apply_clahe_enhancement(img_rgb: np.ndarray) -> np.ndarray:
 
 def preprocess_image(image_path: str) -> np.ndarray:
     """
-    Loads an image from disk, converts to 3-channel RGB, resizes to (224, 224),
-    applies CLAHE medical contrast enhancement, and normalizes using ResNet50 ImageNet statistics.
-    
+    Loads an image from disk, converts to 3-channel RGB, applies two-step resize
+    (256x256 -> 224x224 via INTER_AREA) to prevent interpolation artifacts,
+    and rescales pixel intensities by 1/255.0 to [0, 1] matching training configuration.
+    Note: CLAHE is not applied during model inference to preserve learned intensity distributions.
+
     Returns a numpy array of shape (1, 224, 224, 3) ready for model inference.
     """
     import tensorflow as tf

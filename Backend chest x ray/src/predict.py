@@ -53,7 +53,7 @@ def _get_model_v1():
 def predict_image(image_path: str) -> dict:
     """
     Runs ensemble inference on a chest X-ray image using both models (V1 + V3).
-    Predictions from both models are averaged for 98%+ accuracy.
+    Predictions from both models are averaged for 97.40% verified held-out test accuracy.
 
     Returns:
     {

@@ -1,63 +1,72 @@
 {
-  "evaluation_timestamp": "2026-10-04T02:07:00.000000+00:00",
+  "evaluation_timestamp": "2026-10-21T17:08:16.000000+00:00",
+  "evaluation_scope": "Evaluated on persistent clean held-out test split (N=2,730 images). Research prototype benchmark; not a certified clinical validation.",
   "model_architecture": "ResNet50 Ensemble (V1 + V3)",
-  "ensemble_method": "Average of two fine-tuned ResNet50 models",
+  "ensemble_method": "Softmax probability average of two fine-tuned ResNet50 models: (preds_v1 + preds_v3) / 2.0",
   "models_used": [
-    "final_super_model_old.keras (Original ResNet50 - 95.93%)",
-    "final_super_model_v3.keras (Fine-tuned with Class Weights - 96.00%)"
+    "final_super_model_old.keras (Original ResNet50 V1 - 96.08%)",
+    "final_super_model_v3.keras (Fine-tuned ResNet50 V3 - 97.18%)"
   ],
-  "test_samples": 21070,
+  "class_order": [
+    "COVID",
+    "Lung_Opacity",
+    "Normal",
+    "Pneumonia",
+    "Tuberculosis"
+  ],
+  "test_samples": 2730,
   "overall_metrics": {
-    "total_test_samples": 21070,
-    "accuracy": 0.9815,
-    "macro_precision": 0.98,
-    "macro_recall": 0.97,
-    "macro_f1": 0.98,
-    "weighted_f1": 0.98
+    "total_test_samples": 2730,
+    "accuracy": 0.974,
+    "macro_precision": 0.9653,
+    "macro_recall": 0.9682,
+    "macro_f1": 0.9668,
+    "weighted_f1": 0.974,
+    "macro_roc_auc": 0.9986,
+    "weighted_roc_auc": 0.9982
   },
   "class_metrics": {
     "COVID": {
-      "precision": 0.95,
-      "recall": 0.96,
-      "f1_score": 0.96,
-      "support": 3616
+      "precision": 0.945,
+      "recall": 0.9484,
+      "f1_score": 0.9467,
+      "support": 543
     },
     "Lung_Opacity": {
-      "precision": 1.00,
-      "recall": 1.00,
-      "f1_score": 1.00,
-      "support": 5217
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0,
+      "support": 352
     },
     "Normal": {
-      "precision": 0.98,
-      "recall": 0.98,
-      "f1_score": 0.98,
-      "support": 10192
+      "precision": 0.9823,
+      "recall": 0.9797,
+      "f1_score": 0.981,
+      "support": 1529
     },
     "Pneumonia": {
-      "precision": 0.98,
-      "recall": 0.96,
-      "f1_score": 0.97,
-      "support": 1345
+      "precision": 0.9653,
+      "recall": 0.9701,
+      "f1_score": 0.9677,
+      "support": 201
     },
     "Tuberculosis": {
-      "precision": 0.99,
-      "recall": 0.95,
-      "f1_score": 0.97,
-      "support": 700
+      "precision": 0.934,
+      "recall": 0.9429,
+      "f1_score": 0.9384,
+      "support": 105
     }
   },
   "accuracy_journey": {
-    "Base ResNet50 (93%)": 0.9304,
-    "Fine-tuned V1 (95.93%)": 0.9593,
-    "Fine-tuned V3 + Class Weights (96%)": 0.96,
-    "Ensemble V1+V3 (98.15%)": 0.9815
+    "Model V1 (Original)": 0.9608,
+    "Model V3 (Fine-tuned)": 0.9718,
+    "Ensemble V1+V3": 0.974
   },
   "confusion_matrix_raw": [
-    [3471, 28, 84, 18, 15],
-    [5, 5217, 0, 0, 0],
-    [102, 0, 9988, 67, 35],
-    [18, 0, 34, 1291, 2],
-    [12, 0, 18, 5, 665]
+    [515, 0, 23, 0, 5],
+    [0, 352, 0, 0, 0],
+    [22, 0, 1498, 7, 2],
+    [3, 0, 3, 195, 0],
+    [5, 0, 1, 0, 99]
   ]
 }
