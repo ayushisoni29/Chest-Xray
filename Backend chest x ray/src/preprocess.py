@@ -184,9 +184,12 @@ def apply_clahe_enhancement(img_rgb: np.ndarray) -> np.ndarray:
 
 def preprocess_image(image_path: str) -> np.ndarray:
     """
-    Load and resize an image to IMG_SIZE and normalize pixels to [0, 1].
-    Returns an array with shape (1, height, width, 3).
+    Loads an image from disk, converts it to 3-channel RGB, resizes it
+    to the model input size, and normalizes pixel values to [0, 1].
+
+    Returns a numpy array ready for model inference.
     """
+
     if not os.path.exists(image_path):
         raise FileNotFoundError(
             f"Image not found at path: {image_path}"

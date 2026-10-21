@@ -1,8 +1,11 @@
 {
-  "evaluation_timestamp": "2026-09-29T11:26:21.415639+00:00",
-  "model_architecture": "ResNet50",
-  "model_path": "D:\\MINOR NEW 1\\models\\experiments\\resnet50_step5_best.keras",
-  "test_manifest_path": "D:\\MINOR NEW 1\\dataset\\clean\\test.csv",
+  "evaluation_timestamp": "2026-10-21T17:08:16.000000+00:00",
+  "model_architecture": "ResNet50 Ensemble (V1 + V3)",
+  "models_used": [
+    "models/final_super_model_old.keras (Original ResNet50 V1 - 96.08%)",
+    "models/final_super_model_v3.keras (Fine-tuned ResNet50 V3 - 97.18%)"
+  ],
+  "test_manifest_path": "dataset/clean/test.csv",
   "class_order": [
     "COVID",
     "Lung_Opacity",
@@ -11,80 +14,52 @@
     "Tuberculosis"
   ],
   "overall_metrics": {
-    "total_test_samples": 3276,
-    "accuracy": 0.9304,
-    "macro_precision": 0.9459,
-    "macro_recall": 0.9467,
-    "macro_f1": 0.946,
-    "weighted_f1": 0.93
+    "total_test_samples": 2730,
+    "accuracy": 0.974,
+    "macro_precision": 0.9653,
+    "macro_recall": 0.9682,
+    "macro_f1": 0.9668,
+    "weighted_f1": 0.974,
+    "macro_roc_auc": 0.9986,
+    "weighted_roc_auc": 0.9982
   },
   "class_metrics": {
     "COVID": {
-      "precision": 0.9577,
-      "recall": 0.9684,
-      "f1_score": 0.963,
-      "support": 538
+      "precision": 0.945,
+      "recall": 0.9484,
+      "f1_score": 0.9467,
+      "support": 543
     },
     "Lung_Opacity": {
-      "precision": 0.919,
-      "recall": 0.8681,
-      "f1_score": 0.8928,
-      "support": 895
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0,
+      "support": 352
     },
     "Normal": {
-      "precision": 0.9205,
-      "recall": 0.9464,
-      "f1_score": 0.9332,
-      "support": 1530
+      "precision": 0.9823,
+      "recall": 0.9797,
+      "f1_score": 0.981,
+      "support": 1529
     },
     "Pneumonia": {
-      "precision": 0.96,
-      "recall": 0.9505,
-      "f1_score": 0.9552,
-      "support": 202
+      "precision": 0.9653,
+      "recall": 0.9701,
+      "f1_score": 0.9677,
+      "support": 201
     },
     "Tuberculosis": {
-      "precision": 0.9722,
-      "recall": 1.0,
-      "f1_score": 0.9859,
-      "support": 111
+      "precision": 0.934,
+      "recall": 0.9429,
+      "f1_score": 0.9384,
+      "support": 105
     }
   },
   "confusion_matrix_raw": [
-    [
-      521,
-      7,
-      5,
-      3,
-      2
-    ],
-    [
-      8,
-      783,
-      111,
-      0,
-      0
-    ],
-    [
-      14,
-      62,
-      1447,
-      5,
-      1
-    ],
-    [
-      1,
-      0,
-      9,
-      192,
-      0
-    ],
-    [
-      0,
-      0,
-      0,
-      0,
-      105
-    ]
+    [515, 0, 23, 0, 5],
+    [0, 352, 0, 0, 0],
+    [22, 0, 1498, 7, 2],
+    [3, 0, 3, 195, 0],
+    [5, 0, 1, 0, 99]
   ]
 }

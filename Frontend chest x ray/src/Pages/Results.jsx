@@ -556,15 +556,17 @@ const handleDownloadReport = async () => {
             </div>
             <p className="final-gradcam-note">
               <Brain
-                size={15}
-                style={{
-                  display: "inline",
-                  verticalAlign: "middle",
-                  marginRight: 6,
+               size={15}
+               style={{
+                 display: "inline",
+                 verticalAlign: "middle",
+                 marginRight: 6,
                 }}
               />
-              Heatmap visualization of model attention. It is not a
-              standalone clinical finding.
+              Grad-CAM visualizes regions that influence the model output. It supports
+              interpretability but does not guarantee diagnostic correctness or
+              represent a standalone clinical finding.
+          
             </p>
           </section>
         )}
@@ -649,7 +651,7 @@ const handleDownloadReport = async () => {
               <ShieldCheck size={18} />
               <span>
                 AI MODEL
-                <strong>ResNet50 Deep Learning</strong>
+                <strong>ResNet50 Ensemble (V1 + V3)</strong>
               </span>
             </div>
           </div>
@@ -663,10 +665,11 @@ const handleDownloadReport = async () => {
           <div className="disclaimer-text-content">
             <h3>Medical Disclaimer</h3>
             <p>
-              This AI output is for research and educational purposes. It
-              does not constitute a professional medical diagnosis. A
-              qualified medical professional must review the original image
-              and interpret the findings.
+              This AI system is an academic research prototype and is not clinically
+              validated. Its output is for educational and research purposes only and
+              must not substitute for professional medical diagnosis. A qualified
+              medical professional must review the original image and interpret the
+              findings.
             </p>
           </div>
 

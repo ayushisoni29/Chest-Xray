@@ -18,27 +18,33 @@ function About() {
   const conditions = [
     {
       number: "01",
-      name: "Pneumonia",
+      name: "COVID-19",
       description:
-        "Detection of radiographic patterns associated with pneumonia.",
+        "Detection of radiographic patterns and ground-glass opacities associated with COVID-19.",
     },
     {
       number: "02",
-      name: "Tuberculosis",
+      name: "Lung Opacity",
       description:
-        "Detection of chest X-ray patterns associated with tuberculosis.",
+        "Detection of non-specific parenchymal lung opacities, consolidations, and infiltrates.",
     },
     {
       number: "03",
-      name: "COVID-19",
+      name: "Normal",
       description:
-        "Detection of visible lung abnormalities associated with COVID-19.",
+        "Classification of frontal chest radiographs showing clear lung fields with no active focal pathology.",
     },
     {
       number: "04",
-      name: "Lung Opacity",
+      name: "Pneumonia",
       description:
-        "Detection of increased opacity patterns within the lungs.",
+        "Detection of radiographic infiltrates and consolidations associated with viral or bacterial pneumonia.",
+    },
+    {
+      number: "05",
+      name: "Tuberculosis",
+      description:
+        "Detection of radiographic patterns, apical cavitary lesions, and fibrocalcific changes associated with tuberculosis.",
     },
   ];
 
@@ -202,7 +208,7 @@ function About() {
                 <span>TARGETS</span>
 
                 <strong>
-                  04 Conditions
+                  05 Conditions
                 </strong>
               </div>
 
@@ -237,16 +243,14 @@ function About() {
               <span>DETECTION SCOPE</span>
 
               <h2>
-                Four target
+                Five target
                 <br />
-                conditions
+                classes
               </h2>
             </div>
 
             <p className="about-system-section-description">
-              The current project focuses on four selected
-              chest conditions represented within the analysis
-              interface.
+              The project classifies frontal chest radiographs across five canonical classes: Normal, COVID-19, Lung Opacity, Pneumonia, and Tuberculosis.
             </p>
 
           </div>
@@ -391,16 +395,14 @@ function About() {
                 <BrainCircuit size={21} />
               </div>
 
-              <span>01 · MODEL</span>
+              <span>01 · ENSEMBLE MODEL</span>
 
               <h3>
-                Deep Learning
+                Dual ResNet50 Architecture
               </h3>
 
               <p>
-                Deep-learning based image classification is the
-                intended technical direction for identifying
-                patterns in chest X-ray images.
+                Inference averages softmax probabilities from two independently trained ResNet50 backbones (Model V1 and Model V3), achieving 97.40% accuracy across 2,730 held-out test images.
               </p>
 
             </div>
@@ -412,16 +414,14 @@ function About() {
                 <Database size={21} />
               </div>
 
-              <span>02 · DATA</span>
+              <span>02 · EXPLAINABILITY</span>
 
               <h3>
-                Medical Dataset
+                Grad-CAM Activation Map
               </h3>
 
               <p>
-                A suitable chest X-ray dataset is required for
-                model training, validation and performance
-                evaluation.
+                Visual attention heatmaps are computed from Model V3 (conv5_block3_3_conv) to highlight salient regions influencing its activations. It visualizes Model V3 rather than the combined ensemble.
               </p>
 
             </div>
@@ -433,16 +433,14 @@ function About() {
                 <ShieldCheck size={21} />
               </div>
 
-              <span>03 · VALIDATION</span>
+              <span>03 · DATASET BENCHMARK</span>
 
               <h3>
-                Clinical Evaluation
+                18,200 Evaluated Scans
               </h3>
 
               <p>
-                A real-world medical application requires
-                appropriate validation, security and clinical
-                evaluation before practical use.
+                Split into 12,740 train (70%), 2,730 validation (15%), and 2,730 test (15%) images. Nine byte-identical train–test duplicates (0.33%) were documented to ensure scientific transparency.
               </p>
 
             </div>
@@ -465,19 +463,15 @@ function About() {
           <div className="about-notice-content">
 
             <span>
-              IMPORTANT INFORMATION
+              ACADEMIC PROTOTYPE NOTICE
             </span>
 
             <h3>
-              Research & educational project
+              Research & Educational Project Only
             </h3>
 
             <p>
-              The current frontend contains demonstration
-              analysis values and is intended for academic and
-              project demonstration purposes. It is not a medical
-              diagnostic system and does not replace professional
-              medical evaluation.
+              This system is an academic engineering prototype and has not undergone clinical validation or regulatory clearance. Because patient identifiers are unavailable in public source datasets, patient-level independence cannot be formally proven. This system must not be used as a substitute for professional medical diagnosis.
             </p>
 
           </div>

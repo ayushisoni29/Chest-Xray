@@ -100,8 +100,9 @@ def test_model_immutability_during_inference():
 def test_dataset_manifest_and_split_integrity():
     """
     Verifies that:
-    - Train (15,305), Validation (3,276), Test (3,276) sum to exactly 21,865
-    - All 5 canonical class directories exist
+    - Train (12,740), Validation (2,730), Test (2,730) sum to exactly 18,200 cleaned scans
+    - All manifests exist, are readable, and have valid non-null filepaths and labels
+    - All 5 canonical classes exist in every split
     - Zero data leakage / overlap across splits
     """
     dataset_dir = BASE_DIR / "dataset"
@@ -115,10 +116,11 @@ def test_dataset_manifest_and_split_integrity():
     df_val = pd.read_csv(val_csv)
     df_test = pd.read_csv(test_csv)
 
-    assert len(df_train) == 15099, f"Expected 15,305 train samples, found {len(df_train)}"
-    assert len(df_val) == 3260, f"Expected 3,276 validation samples, found {len(df_val)}"
-    assert len(df_test) == 3276, f"Expected 3,276 test samples, found {len(df_test)}"
-    assert len(df_train) + len(df_val) + len(df_test) == 21635
+    # Clean split counts (70% train, 15% validation, 15% test of 18,200 cleaned scans)
+    assert len(df_train) == 12740, f"Expected 12,740 train samples, found {len(df_train)}"
+    assert len(df_val) == 2730, f"Expected 2,730 validation samples, found {len(df_val)}"
+    assert len(df_test) == 2730, f"Expected 2,730 test samples, found {len(df_test)}"
+    assert len(df_train) + len(df_val) + len(df_test) == 18200
 
     # Check 5 canonical classes in each split
     expected_set = {"COVID", "Lung_Opacity", "Normal", "Pneumonia", "Tuberculosis"}
@@ -126,14 +128,19 @@ def test_dataset_manifest_and_split_integrity():
     assert set(df_val["label"].unique()) == expected_set
     assert set(df_test["label"].unique()) == expected_set
 
+    # Verify no nulls in filepaths or labels
+    for name, df in [("train", df_train), ("val", df_val), ("test", df_test)]:
+        assert df["filepath"].isnull().sum() == 0, f"No null filepaths allowed in {name} manifest."
+        assert df["label"].isnull().sum() == 0, f"No null labels allowed in {name} manifest."
+
     # Leakage check
     train_files = set(df_train["filepath"].apply(os.path.normpath))
     val_files = set(df_val["filepath"].apply(os.path.normpath))
     test_files = set(df_test["filepath"].apply(os.path.normpath))
 
-    assert len(train_files.intersection(val_files)) == 0
-    assert len(train_files.intersection(test_files)) == 0
-    assert len(val_files.intersection(test_files)) == 0
+    assert len(train_files.intersection(val_files)) == 0, "Data leakage between Train and Val!"
+    assert len(train_files.intersection(test_files)) == 0, "Data leakage between Train and Test!"
+    assert len(val_files.intersection(test_files)) == 0, "Data leakage between Val and Test!"
 
 
 # ==========================================

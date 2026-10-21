@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Chest X-Ray Multi-Disease Detection & Grad-CAM Explainability System - Major Project Thesis</title>
+
+<style>
+@page {
+    size: A4;
+    margin: 25mm 20mm 25mm 25mm;
+}
+body {
+    font-family: 'Times New Roman', Times, serif, 'Calibri';
+    font-size: 11.5pt;
+    line-height: 1.6;
+    color: #111;
+    background: #fff;
+    margin: 0;
+    padding: 0;
+}
+h1, h2, h3, h4 {
+    font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+    color: #0f2b48;
+    page-break-after: avoid;
+}
+h1 {
+    font-size: 20pt;
+    border-bottom: 2px solid #0f2b48;
+    padding-bottom: 6px;
+    margin-top: 30pt;
+    page-break-before: always;
+}
+h1:first-of-type {
+    page-break-before: avoid;
+    margin-top: 0;
+}
+h2 {
+    font-size: 15pt;
+    margin-top: 20pt;
+    border-bottom: 1px solid #cbd5e1;
+    padding-bottom: 4px;
+}
+h3 {
+    font-size: 12.5pt;
+    margin-top: 14pt;
+}
+p {
+    text-align: justify;
+    margin-bottom: 10pt;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14pt 0;
+    font-size: 10pt;
+    page-break-inside: avoid;
+}
+th, td {
+    border: 1px solid #94a3b8;
+    padding: 6px 10px;
+    text-align: left;
+}
+th {
+    background-color: #f1f5f9;
+    font-weight: bold;
+    color: #0f2b48;
+}
+code {
+    background: #f1f5f9;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-family: Consolas, monospace;
+    font-size: 9.5pt;
+}
+pre {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 10px;
+    border-radius: 4px;
+    overflow-x: auto;
+    font-size: 9pt;
+    page-break-inside: avoid;
+}
+blockquote {
+    border-left: 4px solid #0f2b48;
+    margin: 12pt 0;
+    padding-left: 12pt;
+    color: #334155;
+    font-style: italic;
+}
+img {
+    max-width: 92%;
+    max-height: 420px;
+    display: block;
+    margin: 12pt auto;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+    page-break-inside: avoid;
+}
+hr {
+    border: 0;
+    border-top: 1px solid #cbd5e1;
+    margin: 20pt 0;
+}
+ul, ol {
+    margin-bottom: 10pt;
+    padding-left: 20pt;
+}
+li {
+    margin-bottom: 4pt;
+}
+</style>
+
+</head>
+<body>
+<h1 id="table-of-contents">TABLE OF CONTENTS</h1>
+
+<table>
+<thead>
+<tr>
+  <th>S.NO.</th>
+  <th>SECTION TITLE</th>
+  <th>SUB HEADINGS</th>
+  <th>PAGE NO</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>1</td>
+  <td>Chapter 1: Introduction</td>
+  <td>1.1 Background<br>1.2 Problem Statement<br>1.3 Scope of the Study<br>1.4 Key Objectives<br>1.5 Proposed Solution<br>1.6 Applications<br>1.7 Organization of the Report</td>
+  <td>1</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td>Chapter 2: Literature Review</td>
+  <td>2.1 Introduction<br>2.2 Chest X-Ray Computer Vision<br>2.3 Deep Learning for Medical Image Classification<br>2.4 Convolutional Neural Networks (CNNs)<br>2.5 Explainable AI and Grad-CAM<br>2.6 Existing Medical Image Analysis Approaches<br>2.7 Research Gap<br>2.8 Summary</td>
+  <td>7</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td>Chapter 3: Methodology</td>
+  <td>3.1 Introduction<br>3.2 Overall System Workflow<br>3.3 System Architecture<br>3.4 Dataset Preparation and Split Integrity<br>3.5 Image Preprocessing Pipeline<br>3.6 Model Development and Dual-Model Ensemble<br>3.7 Model Evaluation Metrics<br>3.8 Grad-CAM Explainability and Model Asymmetry<br>3.9 Shortcut and Border Sensitivity Diagnostics<br>3.10 Database and API Design<br>3.11 Summary</td>
+  <td>12</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td>Chapter 4: System Implementation</td>
+  <td>4.1 Introduction<br>4.2 Software and Hardware Requirements<br>4.3 Frontend Implementation<br>4.4 Backend Implementation<br>4.5 Production Prediction Pipeline<br>4.6 Authentication and History Management<br>4.7 Grad-CAM Module Implementation<br>4.8 Database Implementation<br>4.9 Testing and Automated Verification<br>4.10 Technology Stack<br>4.11 Summary</td>
+  <td>20</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td>Chapter 5: Results and Discussion</td>
+  <td>5.1 Introduction<br>5.2 Dataset Partitioning and Duplicate Audit<br>5.3 Model Progression and Baseline Comparison<br>5.4 Verified Dual-Model Ensemble Results<br>5.5 Confusion Matrix and Classification Breakdown<br>5.6 Focal Loss and Experimental Checkpoints<br>5.7 Explainability Analysis and Interpretability Scope<br>5.8 Runtime Performance and Research Limitations<br>5.9 Summary</td>
+  <td>27</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td>Chapter 6: Conclusion</td>
+  <td>6.1 Introduction<br>6.2 Summary of Work<br>6.3 Achievements<br>6.4 Key Contributions<br>6.5 Conclusion<br>6.6 Summary</td>
+  <td>33</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td>Chapter 7: Future Work</td>
+  <td>7.1 Introduction<br>7.2 Patient-Level Validation<br>7.3 External Dataset Validation<br>7.4 Higher-Resolution Experimentation<br>7.5 Robust Preprocessing and Normalization<br>7.6 PWA and Mobile Access<br>7.7 Clinical Validation and Prospective Trials<br>7.8 Summary</td>
+  <td>37</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td>Chapter 8: Snapshots</td>
+  <td>8.1 User Interface Snapshots Placeholder</td>
+  <td>41</td>
+</tr>
+<tr>
+  <td>9</td>
+  <td>Chapter 9: References</td>
+  <td>References and Benchmark Sources</td>
+  <td>45</td>
+</tr>
+</tbody>
+</table>
+
+<div style="page-break-after: always;"></div>
+
+<h1 id="chapter-1">CHAPTER 1</h1>
+
+<h2 id="introduction">INTRODUCTION</h2>
+
+<h3 id="11-background">1.1 Background</h3>
+
+<p>With the rapid growth of medical imaging and computer vision, deep learning has become one of the most widely investigated technologies for automating diagnostic assistance. Radiologists and medical professionals rely heavily on chest radiography (X-ray imaging) to evaluate thoracic conditions, but interpreting subtle opacities, consolidations, and cavitations requires extensive domain expertise and can be time-consuming when high patient volumes must be triaged. Computer vision and deep learning provide a powerful approach to assist image classification by learning discriminative visual representations directly from labeled radiographic datasets.</p>
+
+<p>The <strong>Chest X-Ray Multi-Disease Detection &amp; Grad-CAM Explainability System</strong> is an end-to-end medical image analysis platform designed to classify frontal chest radiographs into five discrete clinical categories: <strong>COVID-19, Lung Opacity, Normal, Viral/Bacterial Pneumonia, and Tuberculosis</strong>. The system standardizes uploaded radiographs, runs inference through a dual-model deep learning ensemble, provides full softmax differential probability distributions, generates localized explainability heatmaps using Grad-CAM, and persists diagnostic history within an isolated, authenticated workspace.</p>
+
+<h3 id="12-problem-statement">1.2 Problem Statement</h3>
+
+<p>Manual inspection of chest X-ray images is a labor-intensive and challenging task, particularly because several disease categories present with visually overlapping radiographic features. Subtle viral pneumonia infiltrates, COVID-19 ground-glass opacities, and non-specific lung opacities often exhibit high visual similarity. Furthermore, conventional deep learning models function as opaque "black boxes," providing numerical class predictions without revealing the anatomical or spatial reasoning behind the classification. This absence of explainability represents a fundamental barrier to clinical trust and verification.</p>
+
+<p>There is a defined need for a unified diagnostic assistance platform that combines multi-disease classification, localized visual interpretability, empirical evaluation benchmarking, and secure clinician session management within a single responsive workspace. The proposed platform addresses these challenges by integrating a fine-tuned convolutional neural network ensemble with Gradient-weighted Class Activation Mapping (Grad-CAM) to visualize salient image regions influencing model activations.</p>
+
+<h3 id="13-scope-of-the-study">1.3 Scope of the Study</h3>
+
+<p>The scope of this project encompasses the analysis of frontal (PA/AP) chest radiographs using a dual-model ensemble of transfer-learned ResNet50 convolutional neural networks. The platform receives an uploaded image (PNG, JPEG, or WebP), validates payload security, performs two-stage area-preserving resizing to $224 \times 224$ pixels without applying CLAHE during production inference, and executes a forward pass across two independently fine-tuned models: Model V1 (<code>final_super_model_old.keras</code>) and Model V3 (<code>final_super_model_v3.keras</code>).</p>
+
+<p>Prediction probabilities are combined using a uniform arithmetic average, while visual explainability heatmaps are generated specifically from Model V3 targeting its final convolutional layer (<code>conv5_block3_3_conv</code>). The platform provides five-class differential scoring, JWT-based clinician authentication, longitudinal MongoDB history persistence, and structured report exports. <strong>The platform is an academic engineering prototype developed for research and educational purposes; it is not clinically validated, not approved by medical regulatory authorities, and does not replace certified radiologist evaluation.</strong></p>
+
+<h3 id="14-key-objectives">1.4 Key Objectives</h3>
+
+<p>The primary objectives of the proposed system are:
+- To develop an end-to-end full-stack platform that classifies chest radiographs across five canonical classes: COVID-19, Lung Opacity, Normal, Pneumonia, and Tuberculosis.
+- To establish and benchmark a cleaned dataset of 18,200 radiographs partitioned into stratified splits: 12,740 train (70%), 2,730 validation (15%), and 2,730 held-out test images (15%).
+- To deploy a dual-model ResNet50 transfer learning ensemble ($p_{\text{ensemble}} = (p_{\text{V1}} + p_{\text{V3}}) / 2.0$) optimized for CPU-based local demonstration.
+- To implement Grad-CAM explainability targeting layer <code>conv5_block3_3_conv</code> of Model V3, highlighting salient spatial features.
+- To maintain strict scientific transparency by disclosing dataset limitations, including nine identical train–test duplicate images and the unavailability of patient identifiers.
+- To build a secure, authenticated web interface using FastAPI, React.js, and MongoDB with audit trails and user-isolated history tracking.</p>
+
+<h3 id="15-proposed-solution">1.5 Proposed Solution</h3>
+
+<p>The proposed solution delivers an integrated, production-ready diagnostic assistance platform. Upon radiograph upload, the FastAPI backend applies magic-byte verification, decompression bomb limits, and two-stage resizing via OpenCV. Inference is executed through the dual-model ResNet50 ensemble, generating a normalized 5-class probability vector. Concurrently, a Grad-CAM module intercepts gradients from Model V3 to generate an overlaid jet-colormap activation map. The React frontend presents side-by-side radiograph comparisons, interactive probability meters, and historical logs, supported by MongoDB document persistence.</p>
+
+<h3 id="16-applications">1.6 Applications</h3>
+
+<ul>
+<li>Academic demonstration of convolutional neural networks and transfer learning in medical imaging.</li>
+<li>Educational visualization of convolutional feature attribution using Grad-CAM.</li>
+<li>Research investigation into dataset leakage, cross-split duplicate auditing, and shortcut learning.</li>
+<li>Interactive demonstration of secure full-stack machine learning deployment using FastAPI and React.js.</li>
+<li>Preliminary screening assistance prototype for multi-class pulmonary differential exploration.</li>
+</ul>
+
+<h3 id="17-organization-of-the-report">1.7 Organization of the Report</h3>
+
+<p>This report is organized into nine chapters:
+- <strong>Chapter 1</strong> presents the introduction, problem statement, objectives, scope, proposed solution, and applications.
+- <strong>Chapter 2</strong> provides a comprehensive literature review on chest radiography computer vision, CNN architectures, transfer learning, and explainable AI.
+- <strong>Chapter 3</strong> details the methodology, dataset preparation, split partitioning, preprocessing, ensemble strategy, and Grad-CAM formulation.
+- <strong>Chapter 4</strong> describes system implementation, including hardware/software specifications, frontend/backend modules, database integration, and security controls.
+- <strong>Chapter 5</strong> presents empirical results, model comparison benchmarks, the 2,730-image confusion matrix, error analysis, Grad-CAM interpretability, and research limitations.
+- <strong>Chapter 6</strong> summarizes the completed work, key contributions, and conclusion.
+- <strong>Chapter 7</strong> outlines future enhancements, including patient-level splitting and multi-center clinical trials.
+- <strong>Chapter 8</strong> reserves the system snapshot section for application interface figures.
+- <strong>Chapter 9</strong> lists academic and technical references.</p>
+
+<div style="page-break-after: always;"></div>
+
+<h1 id="chapter-2">CHAPTER 2</h1>
+
+<h2 id="literature-review">LITERATURE REVIEW</h2>
+
+<h3 id="21-introduction">2.1 Introduction</h3>
+
+<p>The application of artificial intelligence to diagnostic radiology has accelerated due to open-access medical imaging repositories and advancements in deep convolutional architectures. Computer-aided detection (CAD) systems have transitioned from hand-engineered morphological filters to deep neural networks capable of learning hierarchical visual representations directly from pixel arrays. This chapter reviews the literature, foundational models, and explainability methods underpinning the proposed platform.</p>
+
+<h3 id="22-chest-x-ray-computer-vision">2.2 Chest X-Ray Computer Vision</h3>
+
+<p>Frontal chest radiography is the most frequently requested diagnostic imaging examination globally. Radiographs present projectional superimpositions of 3D thoracic structures onto a 2D plane. Consequently, rib shadows, clavicles, vascular markings, and cardiac silhouettes frequently occlude subtle parenchymal infiltrates. Early automated systems relied on texture segmentation, active contours, and handcrafted feature descriptors (such as Gray-Level Co-occurrence Matrices and Histogram of Oriented Gradients) paired with Support Vector Machines. These approaches suffered from limited generalization across different X-ray machines and patient orientations.</p>
+
+<h3 id="23-deep-learning-for-medical-image-classification">2.3 Deep Learning for Medical Image Classification</h3>
+
+<p>Deep learning models, specifically convolutional neural networks (CNNs), have demonstrated human-expert diagnostic performance across specialized radiological benchmarks. By stacking convolutional kernels, pooling layers, and non-linear activations, CNNs learn multi-scale visual features: edge detectors in early stages, textural patterns in intermediate stages, and complex anatomical configurations in final convolutional layers. Landmark architectures such as ResNet, DenseNet, and ConvNeXt have substantially outperformed traditional algorithms on large-scale datasets such as ChestX-ray14, CheXpert, and COVID-QU-Ex.</p>
+
+<h3 id="24-convolutional-neural-networks-and-transfer-learning">2.4 Convolutional Neural Networks and Transfer Learning</h3>
+
+<p>Training deep vision models from scratch on medical cohorts is often constrained by dataset scale and risk of overfitting. Transfer learning overcomes this by pretraining a network on ImageNet (comprising 1.2 million natural images across 1,000 categories) and adapting the learned weight representations to the target radiological domain. Residual Networks (ResNet), introduced by He et al. (2016), address the vanishing gradient problem through skip connections (residual identity mappings):
+$$\mathbf{y} = \mathcal{F}(\mathbf{x}, {W_i}) + \mathbf{x}$$
+The 50-layer variant (ResNet50) provides an optimal trade-off between representation capacity, parameter count (approximately 24 million parameters), and computational tractability for CPU-based local inference.</p>
+
+<h3 id="25-explainable-ai-and-grad-cam">2.5 Explainable AI and Grad-CAM</h3>
+
+<p>In safety-critical medical contexts, model interpretability is essential. Gradient-weighted Class Activation Mapping (Grad-CAM), formulated by Selvaraju et al. (2017), generates visual explanations for decisions made by CNN-based models without requiring architectural modifications or retraining. Grad-CAM computes the gradient of the score for target class $c$ ($y^c$) with respect to feature activation maps $A^k$ of the final convolutional layer:
+$$\alpha<em>k^c = \frac{1}{Z} \sum</em>{i} \sum_{j} \frac{\partial y^c}{\partial A_{i,j}^k}$$
+The feature maps are then combined with neuron importance weights $\alpha<em>k^c$ and passed through a Rectified Linear Unit (ReLU) to isolate features with positive influence:
+$$L</em>{\text{Grad-CAM}}^c = \text{ReLU}\left(\sum<em>k \alpha</em>k^c A^k\right)$$
+In this project, layer <code>conv5_block3_3_conv</code> of ResNet50 ($7 \times 7 \times 1024$ output dimension) is targeted to localize anatomical regions driving model predictions.</p>
+
+<h3 id="26-existing-medical-image-analysis-approaches">2.6 Existing Medical Image Analysis Approaches</h3>
+
+<p>Existing automated chest screening tools generally fall into two categories: proprietary cloud-hosted enterprise platforms (which lack open code auditability) and standalone research scripts (which lack complete deployment infrastructure, web interfaces, and database persistence). Many published studies report impressive test accuracy but omit critical analyses regarding cross-split duplicate contamination, border shortcut learning, and single-model versus ensemble explainability boundaries.</p>
+
+<h3 id="27-research-gap">2.7 Research Gap</h3>
+
+<p>A significant gap exists in open-source academic engineering projects between raw machine learning experimentation and end-to-end deployable systems. Very few systems unify rigorous leakage auditing, dual-model ensemble inference, single-layer Grad-CAM explainability, upload security sanitization, and session-isolated database persistence within an accessible, transparent prototype. The proposed system addresses this gap.</p>
+
+<h3 id="28-summary">2.8 Summary</h3>
+
+<p>This chapter surveyed foundational computer vision methods, deep learning architectures, transfer learning strategies, and Grad-CAM explainability. The literature establishes ResNet50 as a robust, computationally feasible backbone for thoracic image classification. The following chapter details the methodology, dataset partitioning, preprocessing pipeline, and ensemble strategy.</p>
+
+<div style="page-break-after: always;"></div>
+
+<h1 id="chapter-3">CHAPTER 3</h1>
+
+<h2 id="methodology">METHODOLOGY</h2>
+
+<h3 id="31-introduction">3.1 Introduction</h3>
+
+<p>This chapter describes the methodology employed in designing and evaluating the Chest X-Ray Multi-Disease Detection System. The pipeline encompasses dataset acquisition, deduplication auditing, stratified partitioning, two-stage area-preserving preprocessing, dual-model ensemble classification, Grad-CAM activation mapping, and authenticated persistence.</p>
+
+<h3 id="32-overall-system-workflow">3.2 Overall System Workflow</h3>
+
+<p>The operational workflow proceeds through the following sequential stages:
+1. <strong>Clinician Authentication</strong>: Secure registration or login yielding a cryptographically signed JSON Web Token (JWT).
+2. <strong>Scan Upload &amp; Validation</strong>: Frontend transmits radiograph via multipart form data; backend verifies MIME types, file extensions, and image headers.
+3. <strong>Storage &amp; Isolation</strong>: Scan is assigned a unique UUIDv4 filename and stored in an isolated directory.
+4. <strong>Standardized Preprocessing</strong>: Image is resized to $224 \times 224 \times 3$ via two-stage OpenCV <code>INTER_AREA</code> interpolation and rescaled to $[0, 1]$.
+5. <strong>Dual-Model Inference</strong>: Processed tensor is fed into Model V1 and Model V3 concurrently.
+6. <strong>Ensemble Softmax Fusion</strong>: Probability vectors from both backbones are combined via uniform arithmetic averaging.
+7. <strong>Grad-CAM Extraction</strong>: Gradients of the predicted class are computed with respect to layer <code>conv5_block3_3_conv</code> of Model V3.
+8. <strong>Heatmap Generation &amp; Overlay</strong>: Activation map is normalized, colorized via the OpenCV Jet colormap, and overlaid onto the original radiograph.
+9. <strong>MongoDB Persistence</strong>: Diagnostic record containing scan metadata, prediction probabilities, and asset URLs is saved to the user's isolated profile.
+10. <strong>Frontend Presentation</strong>: Client UI displays differential probability distribution, predicted condition, confidence meter, and explainability overlay.</p>
+
+<h3 id="33-system-architecture">3.3 System Architecture</h3>
+
+<p>The system utilizes a modern decoupled three-tier microservice architecture:
+- <strong>Client Tier (Frontend)</strong>: Developed in React 19 and Vite. Implements JWT storage, dynamic routing, probability visualization, and report generation.
+- <strong>Application Tier (Backend)</strong>: FastAPI asynchronous REST API providing endpoints for <code>/predict</code>, <code>/auth</code>, <code>/predictions/history</code>, and <code>/model/metrics</code>. Houses the deep learning inference engine and Grad-CAM pipeline.
+- <strong>Data &amp; Asset Tier (Storage)</strong>: MongoDB Community 7.0 document store managing user profiles and prediction collections, alongside structured local file storage for radiographs and generated heatmaps.</p>
+
+<h3 id="34-dataset-preparation-and-split-integrity">3.4 Dataset Preparation and Split Integrity</h3>
+
+<p>The system was benchmarked on a curated dataset of <strong>18,200 chest radiographs</strong> sourced from publicly available repositories (COVID-19 Radiography Database and Kaggle Chest X-Ray datasets). The dataset was partitioned into stratified splits maintaining consistent class representations:
+- <strong>Train Set</strong>: 12,740 images (70.0%)
+- <strong>Validation Set</strong>: 2,730 images (15.0%)
+- <strong>Held-Out Test Set</strong>: 2,730 images (15.0%)</p>
+
+<p>The five canonical disease categories and their test set representations are:
+1. <code>COVID</code> (COVID-19 viral pneumonia): 543 test scans
+2. <code>Lung_Opacity</code> (Non-COVID parenchymal infiltrates): 352 test scans
+3. <code>Normal</code> (No active focal pathology): 1,529 test scans
+4. <code>Pneumonia</code> (Bacterial and other viral pneumonias): 201 test scans
+5. <code>Tuberculosis</code> (Active pulmonary tuberculosis lesions): 105 test scans</p>
+
+<p><strong>Cross-Split Duplicate Disclosure</strong>: A rigorous read-only MD5 hash audit across all 18,200 images revealed that <strong>9 images in the held-out test split are byte-for-byte identical to images in the training split</strong> (accounting for 0.33% of the test set). These duplicates originated from adjacent image numbering in public source repositories. To maintain a reproducible, frozen academic benchmark, these manifests (<code>dataset/clean/train.csv</code>, <code>val.csv</code>, <code>test.csv</code>) were preserved unaltered and are transparently disclosed.</p>
+
+<p><strong>Patient-Level Independence Limitation</strong>: Because public multi-source datasets do not provide unique patient identifiers, multi-view or longitudinal patient-level leakage across splits cannot be formally disproven.</p>
+
+<h3 id="35-image-preprocessing-pipeline">3.5 Image Preprocessing Pipeline</h3>
+
+<p>Input radiographs exhibit wide variations in initial resolution, aspect ratio, and bit depth. The production preprocessing pipeline standardizes all images:
+1. <strong>Color Conversion</strong>: Image is decoded via OpenCV and converted from BGR to 3-channel RGB.
+2. <strong>Two-Stage Interpolation</strong>: To avoid aliasing and interpolation moiré patterns caused by drastic single-pass downsampling, images are resized in two stages:
+   $$(H, W) \xrightarrow{\text{INTER_AREA}} (256, 256) \xrightarrow{\text{INTER_AREA}} (224, 224)$$
+3. <strong>Pixel Intensity Rescaling</strong>: Pixel values in $[0, 255]$ are divided by $255.0$ to produce floating-point tensors in $[0.0, 1.0]$.
+4. <strong>Inference Distinction</strong>: <em>Contrast Limited Adaptive Histogram Equalization (CLAHE) is not called during production inference</em> to preserve the learned intensity distributions established during training.</p>
+
+<h3 id="36-model-development-and-dual-model-ensemble">3.6 Model Development and Dual-Model Ensemble</h3>
+
+<p>The production system deploys an ensemble averaging two independently fine-tuned ResNet50 backbones:
+- <strong>Model V1 (Original Backbone)</strong>: <code>final_super_model_old.keras</code> (Stand-alone test accuracy: 96.08%, Macro F1: 0.9365).
+- <strong>Model V3 (Fine-Tuned Backbone)</strong>: <code>final_super_model_v3.keras</code> (Stand-alone test accuracy: 97.18%, Macro F1: 0.9597).</p>
+
+<p><strong>Ensemble Fusion Logic</strong>: Uniform arithmetic averaging across softmax output vectors:
+$$\mathbf{p}<em>{\text{ensemble}} = \frac{\mathbf{p}</em>{\text{V1}} + \mathbf{p}_{\text{V3}}}{2.0}$$
+This ensemble reduces single-model variance and achieves superior generalization over either standalone model.</p>
+
+<p><em>(Historical Academic Note: Early development stages evaluated an intermediate single-model Step 5 checkpoint achieving 93.04% accuracy on an earlier 3,276-sample split, and a MobileNetV3 baseline achieving 72.04% accuracy. These were superseded by the active dual-model production ensemble).</em></p>
+
+<h3 id="37-model-evaluation-metrics">3.7 Model Evaluation Metrics</h3>
+
+<p>The production ensemble was evaluated on the complete 2,730 held-out test images. The verified empirical results are:
+- <strong>Total Test Samples</strong>: 2,730
+- <strong>Correct Predictions</strong>: 2,659
+- <strong>Accuracy</strong>: <strong>97.40%</strong>
+- <strong>Macro-Averaged F1-Score</strong>: <strong>0.9668</strong>
+- <strong>Weighted-Averaged F1-Score</strong>: <strong>0.9740</strong>
+- <strong>Macro-Averaged Precision</strong>: <strong>0.9653</strong>
+- <strong>Macro-Averaged Recall</strong>: <strong>0.9682</strong>
+- <strong>Macro ROC-AUC (One-vs-Rest)</strong>: <strong>0.9986</strong>
+- <strong>Weighted ROC-AUC (One-vs-Rest)</strong>: <strong>0.9982</strong></p>
+
+<h3 id="38-grad-cam-explainability-and-model-asymmetry">3.8 Grad-CAM Explainability and Model Asymmetry</h3>
+
+<p>To provide visual interpretability, Grad-CAM feature attribution is implemented. An important structural aspect of the system is <strong>explainability asymmetry</strong>:
+- The <strong>prediction probabilities</strong> reflect the combined arithmetic ensemble of Model V1 and Model V3.
+- The <strong>Grad-CAM heatmap</strong> is generated exclusively from <strong>Model V3</strong> targeting its final residual convolutional block (<code>conv5_block3_3_conv</code>, output shape $7 \times 7 \times 1024$).</p>
+
+<p>The heatmap illustrates spatial regions that produced high activations within Model V3. It does not visualize Model V1, does not represent a composite ensemble gradient, and does not establish medical or diagnostic ground truth.</p>
+
+<h3 id="39-shortcut-and-border-sensitivity-diagnostics">3.9 Shortcut and Border Sensitivity Diagnostics</h3>
+
+<p>A diagnostic investigation evaluated potential shortcut learning (relying on image borders, radiopaque markers, or diaphragm edges). When an artificial 15% peripheral border mask was applied to test images, classification performance dropped, confirming that convolutional filters utilize peripheral anatomical landmarks (scapular margins and chest wall contours) alongside central parenchymal fields.</p>
+
+<h3 id="310-database-and-api-design">3.10 Database and API Design</h3>
+
+<p>Application state is managed in MongoDB across two primary collections:
+- <code>users</code>: Contains clinician credentials (bcrypt password hashes), names, email addresses, and account creation timestamps.
+- <code>predictions</code>: Contains user ID references, upload filenames, absolute/relative asset URLs, predicted class, confidence scores, 5-class probability maps, and UTC timestamps.</p>
+
+<h3 id="311-summary">3.11 Summary</h3>
+
+<p>This chapter articulated the methodology, dataset partitioning, preprocessing rules, dual-model ensemble averaging, and single-model Grad-CAM explainability. The next chapter details the software implementation and architectural specifications.</p>
+
+<div style="page-break-after: always;"></div>
+
+<h1 id="chapter-4">CHAPTER 4</h1>
+
+<h2 id="system-implementation">SYSTEM IMPLEMENTATION</h2>
+
+<h3 id="41-introduction">4.1 Introduction</h3>
+
+<p>This chapter presents the concrete implementation details of the Chest X-Ray Multi-Disease Detection System. The platform combines deep learning inference, modern asynchronous API endpoints, document-oriented database persistence, and a responsive web dashboard.</p>
+
+<h3 id="42-software-and-hardware-requirements">4.2 Software and Hardware Requirements</h3>
+
+<p><strong>Software Specifications</strong>:
+- <strong>Operating System</strong>: Microsoft Windows 10/11 (or Linux / Docker container)
+- <strong>Runtime Environment</strong>: Python 3.11.9, Node.js 20.x
+- <strong>API Framework</strong>: FastAPI 0.111.0 with Uvicorn 0.30.0
+- <strong>Deep Learning Libraries</strong>: TensorFlow 2.16+, Keras 3.x, NumPy 1.26+, OpenCV 4.10+
+- <strong>Database</strong>: MongoDB Community Server 7.0 via PyMongo 4.7+
+- <strong>Authentication</strong>: PyJWT 2.8+ / Python-Jose, Passlib with BCrypt
+- <strong>Frontend Framework</strong>: React 19.1.0, Vite 7.3.6, Lucide-React 0.468, Recharts 3.10</p>
+
+<p><strong>Hardware Specifications</strong>:
+- <strong>Processor</strong>: Intel Core i5 / AMD Ryzen 5 or higher
+- <strong>RAM</strong>: Minimum 8 GB (16 GB Recommended for model caching)
+- <strong>Storage</strong>: Minimum 10 GB free disk space
+- <strong>Acceleration</strong>: Designed for CPU-friendly inference; compatible with GPU/DirectML acceleration</p>
+
+<h3 id="43-frontend-implementation">4.3 Frontend Implementation</h3>
+
+<p>The user interface is built as a single-page application (SPA) using React.js and Vite. Core views include:
+- <code>Login.jsx</code> &amp; <code>Register.jsx</code>: Clinician authentication with client-side form validation.
+- <code>Dashboard.jsx</code>: Workspace overview displaying model readiness status, cumulative analysis counters, and quick navigation.
+- <code>UploadXRay.jsx</code>: Interactive drag-and-drop file uploader with client-side format checking, file size verification (10 MB limit), and scan preview.
+- <code>Results.jsx</code>: Comprehensive analysis view displaying predicted condition, confidence meter, differential probability breakdown, side-by-side radiograph vs. Grad-CAM comparison, radiologist review toggles, and report export.
+- <code>History.jsx</code>: Tabular presentation of past analyses with pagination and individual record retrieval.
+- <code>About.jsx</code>: Educational overview detailing the five target conditions, technology stack, and academic prototype disclosures.</p>
+
+<h3 id="44-backend-implementation">4.4 Backend Implementation</h3>
+
+<p>The backend is structured as an asynchronous FastAPI application in <code>main.py</code>:
+- Lifespan management pre-warms deep learning models into memory on server initialization.
+- Cross-Origin Resource Sharing (CORS) middleware configured for development and production domains.
+- Static file mount serves uploaded radiographs and generated Grad-CAM heatmaps from <code>/static/uploads</code> and <code>/static/heatmaps</code>.
+- Modular security sanitization ensures protection against directory traversal (<code>is_safe_path</code>), oversized payloads, and unverified file types.</p>
+
+<h3 id="45-production-prediction-pipeline">4.5 Production Prediction Pipeline</h3>
+
+<p>When an image is submitted to <code>/predict</code>:
+1. <code>validate_image_file_content()</code> checks magic bytes to ensure payload is authentic JPEG, PNG, or WebP.
+2. Dimensions are checked to prevent decompression bombs ($&gt; 4096 \times 4096$ rejected) or tiny uninformative images ($&lt; 32 \times 32$ rejected).
+3. The image is saved under a UUIDv4 filename.
+4. <code>preprocess_image()</code> performs two-stage <code>INTER_AREA</code> resizing to $224 \times 224 \times 3$ and rescales values to $[0.0, 1.0]$.
+5. <code>predict_image()</code> computes forward passes across Model V1 and Model V3, averaging their softmax distributions.
+6. <code>generate_gradcam()</code> computes gradients on Model V3, producing an overlaid heatmap.
+7. <code>save_prediction()</code> persists scan metadata into MongoDB, linking it to the authenticated user ID.
+8. A structured <code>PredictionResponse</code> JSON payload is returned to the client.</p>
+
+<h3 id="46-authentication-and-history-management">4.6 Authentication and History Management</h3>
+
+<p>User authentication utilizes stateless JSON Web Tokens (JWT) signed with HMAC-SHA256:
+- Passwords are salted and hashed using bcrypt before database storage.
+- The <code>/auth/login</code> endpoint issues an access token with a configurable expiration window (default 1,440 minutes / 24 hours).
+- Endpoints enforce user isolation: clinicians can only retrieve diagnostic history records linked to their own account.</p>
+
+<h3 id="47-grad-cam-module-implementation">4.7 Grad-CAM Module Implementation</h3>
+
+<p>The Grad-CAM generator (<code>src/gradcam.py</code>) utilizes TensorFlow's <code>tf.GradientTape</code>:
+1. A feature extractor model isolates layer <code>conv5_block3_3_conv</code> alongside the top prediction tensor.
+2. Gradients of the winning class score with respect to convolutional feature maps are calculated and globally pooled:
+   $$\alpha<em>k = \frac{1}{H \times W} \sum</em>{i=1}^H \sum_{j=1}^W \frac{\partial y_{\text{pred}}}{\partial A_{i,j}^k}$$
+3. Feature maps are weighted, summed, and passed through ReLU.
+4. The activation map is resized to match original image dimensions, normalized to $[0, 255]$, color-mapped with <code>cv2.COLORMAP_JET</code>, and blended with the original radiograph ($0.6 \times \text{X-ray} + 0.4 \times \text{Heatmap}$).</p>
+
+<h3 id="48-database-implementation">4.8 Database Implementation</h3>
+
+<p>MongoDB stores document collections with indexes on user email and prediction timestamps:
+- Automatic fallback: If MongoDB is unavailable during inference, predictions continue gracefully, logging a service warning without crashing the client request.
+- Periodic cleanup worker: A background task removes orphaned temporary files while permanently preserving files referenced in MongoDB records.</p>
+
+<h3 id="49-testing-and-automated-verification">4.9 Testing and Automated Verification</h3>
+
+<p>The system incorporates an automated Pytest verification suite:
+- <strong>Unit and Integration Tests</strong>: 94 tests covering authentication, upload security, path traversal prevention, prediction schemas, user isolation, and cleanup idempotency.
+- <strong>Evaluation Tests</strong>: 4 tests verifying test manifest integrity, split disjointness, artifact existence, and the <code>/model/metrics</code> endpoint.
+- All 98 tests execute and pass cleanly on the current codebase.</p>
+
+<h3 id="410-technology-stack">4.10 Technology Stack</h3>
+
+<ul>
+<li><strong>Deep Learning</strong>: TensorFlow 2.16, Keras, OpenCV</li>
+<li><strong>Backend API</strong>: FastAPI, Uvicorn, Pydantic v2</li>
+<li><strong>Persistence</strong>: MongoDB Community 7.0, PyMongo</li>
+<li><strong>Authentication</strong>: JWT, bcrypt</li>
+<li><strong>Frontend</strong>: React 19, Vite, Vanilla CSS, Lucide Icons</li>
+<li><strong>Testing</strong>: Pytest, Starlette TestClient, HTTPX</li>
+</ul>
+
+<h3 id="411-summary">4.11 Summary</h3>
+
+<p>This chapter detailed the implementation architecture across frontend, backend, neural network serving, and database modules. The next chapter evaluates empirical results, confusion matrix performance, and research limitations.</p>
+
+<div style="page-break-after: always;"></div>
+
+<h1 id="chapter-5">CHAPTER 5</h1>
+
+<h2 id="results-and-discussion">RESULTS AND DISCUSSION</h2>
+
+<h3 id="51-introduction">5.1 Introduction</h3>
+
+<p>This chapter presents the empirical evaluation of the Chest X-Ray Multi-Disease Detection System. Performance is evaluated across 2,730 clean held-out test radiographs, accompanied by confusion matrix analysis, Grad-CAM interpretability diagnostics, runtime profiling, and scientific limitation disclosures.</p>
+
+<h3 id="52-dataset-partitioning-and-duplicate-audit">5.2 Dataset Partitioning and Duplicate Audit</h3>
+
+<p>The evaluation utilized the clean 18,200-image dataset partitioned into 12,740 training, 2,730 validation, and 2,730 held-out test scans. Path-level integrity confirmed zero path overlap between partitions ($\text{Train} \cap \text{Test} = \emptyset$).</p>
+
+<p>A content-based MD5 hash audit identified <strong>9 exact byte-for-byte duplicate images</strong> shared between the training and test manifests (accounting for 0.33% of the test set). These duplicates occurred due to adjacent file indexing in source repositories (<code>COVID-2942.png</code> vs. <code>COVID-2941.png</code>, <code>tb_ds_Tuberculosis-509.png</code> vs. <code>tb_ds_Tuberculosis-510.png</code>). To maintain reproducible benchmark integrity, manifests were kept intact and these duplicates are disclosed for academic transparency.</p>
+
+<h3 id="53-model-progression-and-baseline-comparison">5.3 Model Progression and Baseline Comparison</h3>
+
+<p>Model exploration progressed through multiple architectural stages:
+- <strong>Baseline MobileNetV3</strong>: Lightweight reference achieving 72.04% test accuracy.
+- <strong>Historical Intermediate ResNet50 (Step 5 Checkpoint)</strong>: Single-model checkpoint evaluated on an earlier 3,276-sample split, reaching 93.04% accuracy.
+- <strong>Model V1 (Original ResNet50 Backbone)</strong>: Achieved stand-alone test accuracy of <strong>96.08%</strong> (2,623 / 2,730) and Macro F1 of 0.9365 on the current 2,730-image test set.
+- <strong>Model V3 (Fine-Tuned ResNet50 Backbone)</strong>: Achieved stand-alone test accuracy of <strong>97.18%</strong> (2,653 / 2,730) and Macro F1 of 0.9597 on the current 2,730-image test set.
+- <strong>Active Production Ensemble (V1 + V3)</strong>: Uniform probability averaging achieved <strong>97.40% accuracy</strong> (2,659 / 2,730), outperforming both individual models.</p>
+
+<h3 id="54-verified-dual-model-ensemble-results">5.4 Verified Dual-Model Ensemble Results</h3>
+
+<p>The verified performance metrics for the active ensemble on the 2,730-image test set are summarized below:</p>
+
+<table>
+<thead>
+<tr>
+  <th style="text-align:left;">Condition / Class</th>
+  <th style="text-align:center;">Precision</th>
+  <th style="text-align:center;">Recall (Sensitivity)</th>
+  <th style="text-align:center;">F1-Score</th>
+  <th style="text-align:center;">Support (Test Images)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td style="text-align:left;"><strong>COVID-19</strong></td>
+  <td style="text-align:center;">94.50%</td>
+  <td style="text-align:center;">94.84%</td>
+  <td style="text-align:center;">94.67%</td>
+  <td style="text-align:center;">543</td>
+</tr>
+<tr>
+  <td style="text-align:left;"><strong>Lung Opacity</strong></td>
+  <td style="text-align:center;">100.00%</td>
+  <td style="text-align:center;">100.00%</td>
+  <td style="text-align:center;">100.00%</td>
+  <td style="text-align:center;">352</td>
+</tr>
+<tr>
+  <td style="text-align:left;"><strong>Normal</strong></td>
+  <td style="text-align:center;">98.23%</td>
+  <td style="text-align:center;">97.97%</td>
+  <td style="text-align:center;">98.10%</td>
+  <td style="text-align:center;">1,529</td>
+</tr>
+<tr>
+  <td style="text-align:left;"><strong>Pneumonia</strong></td>
+  <td style="text-align:center;">96.53%</td>
+  <td style="text-align:center;">97.01%</td>
+  <td style="text-align:center;">96.77%</td>
+  <td style="text-align:center;">201</td>
+</tr>
+<tr>
+  <td style="text-align:left;"><strong>Tuberculosis</strong></td>
+  <td style="text-align:center;">93.40%</td>
+  <td style="text-align:center;">94.29%</td>
+  <td style="text-align:center;">93.84%</td>
+  <td style="text-align:center;">105</td>
+</tr>
+<tr>
+  <td style="text-align:left;"><strong>Overall / Macro Avg</strong></td>
+  <td style="text-align:center;"><strong>96.53%</strong></td>
+  <td style="text-align:center;"><strong>96.82%</strong></td>
+  <td style="text-align:center;"><strong>96.68%</strong></td>
+  <td style="text-align:center;"><strong>2,730</strong></td>
+</tr>
+<tr>
+  <td style="text-align:left;"><strong>Weighted Average</strong></td>
+  <td style="text-align:center;"><strong>97.40%</strong></td>
+  <td style="text-align:center;"><strong>97.40%</strong></td>
+  <td style="text-align:center;"><strong>97.40%</strong></td>
+  <td style="text-align:center;"><strong>2,730</strong></td>
+</tr>
+</tbody>
+</table>
+
+<ul>
+<li><strong>Overall Accuracy</strong>: <strong>97.40%</strong> (2,659 correct out of 2,730 samples)</li>
+<li><strong>Macro ROC-AUC (One-vs-Rest)</strong>: <strong>0.9986</strong></li>
+<li><strong>Weighted ROC-AUC (One-vs-Rest)</strong>: <strong>0.9982</strong></li>
+</ul>
+
+<h3 id="55-confusion-matrix-and-classification-breakdown">5.5 Confusion Matrix and Classification Breakdown</h3>
+
+<p>The $5 \times 5$ confusion matrix on the 2,730 test images illustrates class-by-class classifications:</p>
+
+<div class="codehilite">
+<pre><span></span><code>               Predicted Class
+             COVID   Opacity  Normal  Pneumonia  TB   | Total
+Actual COVID  515       0       23        0       5   |  543
+Actual Opacity  0     352        0        0       0   |  352
+Actual Normal  22       0     1498        7       2   | 1529
+Actual Pneum.   3       0        3      195       0   |  201
+Actual TB       5       0        1        0      99   |  105
+</code></pre>
+</div>
+
+<p>Key observations:
+1. <strong>Lung Opacity</strong>: Achieved flawless classification (352/352 correct, zero false positives, zero false negatives).
+2. <strong>COVID-19 vs. Normal</strong>: 23 COVID scans were classified as Normal, and 22 Normal scans were classified as COVID, representing subtle early ground-glass opacities that border on clear lung fields.
+3. <strong>Tuberculosis</strong>: 99 of 105 cases were correctly identified (94.29% sensitivity); 5 cases were misclassified as COVID due to overlapping apical consolidation patterns.
+4. <strong>Pneumonia</strong>: 195 of 201 cases were correctly identified (97.01% sensitivity).</p>
+
+<h3 id="56-focal-loss-and-experimental-checkpoints">5.6 Focal Loss and Experimental Checkpoints</h3>
+
+<p>In addition to standard categorical cross-entropy, experiments with Focal Loss ($\gamma = 2.0$) were evaluated during development to address minority class imbalance (e.g., Tuberculosis). However, Focal Loss reduced validation Macro F1 to 0.8788 and was rejected in favor of weighted cross-entropy fine-tuning.</p>
+
+<h3 id="57-explainability-analysis-and-interpretability-scope">5.7 Explainability Analysis and Interpretability Scope</h3>
+
+<p>Grad-CAM heatmaps generated from Model V3 (<code>conv5_block3_3_conv</code>) consistently highlighted parenchymal areas corresponding to clinical pathology:
+- In pneumonia scans, attention concentrated over dense lobar consolidations.
+- In COVID-19 scans, activations distributed across bilateral peripheral lung bases.
+- In tuberculosis scans, activations localized over upper-lobe apical cavitary lesions.</p>
+
+<p><strong>Interpretability Caveats</strong>: While Grad-CAM confirms that convolutional filters are responding to pulmonary regions rather than extraneous background text, heatmap localization does not verify diagnostic correctness, cannot define surgical resection margins, and visualizes only Model V3 rather than the dual ensemble.</p>
+
+<h3 id="58-runtime-performance-and-research-limitations">5.8 Runtime Performance and Research Limitations</h3>
+
+<p><strong>Runtime Profiling (Audited Local Setup)</strong>:
+Benchmarks measured on a standard Intel Core i5 CPU local development environment:
+- Model Loading &amp; Initialization: ~3.5 seconds (one-time startup cost).
+- Preprocessing: ~18 ms per image.
+- Dual-Model Ensemble Inference: <strong>~675 ms per image</strong>.
+- Grad-CAM Generation &amp; Overlay: <strong>~825 ms per image</strong>.
+- Total Request Processing Time: <strong>~1.50 seconds</strong>.</p>
+
+<p><em>(Note: Earlier single-model scripts reported 21.73 ms under batch/GPU execution; this figure does not reflect the production dual-model CPU ensemble).</em></p>
+
+<p><strong>Research Limitations</strong>:
+1. <strong>Unverified Patient Independence</strong>: Source datasets omit patient IDs, preventing confirmation that multi-view images from a single patient do not span splits.
+2. <strong>Cross-Split Duplicates</strong>: Nine identical images remain across train and test sets (0.33% of test samples).
+3. <strong>Frontal Projections Only</strong>: Lateral chest views and non-thoracic radiographs are invalid inputs.
+4. <strong>Resized Spatial Resolution</strong>: Downsampling to $224 \times 224$ pixels may obscure micro-nodules and subtle linear infiltrates.
+5. <strong>Academic Prototype Status</strong>: The system is not clinically validated and must not be used as a primary diagnostic instrument.</p>
+
+<h3 id="59-summary">5.9 Summary</h3>
+
+<p>The production dual-model ensemble demonstrates strong empirical performance, achieving 97.40% accuracy and 0.9668 Macro F1 on 2,730 held-out test scans. Explainability heatmaps provide qualitative transparency, supported by explicit disclosures of dataset constraints.</p>
+
+<div style="page-break-after: always;"></div>
+
+<h1 id="chapter-6">CHAPTER 6</h1>
+
+<h2 id="conclusion">CONCLUSION</h2>
+
+<h3 id="61-introduction">6.1 Introduction</h3>
+
+<p>This chapter concludes the report by summarizing the work performed, highlighting key engineering achievements, defining contributions, and offering concluding remarks.</p>
+
+<h3 id="62-summary-of-work">6.2 Summary of Work</h3>
+
+<p>The project addressed the challenge of computer-assisted pulmonary radiograph screening by developing an end-to-end full-stack platform:
+- Prepared a cleaned, stratified benchmark of 18,200 chest radiographs across 5 disease classes.
+- Conducted exhaustive hash-level duplicate auditing, disclosing 9 cross-split duplicates.
+- Deployed a dual-model transfer learning ensemble averaging ResNet50 Model V1 and Model V3.
+- Integrated Grad-CAM explainability targeting layer <code>conv5_block3_3_conv</code> of Model V3.
+- Engineered a production FastAPI backend with upload sanitization, bcrypt authentication, and MongoDB persistence.
+- Built a responsive React.js frontend interface with differential probability meters and structured report export.
+- Implemented automated test suites with 98 passing test cases.</p>
+
+<h3 id="63-achievements">6.3 Achievements</h3>
+
+<ul>
+<li>Achieved <strong>97.40% empirical test accuracy</strong> (2,659 / 2,730) and <strong>0.9668 Macro F1</strong> on held-out test radiographs.</li>
+<li>Achieved <strong>0.9986 Macro ROC-AUC</strong>, demonstrating strong inter-class discriminative ability.</li>
+<li>Delivered localized explainability overlays for every inference request.</li>
+<li>Engineered user-isolated history tracking with fast retrieval via MongoDB.</li>
+<li>Maintained complete scientific transparency regarding data leakage boundaries and prototype status.</li>
+</ul>
+
+<h3 id="64-key-contributions">6.4 Key Contributions</h3>
+
+<ol>
+<li><strong>Ensemble Architecture</strong>: Demonstrated that uniform probability averaging of two fine-tuned ResNet50 models yields superior accuracy (97.40%) compared to either standalone model (96.08% and 97.18%).</li>
+<li><strong>Practical Explainability Integration</strong>: Connected CNN gradient extraction directly into an interactive web interface.</li>
+<li><strong>Transparent Audit Standard</strong>: Established rigorous disclosure of dataset duplicate contamination and patient ID constraints for academic review.</li>
+<li><strong>Production Engineering Quality</strong>: Implemented enterprise-grade input validation, error handling, and automated test coverage.</li>
+</ol>
+
+<h3 id="65-conclusion">6.5 Conclusion</h3>
+
+<p>The Chest X-Ray Multi-Disease Detection &amp; Grad-CAM Explainability System demonstrates that deep learning and explainable AI can be successfully unified into a responsive, secure diagnostic assistance prototype. The platform bridges the divide between theoretical convolutional vision models and interactive software engineering, providing a strong foundation for future clinical research.</p>
+
+<h3 id="66-summary">6.6 Summary</h3>
+
+<p>The project successfully fulfilled all foundational objectives, delivering an accurate, interpretable, and reproducible medical image screening platform.</p>
+
+<div style="page-break-after: always;"></div>
+
+<h1 id="chapter-7">CHAPTER 7</h1>
+
+<h2 id="future-scope">FUTURE SCOPE</h2>
+
+<h3 id="71-introduction">7.1 Introduction</h3>
+
+<p>While the current system demonstrates high empirical accuracy and reliable deployment characteristics, several research and architectural avenues remain for future exploration.</p>
+
+<h3 id="72-patient-level-validation">7.2 Patient-Level Validation</h3>
+
+<p>Future research should procure datasets containing explicit, anonymized patient identifiers. Partitioning splits at the patient level will guarantee that anterior-posterior and lateral views from a single patient cannot co-occur across training and testing partitions, establishing true external generalization.</p>
+
+<h3 id="73-external-dataset-validation">7.3 External Dataset Validation</h3>
+
+<p>Evaluating the current ensemble against independent, multi-center hospital datasets (e.g., MIMIC-CXR, CheXpert, and localized clinical repositories) is necessary to evaluate robustness against domain shift and acquisition artifacts.</p>
+
+<h3 id="74-higher-resolution-experimentation">7.4 Higher-Resolution Experimentation</h3>
+
+<p>Evaluating models at native radiographic resolutions (e.g., $512 \times 512$ or $1024 \times 1024$) using vision transformers or high-resolution convolutional backbones could enhance sensitivity for subtle apical tuberculosis lesions and early interstitial opacities.</p>
+
+<h3 id="75-robust-preprocessing-and-normalization">7.5 Robust Preprocessing and Normalization</h3>
+
+<p>Future pipelines can incorporate bone suppression algorithms, automated lung field cropping (segmentation-guided inference), and adaptive contrast normalization to eliminate extraneous background noise.</p>
+
+<h3 id="76-pwa-and-mobile-access">7.6 PWA and Mobile Access</h3>
+
+<p>Converting the React client into a Progressive Web App (PWA) with offline caching and responsive touch controls would allow clinicians to review screening results on mobile tablets in emergency triage environments.</p>
+
+<h3 id="77-clinical-validation-and-prospective-trials">7.7 Clinical Validation and Prospective Trials</h3>
+
+<p>Transitioning from an academic engineering prototype to a clinical decision-support tool requires prospective clinical trials, multi-radiologist reader studies, regulatory assessment (FDA 510(k) / CE marking), and integration with standard Picture Archiving and Communication Systems (PACS) via DICOM protocols.</p>
+
+<h3 id="78-summary">7.8 Summary</h3>
+
+<p>Future extensions will prioritize patient-level partitioning, multi-center external validation, higher-resolution inputs, and formal prospective clinical validation.</p>
+
+<div style="page-break-after: always;"></div>
+
+<h1 id="chapter-8">CHAPTER 8</h1>
+
+<h2 id="system-snapshots">SYSTEM SNAPSHOTS</h2>
+
+<p>This chapter presents genuine user-interface snapshots captured from the live, fully integrated system running the React frontend, FastAPI backend, and MongoDB Community database.</p>
+
+<h3 id="81-clinician-authentication-interface">8.1 Clinician Authentication Interface</h3>
+
+<p>Figure 8.1 illustrates the clinician access interface, featuring modern glassmorphism visual styling, secure session routing, and input validation for clinician credentials.</p>
+
+<p><img src="assets/screenshots/01_login_page.png" alt="Figure 8.1: Clinician Authentication Interface" />
+<em>Figure 8.1: Clinician Authentication Interface featuring secure JWT-based sign-in and account registration.</em></p>
+
+<h3 id="82-clinical-workspace-dashboard">8.2 Clinical Workspace Dashboard</h3>
+
+<p>Figure 8.2 displays the primary clinician dashboard. The interface provides real-time model operational health indicators, cumulative diagnostic counters, disease category overviews, and quick navigation to the detection workflow.</p>
+
+<p><img src="assets/screenshots/02_main_dashboard.png" alt="Figure 8.2: Clinical Workspace Dashboard" />
+<em>Figure 8.2: Clinical Workspace Dashboard displaying system readiness, model health status, and active screening scope.</em></p>
+
+<h3 id="83-radiograph-upload-and-pre-processing-workspace">8.3 Radiograph Upload and Pre-processing Workspace</h3>
+
+<p>Figure 8.3 shows the interactive X-ray upload interface with drag-and-drop support, file-type filtering, client-side dimension checks, and immediate preview of the selected frontal radiograph.</p>
+
+<p><img src="assets/screenshots/03_upload_interface.png" alt="Figure 8.3: Radiograph Upload Workspace" />
+<em>Figure 8.3: Detection and Upload interface with client-side image validation and preprocessing controls.</em></p>
+
+<h3 id="84-five-class-differential-assessment-and-prediction-results">8.4 Five-Class Differential Assessment and Prediction Results</h3>
+
+<p>Figure 8.4 illustrates the comprehensive diagnostic assessment screen following dual-model ResNet50 ensemble inference. The interface renders the primary predicted condition (<code>Normal</code> at 99.98% confidence), interactive confidence meters, and full differential probability distributions across all five disease classes.</p>
+
+<p><img src="assets/screenshots/04_prediction_results.png" alt="Figure 8.4: Differential Assessment and Prediction Results" />
+<em>Figure 8.4: Primary diagnostic evaluation screen displaying five-class differential probabilities and ensemble confidence.</em></p>
+
+<h3 id="85-grad-cam-visual-explainability-overlay">8.5 Grad-CAM Visual Explainability Overlay</h3>
+
+<p>Figure 8.5 presents the side-by-side explainability section. The interface pairs the original radiograph with the Model V3 Grad-CAM heatmap (<code>conv5_block3_3_conv</code> layer) using an intuitive color scale, providing anatomical feature localization alongside the academic clinical disclaimer.</p>
+
+<p><img src="assets/screenshots/05_gradcam_explainability.png" alt="Figure 8.5: Grad-CAM Explainability Overlay" />
+<em>Figure 8.5: Grad-CAM visual explainability interface illustrating localized feature attribution alongside the original scan.</em></p>
+
+<h3 id="86-longitudinal-prediction-history">8.6 Longitudinal Prediction History</h3>
+
+<p>Figure 8.6 displays the user-isolated prediction history table. Clinicians can review archived diagnostic records, timestamps, predicted classes, confidence scores, and past Grad-CAM heatmaps stored securely within MongoDB.</p>
+
+<p><img src="assets/screenshots/06_prediction_history.png" alt="Figure 8.6: Longitudinal Prediction History Table" />
+<em>Figure 8.6: Historical diagnostic audit trail displaying archived patient scans, timestamps, and confidence metrics.</em></p>
+
+<div style="page-break-after: always;"></div>
+
+<h1 id="chapter-9">CHAPTER 9</h1>
+
+<h2 id="references">REFERENCES</h2>
+
+<p>[1] K. He, X. Zhang, S. Ren, and J. Sun, "Deep Residual Learning for Image Recognition," <em>Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)</em>, pp. 770-778, 2016.</p>
+
+<p>[2] R. R. Selvaraju, M. Cogswell, A. Das, R. Vedantam, D. Parikh, and D. Batra, "Grad-CAM: Visual Explanations from Deep Networks via Gradient-based Localization," <em>Proceedings of the IEEE International Conference on Computer Vision (ICCV)</em>, pp. 618-626, 2017.</p>
+
+<p>[3] O. Ronneberger, P. Fischer, and T. Brox, "U-Net: Convolutional Networks for Biomedical Image Segmentation," <em>Medical Image Computing and Computer-Assisted Intervention (MICCAI)</em>, Springer, pp. 234-241, 2015.</p>
+
+<p>[4] TensorFlow / Keras Documentation, "Model training, transfer learning, and gradient tape APIs," Available: https://tensorflow.org/</p>
+
+<p>[5] Keras Applications Documentation, "ResNet50 architecture and ImageNet weight specifications," Available: https://keras.io/api/applications/resnet/</p>
+
+<p>[6] OpenCV Documentation, "Image processing, geometric transformations, and colormap functionality," Available: https://opencv.org/</p>
+
+<p>[7] FastAPI Documentation, "High-performance asynchronous web framework and request validation," Available: https://fastapi.tiangolo.com/</p>
+
+<p>[8] MongoDB Documentation, "Document database, schema indexing, and PyMongo driver," Available: https://www.mongodb.com/docs/</p>
+
+<p>[9] React Documentation, "Component-based user interface library and state hooks," Available: https://react.dev/</p>
+
+<p>[10] Cleaned Project Dataset Manifests: <code>dataset/clean/train.csv</code> (12,740), <code>dataset/clean/val.csv</code> (2,730), and <code>dataset/clean/test.csv</code> (2,730), Chest X-Ray Multi-Disease Detection System, 2026.</p>
+
+</body>
+</html>

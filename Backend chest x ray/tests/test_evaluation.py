@@ -22,7 +22,7 @@ def test_test_manifest_integrity():
     assert test_csv_path.exists(), "dataset/test.csv must exist."
 
     df = pd.read_csv(test_csv_path)
-    assert len(df) == 3276, f"Expected exactly 3,276 test samples, found {len(df)}"
+    assert len(df) == 2730, f"Expected exactly 2,730 test samples, found {len(df)}"
 
     unique_classes = set(df['label'].unique())
     expected_classes = set(CLASS_NAMES)
@@ -74,7 +74,7 @@ def test_evaluation_artifacts_exist_and_valid():
 
     # Overall metrics checks
     om = data["overall_metrics"]
-    assert om["total_test_samples"] == 3276
+    assert om["total_test_samples"] == 2730
     for key in ["accuracy", "macro_precision", "macro_recall", "macro_f1", "weighted_f1"]:
         assert key in om
         val = om[key]
@@ -99,7 +99,7 @@ def test_evaluation_artifacts_exist_and_valid():
     for row in raw_cm:
         assert len(row) == 5, "Confusion matrix must have 5 columns."
         total_cm_sum += sum(row)
-    assert total_cm_sum == 3276, f"Confusion matrix total sum ({total_cm_sum}) must match test sample count (3276)."
+    assert total_cm_sum == 2730, f"Confusion matrix total sum ({total_cm_sum}) must match test sample count (2730)."
 
 
 def test_get_model_metrics_api():
@@ -110,4 +110,4 @@ def test_get_model_metrics_api():
     assert "overall_metrics" in data
     assert "class_metrics" in data
     assert "confusion_matrix_raw" in data
-    assert data["overall_metrics"]["total_test_samples"] == 3276
+    assert data["overall_metrics"]["total_test_samples"] == 2730

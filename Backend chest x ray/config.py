@@ -15,13 +15,22 @@ PREDICTIONS_COLLECTION = os.getenv("MONGODB_COLLECTION", "predictions")
 USERS_COLLECTION = os.getenv("MONGODB_USERS_COLLECTION", "users")
 
 # JWT Authentication settings
-JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "chest-xray-ai-super-secret-key-change-in-production")
+_DEFAULT_DEV_JWT_SECRET = "chest-xray-ai-super-secret-key-change-in-production"
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", _DEFAULT_DEV_JWT_SECRET)
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development").strip().lower()
+
+if ENVIRONMENT == "production" and (not JWT_SECRET_KEY or JWT_SECRET_KEY == _DEFAULT_DEV_JWT_SECRET):
+    raise RuntimeError(
+        "CRITICAL SECURITY CONFIGURATION ERROR: JWT_SECRET_KEY must be set to a strong, random "
+        "secret in production mode. Please configure JWT_SECRET_KEY in your .env or environment variables."
+    )
+
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 JWT_ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
 
-# Model settings — Ensemble: both models are used for 98%+ accuracy
-MODEL_PATH = os.path.join(BASE_DIR, "models", "final_super_model_v3.keras")       # Fine-tuned v3
-MODEL_PATH_V1 = os.path.join(BASE_DIR, "models", "final_super_model_old.keras")  # Original v1
+# Model settings — Ensemble: both models are averaged for 97.40% verified held-out test accuracy
+MODEL_PATH = os.path.join(BASE_DIR, "models", "final_super_model_v3.keras")       # Fine-tuned v3 (97.18% standalone)
+MODEL_PATH_V1 = os.path.join(BASE_DIR, "models", "final_super_model_old.keras")  # Original v1 (96.08% standalone)
 CLASS_LABELS_PATH = os.path.join(BASE_DIR, "models", "class_labels.json")
 IMG_SIZE = (224, 224)
 

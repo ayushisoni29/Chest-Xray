@@ -51,15 +51,14 @@ This project delivers an interpretable, secure, and production-ready deep learni
 
 ## 4. Machine Learning Model & Evaluation
 
-### Model Architecture
-* **Backbone**: ResNet50 pre-trained on ImageNet with customized classification head:
-  * Global Average Pooling 2D
-  * Batch Normalization
-  * Dense Layer (256 units, ReLU, L2 regularization)
-  * Dropout (0.4)
-  * Dense Softmax Output (5 units)
-* **Input Resolution**: $224 \times 224 \times 3$ RGB
-* **Explainability Layer**: `conv5_block3_3_conv` ($7 \times 7 \times 1024$ feature map)
+### Model Architecture & Ensemble Strategy
+The production inference engine employs a dual-model ensemble averaging two independently fine-tuned ResNet50 backbones:
+* **Model V3 (Fine-Tuned)**: `models/final_super_model_v3.keras` (Stand-alone test accuracy: 97.18%, Macro F1: 0.9597)
+* **Model V1 (Original Backbone)**: `models/final_super_model_old.keras` (Stand-alone test accuracy: 96.08%, Macro F1: 0.9365)
+* **Ensemble Fusion**: Uniform softmax probability averaging:
+  $$\text{preds}_{\text{ensemble}} = \frac{\text{preds}_{\text{V1}} + \text{preds}_{\text{V3}}}{2.0}$$
+* **Input Preprocessing**: Two-stage area-preserving resizing: $(H, W) \to (256, 256) \to (224, 224)$ via `cv2.INTER_AREA`, followed by $[0, 1]$ floating-point rescaling (`/ 255.0`). *Note: CLAHE is not applied during production inference to preserve training intensity distributions.*
+* **Explainability Layer**: `conv5_block3_3_conv` ($7 \times 7 \times 1024$ feature activation map).
 
 ### The 5 Canonical Disease Classes
 1. `COVID` (COVID-19 viral pneumonia manifestations)
@@ -68,44 +67,72 @@ This project delivers an interpretable, secure, and production-ready deep learni
 4. `Pneumonia` (Bacterial and other viral pneumonias)
 5. `Tuberculosis` (Active pulmonary tuberculosis lesions and cavitations)
 
-### Verified Evaluation Results (Held-Out Test Set, $N = 3,280$)
-* **Overall Test Accuracy**: **76.86%**
-* **Macro Precision**: **79.37%**
-* **Macro Recall**: **76.86%**
-* **Macro F1-Score**: **77.70%**
-* **Weighted F1-Score**: **77.70%**
+### Verified Evaluation Results (Clean Held-Out Test Set, $N = 2,730$)
+Evaluated on the persistent clean test split (`dataset/clean/test.csv`, 2,730 scans):
+
+| Metric | Model V1 (Original) | Model V3 (Fine-Tuned) | Production Ensemble (V1 + V3) |
+| :--- | :---: | :---: | :---: |
+| **Accuracy** | 96.08% (2,623 / 2,730) | 97.18% (2,653 / 2,730) | **97.40% (2,659 / 2,730)** |
+| **Macro F1-Score** | 0.9365 | 0.9597 | **0.9668** |
+| **Weighted F1-Score** | 0.9604 | 0.9719 | **0.9740** |
+| **Macro Precision** | 0.9656 | 0.9489 | **0.9653** |
+| **Macro Recall** | 0.9142 | 0.9717 | **0.9682** |
+| **Macro ROC-AUC (OvR)** | 0.9973 | 0.9985 | **0.9986** |
+| **Weighted ROC-AUC (OvR)** | 0.9967 | 0.9979 | **0.9982** |
+
+*Scientific Note: The 97.40% figure represents empirical performance on the specific 2,730-image held-out test manifest. It must not be interpreted as clinically certified accuracy or a guaranteed generalization rate on uncurated external hospital data.*
+
+### Explainability Asymmetry: Ensemble vs. Grad-CAM
+* **Prediction Output**: Softmax probabilities displayed to clinicians represent the uniform arithmetic ensemble of both models: $(p_{\text{V1}} + p_{\text{V3}}) / 2.0$.
+* **Grad-CAM Visualization**: The heatmap overlay is generated exclusively from the primary **Model V3 (Fine-Tuned)** targeting layer `conv5_block3_3_conv`.
+* **Important Interpretation**: The Grad-CAM heatmap highlights spatial regions of interest that influenced Model V3's internal activations. It does **not** visualize Model V1, does not represent a composite ensemble activation, and does not establish medical or diagnostic correctness.
 
 ---
 
-## 5. Dataset Information
+## 5. Dataset Information & Audit Findings
 
-The model was trained, validated, and evaluated on a combined dataset of **21,865 clinical chest X-rays** with deterministic, non-overlapping stratified splits:
+The system was evaluated on a cleaned and deduplicated dataset of **18,200 radiographs** partitioned into stratified splits:
 
-* **Train Set**: 15,305 images (70%)
-* **Validation Set**: 3,280 images (15%)
-* **Held-Out Test Set**: 3,280 images (15%)
-* **Total**: 21,865 images across 5 balanced classes
-* **Manifests**: Stored permanently in `dataset/train.csv`, `dataset/val.csv`, and `dataset/test.csv`.
+* **Train Set**: 12,740 images (70%)
+* **Validation Set**: 2,730 images (15%)
+* **Held-Out Test Set**: 2,730 images (15%)
+* **Split Path Integrity**: Zero filename or path overlap across splits ($\text{Train} \cap \text{Test} = \emptyset, \text{Val} \cap \text{Test} = \emptyset$).
+* **Manifests**: Stored permanently in `dataset/clean/train.csv`, `dataset/clean/val.csv`, and `dataset/clean/test.csv`.
+
+### Read-Only Content Hash Audit (9 Exact Cross-Split Duplicates Identified)
+A complete MD5 hash audit of all 18,200 images revealed that **9 images in the held-out test split are byte-for-byte identical to images in the training set**, having received different filenames due to adjacent numbering in the public source repositories:
+1. `COVID`: `Train: COVID-2942.png` $\leftrightarrow$ `Test: COVID-2941.png`
+2. `COVID`: `Train: COVID-2719.png` $\leftrightarrow$ `Test: COVID-2716.png`
+3. `COVID`: `Train: COVID-3376.png` $\leftrightarrow$ `Test: COVID-3375.png`
+4. `COVID`: `Train: COVID-3574.png` $\leftrightarrow$ `Test: COVID-3573.png`
+5. `COVID`: `Train: COVID-52.png` $\leftrightarrow$ `Test: COVID-49.png`
+6. `Pneumonia`: `Train: Viral Pneumonia-75.png` $\leftrightarrow$ `Test: Viral Pneumonia-74.png`
+7. `Pneumonia`: `Train: Viral Pneumonia-596.png` $\leftrightarrow$ `Test: Viral Pneumonia-595.png`
+8. `Tuberculosis`: `Train: tb_ds_Tuberculosis-509.png` $\leftrightarrow$ `Test: tb_ds_Tuberculosis-510.png`
+9. `Tuberculosis`: `Train: tb_ds_Tuberculosis-346.png` $\leftrightarrow$ `Test: tb_ds_Tuberculosis-348.png`
+
+*These 9 images account for 0.33% of the test set. To preserve the exact, reproducible evaluation benchmark, the split manifests were intentionally left untouched and are transparently disclosed here for academic review.*
 
 ---
 
-## 6. Medical Safety & Limitations
+## 6. Medical Safety, Scope & Limitations
 
 > [!IMPORTANT]
-> **Research & Educational Notice**:
-> This software is intended strictly for research and educational purposes. It is **not a certified medical device** and has not been cleared by regulatory bodies (FDA, CE, CDSCO). It should never be used as a definitive diagnostic tool or as the sole basis for clinical decisions. All predictions must be reviewed by certified medical professionals alongside clinical history and laboratory findings.
+> **Research & Academic Prototype Notice**:
+> This software is strictly an academic demonstration prototype. It is **not a certified medical device** and has not been cleared by regulatory bodies (FDA, CE, CDSCO). Performance metrics describe results on the current held-out dataset split and must **not be interpreted as clinical validation or proof of real-world diagnostic accuracy**. All predictions must be reviewed by certified medical professionals alongside clinical history and laboratory findings.
 
 ### Known Limitations
-1. **Frontal Projections Only**: Optimized for standard frontal (PA/AP) chest radiographs; lateral projections and non-thoracic scans are invalid.
-2. **Fixed Input Resolution**: Inputs are resized to $224 \times 224$ pixels, which may obscure sub-millimeter micro-nodules.
-3. **Single-Scan Context**: Inference is performed on isolated static images without access to patient longitudinal records or laboratory biomarkers.
+1. **Unverifiable Patient-Level Independence**: Public multi-source datasets (COVID-QU-Ex, Kaggle Chest X-Ray) do not provide unique patient identifiers. Consequently, multi-view or longitudinal patient-level leakage across splits cannot be ruled out.
+2. **Frontal Projections Only**: Optimized strictly for standard frontal (PA/AP) chest radiographs; lateral projections and non-thoracic scans are invalid.
+3. **Fixed Input Resolution**: Inputs are resized to $224 \times 224$ pixels, which may obscure subtle sub-millimeter micro-nodules or early apical tuberculosis infiltrates.
+4. **Single-Scan Context**: Inference operates on isolated static images without access to longitudinal patient history, clinical symptoms, or laboratory biomarkers.
 
 ---
 
 ## 7. Project Structure
 
 ```text
-D:\MINOR NEW 1\
+Backend chest x ray/
 ├── Dockerfile                   # Production container definition
 ├── docker-compose.yml           # Microservices container orchestrator
 ├── .dockerignore                # Image optimization manifest
