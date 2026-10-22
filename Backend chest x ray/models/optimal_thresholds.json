@@ -1,0 +1,7 @@
+{
+  "COVID": 0.45,
+  "Lung_Opacity": 0.50,
+  "Normal": 0.50,
+  "Pneumonia": 0.38,
+  "Tuberculosis": 0.35
+}

@@ -32,7 +32,8 @@ Thumbs.db
 desktop.ini
 
 # Heavy Data & Models in Backend
-Backend chest x ray/models/
+Backend chest x ray/models/experiments/
+Backend chest x ray/models/final_super_model_v4_class_weights.keras
 Backend chest x ray/dataset/
 Backend chest x ray/venv/
 Backend chest x ray/.venv/

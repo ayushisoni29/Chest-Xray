@@ -20,7 +20,8 @@ static/heatmaps/*
 Thumbs.db
 
 # Heavy Data & Models
-models/
+models/experiments/
+models/final_super_model_v4_class_weights.keras
 dataset/
 venv/
 .venv/
