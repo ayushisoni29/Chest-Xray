@@ -16,8 +16,14 @@ if [ ! -f "models/final_super_model_v3.keras" ] || [ ! -f "models/final_super_mo
     echo ""
 fi
 
+# Install Linux headless libraries for OpenCV if running in Debian/Ubuntu container
+if command -v apt-get &> /dev/null; then
+    sudo apt-get update -qq && sudo apt-get install -y -qq libgl1 libglib2.0-0 || true
+fi
+
 # Install dependencies if not already installed
 pip install -r requirements.txt
+pip install opencv-python-headless
 
 # Allow external mobile app CORS
 export ALLOWED_ORIGINS="*"
