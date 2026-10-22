@@ -42,6 +42,11 @@ jobs:
         working-directory: './Frontend chest x ray/android'
         run: chmod +x gradlew
 
+      - name: Install Android SDK Platform 36
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-36" || true
+
       - name: Build Android Debug APK
         working-directory: './Frontend chest x ray/android'
         env:
