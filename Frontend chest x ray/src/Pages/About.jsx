@@ -445,6 +445,25 @@ function About() {
 
             </div>
 
+
+            <div className="about-technology-card">
+
+              <div className="about-technology-icon">
+                <Activity size={21} />
+              </div>
+
+              <span>04 · CLINICAL GATING & TTA</span>
+
+              <h3>
+                OOD Gating & Calibrated Cutoffs
+              </h3>
+
+              <p>
+                Real-time HSV color saturation gating filters non-radiographic uploads, while Test-Time Augmentation (TTA) and calibrated decision cutoffs optimize sensitivity for rare pulmonary conditions (TB and Pneumonia).
+              </p>
+
+            </div>
+
           </div>
 
         </section>

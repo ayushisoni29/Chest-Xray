@@ -506,11 +506,11 @@ function UploadXRay() {
                 )}
 
                 <div className="upload-format-info">
-                  <span>PNG</span>
-                  <span>JPG</span>
-                  <span>JPEG</span>
-                  <span>WEBP</span>
+                  <span>PNG / JPG / WEBP</span>
                   <span>Max 10 MB</span>
+                  <span style={{ color: "#0284c7", background: "#f0f9ff", borderColor: "#bae6fd" }}>OOD Gated</span>
+                  <span style={{ color: "#7c3aed", background: "#f5f3ff", borderColor: "#ddd6fe" }}>TTA Invariance</span>
+                  <span style={{ color: "#059669", background: "#ecfdf5", borderColor: "#a7f3d0" }}>Calibrated Triaging</span>
                 </div>
               </div>
             ) : (

@@ -44,6 +44,7 @@ from config import (
     MAX_FILE_SIZE_MB,
     MAX_FILE_SIZE_BYTES,
     CLEANUP_ENABLED,
+    load_optimal_thresholds,
 )
 
 
@@ -857,13 +858,15 @@ async def download_prediction_report(
                 [
                     Paragraph("<b>Model output</b>", styles["BodySmall"]),
                     Paragraph("<b>Reported confidence</b>", styles["BodySmall"]),
+                    Paragraph("<b>Inference Pipeline</b>", styles["BodySmall"]),
                 ],
                 [
                     Paragraph(predicted_class, styles["BodySmall"]),
                     Paragraph(confidence_text, styles["BodySmall"]),
+                    Paragraph("ResNet50 Ensemble + TTA", styles["BodySmall"]),
                 ],
             ],
-            colWidths=[82 * mm, 82 * mm],
+            colWidths=[58 * mm, 58 * mm, 60 * mm],
         )
         summary_table.setStyle(TableStyle([
             ("BACKGROUND", (0, 0), (-1, 0), light_blue),
@@ -879,11 +882,11 @@ async def download_prediction_report(
         story.append(Spacer(1, 4 * mm))
 
         # ==========================================
-        # 3. Class Probability Scores
-        # Keep the heading and complete table together
+        # 3. Class Probability Scores & Cutoffs
         # ==========================================
 
         probabilities = prediction.get("probabilities", {})
+        thresholds_dict = load_optimal_thresholds()
 
         probability_rows = [
             [
@@ -892,7 +895,11 @@ async def download_prediction_report(
                     styles["BodySmall"],
                 ),
                 Paragraph(
-                    "<b>Model score</b>",
+                    "<b>Calibrated Cutoff</b>",
+                    styles["BodySmall"],
+                ),
+                Paragraph(
+                    "<b>Model Probability & Finding</b>",
                     styles["BodySmall"],
                 ),
             ]
@@ -903,17 +910,30 @@ async def download_prediction_report(
                 try:
                     score = float(value) * 100
                     score_text = f"{score:.2f}%"
+                    cutoff = thresholds_dict.get(label, 0.50) * 100
+                    cutoff_text = f"{cutoff:.1f}%"
+
+                    if float(value) >= thresholds_dict.get(label, 0.50) and label != "Normal":
+                        finding_text = f"<b>{score_text}</b> - <font color='#B91C1C'><b>[FLAGGED]</b></font>"
+                    else:
+                        finding_text = f"{score_text} (Normal Range)"
                 except (TypeError, ValueError):
                     score_text = "N/A"
+                    cutoff_text = "50.0%"
+                    finding_text = "N/A"
 
                 probability_rows.append(
                     [
                         Paragraph(
-                            safe_text(label),
+                            safe_text(label).replace("_", " "),
                             styles["BodySmall"],
                         ),
                         Paragraph(
-                            score_text,
+                            cutoff_text,
+                            styles["BodySmall"],
+                        ),
+                        Paragraph(
+                            finding_text,
                             styles["BodySmall"],
                         ),
                     ]
@@ -929,12 +949,16 @@ async def download_prediction_report(
                         "N/A",
                         styles["BodySmall"],
                     ),
+                    Paragraph(
+                        "N/A",
+                        styles["BodySmall"],
+                    ),
                 ]
             )
 
         probability_table = Table(
             probability_rows,
-            colWidths=[115 * mm, 49 * mm],
+            colWidths=[65 * mm, 45 * mm, 66 * mm],
             repeatRows=1,
         )
 
