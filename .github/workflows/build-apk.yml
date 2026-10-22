@@ -21,9 +21,6 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Set up Node.js 20
         uses: actions/setup-node@v4
         with:
@@ -47,6 +44,8 @@ jobs:
 
       - name: Build Android Debug APK
         working-directory: './Frontend chest x ray/android'
+        env:
+          ANDROID_HOME: /usr/local/lib/android/sdk
         run: ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Upload Debug APK Artifact
