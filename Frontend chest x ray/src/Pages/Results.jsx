@@ -451,7 +451,7 @@ const handleDownloadReport = async () => {
               <div>
                 <ShieldCheck size={18} />
                 <span>
-                  <strong>ResNet50</strong>
+                  <strong>ResNet50 + TTA</strong>
                   AI model used
                 </span>
               </div>
@@ -465,7 +465,7 @@ const handleDownloadReport = async () => {
               <div className="final-section-number">03</div>
               <div>
                 <span className="section-label">CONDITION PROBABILITIES</span>
-                <h2>Class-wise Results</h2>
+                <h2>Class-wise Results & Calibrated Thresholds</h2>
               </div>
             </div>
           </div>
@@ -481,6 +481,8 @@ const handleDownloadReport = async () => {
                 const pct = probability.toFixed(1);
                 const color = CLASS_COLORS[cls] || "#1769aa";
                 const isTopClass = cls === predictedClass;
+                const thresholdVal = analysisData?.calibrated_thresholds?.[cls];
+                const isFlagged = analysisData?.clinical_flags?.includes(cls);
 
                 return (
                   <article
@@ -526,6 +528,36 @@ const handleDownloadReport = async () => {
                       <span
                         style={{ width: `${probability}%`, background: color }}
                       ></span>
+                    </div>
+                    <div
+                      style={{
+                        marginTop: "10px",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        fontSize: "11px",
+                        color: "#64748b",
+                      }}
+                    >
+                      <span>
+                        Calibrated Cutoff:{" "}
+                        {thresholdVal ? `${(thresholdVal * 100).toFixed(0)}%` : "50%"}
+                      </span>
+                      {isFlagged && (
+                        <span
+                          style={{
+                            background: "#fee2e2",
+                            color: "#b91c1c",
+                            padding: "2px 7px",
+                            borderRadius: "4px",
+                            fontWeight: "600",
+                            fontSize: "10px",
+                            letterSpacing: "0.3px",
+                          }}
+                        >
+                          CLINICAL FLAG
+                        </span>
+                      )}
                     </div>
                   </article>
                 );

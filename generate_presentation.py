@@ -244,8 +244,8 @@ def create_deck():
     add_header(s4, "Proposed System Architecture & End-to-End Pipeline", "Architectural Blueprint")
 
     boxes = [
-        ("1. Input & Validation", "• Frontal CXR upload (PNG/JPG)\n• MIME type & integrity checks\n• 224x224 RGB conversion\n• Normalization pipeline", Inches(0.8)),
-        ("2. Dual Model Ensemble", "• ResNet50 V1 (Baseline, 96.08%)\n• ResNet50 V3 (Fine-tuned, 97.18%)\n• Softmax Probability Average:\n  P = 0.5 * (P_v1 + P_v3)", Inches(3.75)),
+        ("1. Input & Validation", "• Frontal CXR upload (PNG/JPG)\n• MIME type & integrity checks\n• OOD Saturation Gating\n• 224x224 RGB conversion", Inches(0.8)),
+        ("2. Dual Model Ensemble", "• ResNet50 V1 + V3\n• Test-Time Augmentation (TTA)\n• Calibrated Clinical Cutoffs\n• P = 0.5 * (P_v1 + P_v3)", Inches(3.75)),
         ("3. Explainability Engine", "• Gradient Class Activation (Grad-CAM)\n• conv5_block3_3_conv gradients\n• Global Average Pooling + ReLU\n• Jet colormap overlay generation", Inches(6.7)),
         ("4. Clinical Frontend", "• React 18 + Vite Web Dashboard\n• Probability breakdown & alerts\n• Interactive heatmap overlay slider\n• History tracking & export", Inches(9.65))
     ]
@@ -411,13 +411,15 @@ def create_deck():
     p.text = "• Softmax Probability Averaging:\n" \
              "  For each test sample x, predicted probability vector is computed as:\n" \
              "     P_ensemble(c|x) = 0.5 * P_v1(c|x) + 0.5 * P_v3(c|x)\n\n" \
-             "• Theoretical Justification:\n" \
-             "  Ensembling cancels out independent prediction errors and smooths decision boundaries, improving overall generalization.\n\n" \
+             "• Test-Time Augmentation (TTA):\n" \
+             "  Inference averages canonical and horizontal reflections for orientation invariance.\n\n" \
+             "• Calibrated Decision Cutoffs:\n" \
+             "  Tuned per class (TB: 0.35, Pneumonia: 0.38) preventing false-negative underdiagnosis.\n\n" \
              "• Ensemble Test Benchmark: 97.40% Accuracy\n" \
              "  Outperforms both individual models (96.08% and 97.18%), yielding 2,659 correct predictions out of 2,730."
-    p.font.size = Pt(11.5)
+    p.font.size = Pt(11)
     p.font.color.rgb = TEXT_DARK
-    p.space_before = Pt(10)
+    p.space_before = Pt(8)
 
     # ==================== SLIDE 8: Prediction Workflow & Tech Stack ====================
     s8 = prs.slides.add_slide(blank_layout)

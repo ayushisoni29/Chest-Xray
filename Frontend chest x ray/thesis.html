@@ -276,13 +276,60 @@ The feature maps are then combined with neuron importance weights $\alpha<em>k^c
 $$L</em>{\text{Grad-CAM}}^c = \text{ReLU}\left(\sum<em>k \alpha</em>k^c A^k\right)$$
 In this project, layer <code>conv5_block3_3_conv</code> of ResNet50 ($7 \times 7 \times 1024$ output dimension) is targeted to localize anatomical regions driving model predictions.</p>
 
-<h3 id="26-existing-medical-image-analysis-approaches">2.6 Existing Medical Image Analysis Approaches</h3>
+<h3 id="26-existing-medical-image-analysis-approaches-and-research-benchmarks">2.6 Existing Medical Image Analysis Approaches and Research Benchmarks</h3>
 
-<p>Existing automated chest screening tools generally fall into two categories: proprietary cloud-hosted enterprise platforms (which lack open code auditability) and standalone research scripts (which lack complete deployment infrastructure, web interfaces, and database persistence). Many published studies report impressive test accuracy but omit critical analyses regarding cross-split duplicate contamination, border shortcut learning, and single-model versus ensemble explainability boundaries.</p>
+<p>Automated chest radiography analysis has progressed through several major deep learning milestones:</p>
+
+<table>
+<thead>
+<tr>
+  <th>System / Study</th>
+  <th>Primary Architecture</th>
+  <th>Benchmark Dataset</th>
+  <th>Key Clinical Strength</th>
+  <th>Documented Limitations</th>
+  <th>Novelty Introduced by Proposed Platform</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>CheXNet</strong> <em>(Rajpurkar et al., Stanford 2017)</em></td>
+  <td>DenseNet121</td>
+  <td>ChestX-ray14 (112,120 frontal views)</td>
+  <td>Radiologist-level pneumonia detection; 14-label AUROC benchmark.</td>
+  <td>Black-box single prediction; lacks out-of-distribution rejection and uncertainty guidance.</td>
+  <td>Dual ResNet50 ensemble with Test-Time Augmentation (TTA), OOD saturation gating, and multi-class Grad-CAM explainability.</td>
+</tr>
+<tr>
+  <td><strong>CheXclusion</strong> <em>(Seyyed-Kalantari et al., 2020)</em></td>
+  <td>DenseNet121 / ResNet50</td>
+  <td>CheXpert &amp; MIMIC-CXR</td>
+  <td>Audits clinical bias and underdiagnosis across demographic subgroups.</td>
+  <td>Purely diagnostic analysis; does not provide an interactive deployable clinician interface.</td>
+  <td>End-to-end full-stack platform with authenticated session isolation and calibrated per-disease decision cutoffs.</td>
+</tr>
+<tr>
+  <td><strong>BioViL / Med-CLIP</strong> <em>(Microsoft Research 2022)</em></td>
+  <td>Vision-Language Transformers</td>
+  <td>MIMIC-CXR text-image pairs</td>
+  <td>Cross-modal zero-shot retrieval and text-guided radiology grounding.</td>
+  <td>Computationally heavy; high inference latency requiring high-end data-center GPU clusters.</td>
+  <td>Lightweight sub-1.5s CPU-optimized dual-model inference with real-time browser overlay and PDF clinical reporting.</td>
+</tr>
+<tr>
+  <td><strong>Proposed System</strong> <em>(SSIPMT Major Project)</em></td>
+  <td>Dual ResNet50 Ensemble (V1 + V3)</td>
+  <td>18,200 frontal CXRs (COVID-QU-Ex &amp; Kaggle)</td>
+  <td><strong>97.40% verified test accuracy</strong>; sub-1.5s CPU latency; OOD gating; calibrated thresholds.</td>
+  <td>Academic engineering prototype; single-view frontal PA/AP scope; retrospective multi-source cohort.</td>
+  <td>Integrated production pipeline with full audit disclosure (9 train-test duplicate transparency) and explainability.</td>
+</tr>
+</tbody>
+</table>
 
 <h3 id="27-research-gap">2.7 Research Gap</h3>
 
-<p>A significant gap exists in open-source academic engineering projects between raw machine learning experimentation and end-to-end deployable systems. Very few systems unify rigorous leakage auditing, dual-model ensemble inference, single-layer Grad-CAM explainability, upload security sanitization, and session-isolated database persistence within an accessible, transparent prototype. The proposed system addresses this gap.</p>
+<p>A significant gap exists in open-source academic engineering projects between raw machine learning experimentation and end-to-end deployable systems. Very few systems unify rigorous leakage auditing, dual-model ensemble inference, single-layer Grad-CAM explainability, upload security sanitization, and session-isolated database persistence within an accessible, transparent prototype. The proposed system addresses this gap by combining verified classification metrics, real-time spatial heatmap attribution, and clinical-grade error handling.</p>
 
 <h3 id="28-summary">2.8 Summary</h3>
 
@@ -337,26 +384,38 @@ In this project, layer <code>conv5_block3_3_conv</code> of ResNet50 ($7 \times 7
 
 <p><strong>Patient-Level Independence Limitation</strong>: Because public multi-source datasets do not provide unique patient identifiers, multi-view or longitudinal patient-level leakage across splits cannot be formally disproven.</p>
 
-<h3 id="35-image-preprocessing-pipeline">3.5 Image Preprocessing Pipeline</h3>
+<h3 id="35-image-preprocessing-pipeline-and-ood-domain-validation">3.5 Image Preprocessing Pipeline and OOD Domain Validation</h3>
 
-<p>Input radiographs exhibit wide variations in initial resolution, aspect ratio, and bit depth. The production preprocessing pipeline standardizes all images:
-1. <strong>Color Conversion</strong>: Image is decoded via OpenCV and converted from BGR to 3-channel RGB.
-2. <strong>Two-Stage Interpolation</strong>: To avoid aliasing and interpolation moiré patterns caused by drastic single-pass downsampling, images are resized in two stages:
+<p>Input radiographs exhibit wide variations in initial resolution, aspect ratio, bit depth, and upload integrity. The production preprocessing pipeline standardizes all images through a multi-stage validation workflow:
+1. <strong>Out-of-Distribution (OOD) Domain Validation</strong>: Frontal chest radiographs are inherently monochrome projections. To reject accidental natural photographs, selfies, or non-medical images before inference, the image is evaluated in the HSV color space. Uploads exhibiting mean saturation $S_{\text{mean}} &gt; 45$ with over $25\%$ high-saturation pixels are flagged as out-of-distribution and safely rejected.
+2. <strong>Sharpness and Blur Calibration</strong>: Laplacian variance $\sigma_{\text{Laplace}}^2$ is evaluated to prevent severely blurred scans from propagating false diagnostic confidence.
+3. <strong>Color Conversion</strong>: Validated images are decoded via OpenCV and converted from BGR to 3-channel RGB.
+4. <strong>Two-Stage Interpolation</strong>: To avoid aliasing and interpolation moiré patterns caused by drastic single-pass downsampling, images are resized in two stages:
    $$(H, W) \xrightarrow{\text{INTER_AREA}} (256, 256) \xrightarrow{\text{INTER_AREA}} (224, 224)$$
-3. <strong>Pixel Intensity Rescaling</strong>: Pixel values in $[0, 255]$ are divided by $255.0$ to produce floating-point tensors in $[0.0, 1.0]$.
-4. <strong>Inference Distinction</strong>: <em>Contrast Limited Adaptive Histogram Equalization (CLAHE) is not called during production inference</em> to preserve the learned intensity distributions established during training.</p>
+5. <strong>Pixel Intensity Rescaling</strong>: Pixel values in $[0, 255]$ are divided by $255.0$ to produce floating-point tensors in $[0.0, 1.0]$.
+6. <strong>Inference Distinction</strong>: <em>Contrast Limited Adaptive Histogram Equalization (CLAHE) is not called during production inference</em> to preserve the learned intensity distributions established during training.</p>
 
-<h3 id="36-model-development-and-dual-model-ensemble">3.6 Model Development and Dual-Model Ensemble</h3>
+<h3 id="36-model-development-dual-model-ensemble-and-tta-fusion">3.6 Model Development, Dual-Model Ensemble, and TTA Fusion</h3>
 
 <p>The production system deploys an ensemble averaging two independently fine-tuned ResNet50 backbones:
 - <strong>Model V1 (Original Backbone)</strong>: <code>final_super_model_old.keras</code> (Stand-alone test accuracy: 96.08%, Macro F1: 0.9365).
 - <strong>Model V3 (Fine-Tuned Backbone)</strong>: <code>final_super_model_v3.keras</code> (Stand-alone test accuracy: 97.18%, Macro F1: 0.9597).</p>
 
-<p><strong>Ensemble Fusion Logic</strong>: Uniform arithmetic averaging across softmax output vectors:
-$$\mathbf{p}<em>{\text{ensemble}} = \frac{\mathbf{p}</em>{\text{V1}} + \mathbf{p}_{\text{V3}}}{2.0}$$
-This ensemble reduces single-model variance and achieves superior generalization over either standalone model.</p>
+<p><strong>Test-Time Augmentation (TTA) and Ensemble Fusion Logic</strong>:
+To enhance orientation invariance across anteroposterior (AP) and posteroanterior (PA) patient projections, inference applies Test-Time Augmentation (TTA). Each model evaluates both the canonical scan $x$ and its horizontal reflection $x_{\text{flip}}$:
+$$\mathbf{p}<em>{\text{model}}(x) = \frac{\mathbf{p}(x) + \mathbf{p}(x</em>{\text{flip}})}{2.0}$$
+The dual-model predictions are subsequently fused via arithmetic averaging:
+$$\mathbf{p}<em>{\text{ensemble}} = \frac{\mathbf{p}</em>{\text{V1}}(x) + \mathbf{p}_{\text{V3}}(x)}{2.0}$$
+This ensembling cancels individual architectural idiosyncrasies and produces smooth, calibrated probability boundaries.</p>
 
-<p><em>(Historical Academic Note: Early development stages evaluated an intermediate single-model Step 5 checkpoint achieving 93.04% accuracy on an earlier 3,276-sample split, and a MobileNetV3 baseline achieving 72.04% accuracy. These were superseded by the active dual-model production ensemble).</em></p>
+<p><strong>Calibrated Per-Class Clinical Thresholds</strong>:
+To combat severe class imbalance where high-prevalence categories (Normal, 56.0%) overshadow low-prevalence pathologies (Tuberculosis, 3.8%), the system applies calibrated decision thresholds rather than a naive 0.5 argmax cutoff:
+- <code>Tuberculosis</code>: 0.35 threshold (high sensitivity for cavitary lesions)
+- <code>Pneumonia</code>: 0.38 threshold (early consolidative capture)
+- <code>COVID-19</code>: 0.45 threshold
+- <code>Lung Opacity / Normal</code>: 0.50 threshold</p>
+
+<p>When class probabilities exceed these tuned boundaries, automated <em>Clinical Flags</em> alert reviewing clinicians to subtle focal abnormalities.</p>
 
 <h3 id="37-model-evaluation-metrics">3.7 Model Evaluation Metrics</h3>
 

@@ -1,4 +1,4 @@
-﻿
+
 import React, { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -310,6 +310,8 @@ function UploadXRay() {
           result.all_class_probabilities || result.probabilities || {},
         heatmap_url: result.heatmap_url,
         image_url: result.image_url,
+        calibrated_thresholds: result.calibrated_thresholds || {},
+        clinical_flags: result.clinical_flags || [],
         status: "Completed",
         patient: {
           patientName: patientName.trim(),
