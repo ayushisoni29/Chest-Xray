@@ -3,7 +3,7 @@ import threading
 import numpy as np
 import tensorflow as tf
 
-from config import MODEL_PATH, MODEL_PATH_V1, CLASS_NAMES, load_class_names
+from config import MODEL_PATH, MODEL_PATH_V1, CLASS_NAMES, load_class_names, load_optimal_thresholds
 from src.preprocess import preprocess_image
 
 # --- Thread-safe singleton for Model V3 (fine-tuned) ---
@@ -111,8 +111,16 @@ def predict_image(image_path: str, use_tta: bool = True) -> dict:
         name = class_names[i] if i < len(class_names) else f"Class_{i}"
         prob_dict[name] = round(float(p), 4)
 
+    thresholds = load_optimal_thresholds()
+    clinical_flags = [
+        cls for cls, prob in prob_dict.items()
+        if prob >= thresholds.get(cls, 0.5) and cls != "Normal"
+    ]
+
     return {
         "predicted_class": pred_label,
         "confidence": round(float(preds[class_idx]), 4),
         "all_class_probabilities": prob_dict,
+        "calibrated_thresholds": thresholds,
+        "clinical_flags": clinical_flags,
     }

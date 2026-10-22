@@ -51,6 +51,27 @@ def load_class_names():
 
 CLASS_NAMES = load_class_names()
 
+# Calibrated decision thresholds per class for clinical sensitivity optimization
+OPTIMAL_THRESHOLDS_PATH = os.path.join(BASE_DIR, "models", "optimal_thresholds.json")
+DEFAULT_THRESHOLDS = {
+    "COVID": 0.45,
+    "Lung_Opacity": 0.50,
+    "Normal": 0.50,
+    "Pneumonia": 0.38,
+    "Tuberculosis": 0.35,
+}
+
+def load_optimal_thresholds():
+    if os.path.exists(OPTIMAL_THRESHOLDS_PATH):
+        try:
+            with open(OPTIMAL_THRESHOLDS_PATH, "r") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return DEFAULT_THRESHOLDS
+
+OPTIMAL_THRESHOLDS = load_optimal_thresholds()
+
 # Storage paths for uploaded scans and generated Grad-CAM overlays
 UPLOAD_FOLDER = os.path.join(BASE_DIR, "static", "uploads")
 HEATMAP_FOLDER = os.path.join(BASE_DIR, "static", "heatmaps")

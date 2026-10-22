@@ -129,6 +129,34 @@ def validate_image_file_content(
     }
 
 
+def validate_chest_xray_domain(image_path: str) -> None:
+    """
+    Out-of-Distribution (OOD) filter:
+    Validates whether the image possesses characteristics of a chest radiograph.
+    Chest radiographs are inherently monochrome / grayscale with very low color saturation.
+    If an image exhibits high saturation (e.g., natural color photos, selfies, animals, cars),
+    it is rejected with a clear clinical explanation.
+    """
+    img = cv2.imread(image_path)
+    if img is None:
+        return
+
+    # Convert to HSV color space to inspect color saturation
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    saturation = hsv[:, :, 1]
+
+    mean_sat = float(np.mean(saturation))
+    high_sat_ratio = float(np.sum(saturation > 50) / saturation.size)
+
+    # Authentic chest X-rays have mean saturation near 0.
+    # Natural photos typically have mean_sat > 45 and significant high-saturation pixels.
+    if mean_sat > 45.0 and high_sat_ratio > 0.25:
+        raise ValueError(
+            "Out-of-Distribution Image: The uploaded file appears to be a natural color photograph "
+            "rather than a chest radiograph. Please upload a standard chest X-ray image (PA/AP view)."
+        )
+
+
 def calculate_blur_score(image_path: str) -> float:
     """
     Calculate image sharpness using Laplacian variance.

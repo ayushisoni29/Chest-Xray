@@ -50,6 +50,7 @@ from config import (
 from src.preprocess import (
     is_valid_image_file,
     validate_image_file_content,
+    validate_chest_xray_domain,
     calculate_blur_score,
 )
 from src.predict import predict_image, get_model
@@ -1191,6 +1192,15 @@ async def predict(
                 upload_path,
                 min_dimension=32,
             )
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(exc),
+            )
+
+        # 5b. Out-of-Distribution (OOD) Domain Validation (Rejects non-X-ray photos)
+        try:
+            validate_chest_xray_domain(upload_path)
         except ValueError as exc:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
