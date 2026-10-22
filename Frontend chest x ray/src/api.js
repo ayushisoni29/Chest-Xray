@@ -63,6 +63,8 @@ export function removeStoredUser() {
 // BASE FETCH WITH AUTH
 // -------------------------------------------------------
 
+import { forceLogout } from "./session.js";
+
 async function apiFetch(path, options = {}) {
   const token = getToken();
 
@@ -82,13 +84,22 @@ async function apiFetch(path, options = {}) {
     headers,
   });
 
+  if (response.status === 401) {
+    forceLogout("Session expired or unauthorized. Please sign in again.");
+    throw new Error("Session expired. Please sign in again.");
+  }
+
   if (!response.ok) {
     let errorDetail = `HTTP ${response.status}`;
     try {
       const errData = await response.json();
       errorDetail = errData.detail || errorDetail;
     } catch {
-      // ignore JSON parse error
+      // response might be HTML or empty
+      const text = await response.text().catch(() => "");
+      if (text.includes("<!doctype") || text.includes("<html")) {
+        errorDetail = "Backend server unreachable. Please verify server status in Profile.";
+      }
     }
     throw new Error(errorDetail);
   }
@@ -180,6 +191,11 @@ export async function predictXRay(file) {
     headers,
     body: formData,
   });
+
+  if (response.status === 401) {
+    forceLogout("Session expired. Please sign in again.");
+    throw new Error("Session expired. Please sign in again.");
+  }
 
   if (!response.ok) {
     let errorDetail = `HTTP ${response.status}`;

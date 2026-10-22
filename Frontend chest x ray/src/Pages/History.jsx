@@ -1,24 +1,19 @@
-﻿import React, { useEffect, useState, useMemo } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Search,
   Filter,
-  FileImage,
-  CheckCircle2,
-  Clock3,
-  Eye,
-  ScanLine,
-  History as HistoryIcon,
+  Download,
+  Calendar,
+  Clock,
+  ChevronRight,
+  FileText,
   AlertCircle,
-  ArrowRight,
-  X,
   Loader2,
-  Activity,
+  FolderOpen,
 } from "lucide-react";
-import Navbar from "../components/Navbar";
-import { getPredictionHistory } from "../api.js";
+import { getPredictionHistory, getStaticUrl, downloadPredictionReport } from "../api";
 
-// Map class names to badge colors
 const CLASS_COLORS = {
   COVID: "#ef4444",
   Lung_Opacity: "#f97316",
@@ -27,391 +22,294 @@ const CLASS_COLORS = {
   Tuberculosis: "#a855f7",
 };
 
-function History() {
-  const [history, setHistory] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [classFilter, setClassFilter] = useState("All");
-  const [page, setPage] = useState(0);
-  const PAGE_SIZE = 20;
+export default function History() {
+  const navigate = useNavigate();
 
-  const loadHistory = async (skip = 0) => {
-    setLoading(true);
-    setError("");
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filterClass, setFilterClass] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [downloadingId, setDownloadingId] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchHistory = async () => {
+      setLoading(true);
+      try {
+        const res = await getPredictionHistory({ limit: 50, skip: 0 });
+        if (cancelled) return;
+        setItems(res.items || res.predictions || []);
+      } catch (err) {
+        if (!cancelled) setItems([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    fetchHistory();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleDownload = async (e, item) => {
+    e.stopPropagation();
+    if (downloadingId) return;
+    setDownloadingId(item.id);
     try {
-      const data = await getPredictionHistory({ limit: PAGE_SIZE, skip });
-      setHistory(data.items || []);
+      await downloadPredictionReport(item.id, {
+        name: "Patient",
+      });
     } catch (err) {
-      setError(err.message || "Failed to load history.");
+      // ignore
     } finally {
-      setLoading(false);
+      setDownloadingId(null);
     }
   };
 
-  useEffect(() => {
-    loadHistory(page * PAGE_SIZE);
-  }, [page]);
+  const categories = ["All", "COVID", "Normal", "Tuberculosis", "Pneumonia", "Lung_Opacity"];
 
-  const filteredHistory = useMemo(() => {
-    return history.filter((item) => {
-      const searchValue = searchTerm.toLowerCase().trim();
-      const matchesSearch =
-        !searchValue ||
-        item.image_filename?.toLowerCase().includes(searchValue) ||
-        item.id?.toLowerCase().includes(searchValue) ||
-        item.predicted_class?.toLowerCase().includes(searchValue);
-      const matchesClass =
-        classFilter === "All" || item.predicted_class === classFilter;
-      return matchesSearch && matchesClass;
-    });
-  }, [history, searchTerm, classFilter]);
-
-  const classes = useMemo(
-    () => [...new Set(history.map((h) => h.predicted_class).filter(Boolean))],
-    [history]
-  );
-
-  const completedCount = history.length;
-  const avgConfidence =
-    history.length > 0
-      ? Math.round(
-          (history.reduce((sum, item) => sum + (item.confidence || 0), 0) /
-            history.length) *
-            100
-        )
-      : 0;
-
-  const topClass = useMemo(() => {
-    if (!history.length) return "—";
-    const counts = {};
-    history.forEach((h) => {
-      counts[h.predicted_class] = (counts[h.predicted_class] || 0) + 1;
-    });
-    return Object.entries(counts).sort(([, a], [, b]) => b - a)[0]?.[0] || "—";
-  }, [history]);
+  const filteredItems = items.filter((item) => {
+    const matchesFilter = filterClass === "All" || item.predicted_class === filterClass;
+    const matchesSearch =
+      !searchQuery.trim() ||
+      (item.predicted_class || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.image_filename || "").toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesFilter && matchesSearch;
+  });
 
   return (
-    <div className="app-shell">
-      <Navbar />
-
-      <main className="history-page">
-        {/* PAGE HEADER */}
-        <section className="history-page-header">
-          <div className="history-heading">
-            <div className="history-heading-icon">
-              <HistoryIcon size={22} />
-            </div>
-            <div>
-              <span className="section-label">ANALYSIS RECORDS</span>
-              <h1>Analysis History</h1>
-              <p>Review previously analyzed chest X-ray records.</p>
-            </div>
-          </div>
-
-          <div className="history-header-actions">
-            <button
-              type="button"
-              className="history-new-btn"
-              onClick={() => loadHistory(page * PAGE_SIZE)}
-              disabled={loading}
-            >
-              <ScanLine size={15} />
-              Refresh
-            </button>
-            <Link to="/detection" className="history-new-btn">
-              <ScanLine size={16} />
-              New Analysis
-            </Link>
-          </div>
-        </section>
-
-        {/* STATISTICS */}
-        <section className="history-stat-grid">
-          <div className="history-stat-card">
-            <div className="history-stat-icon">
-              <FileImage size={19} />
-            </div>
-            <div>
-              <span>Total Analyses</span>
-              <strong>{history.length}</strong>
-            </div>
-          </div>
-
-          <div className="history-stat-card">
-            <div className="history-stat-icon">
-              <CheckCircle2 size={19} />
-            </div>
-            <div>
-              <span>Completed</span>
-              <strong>{completedCount}</strong>
-            </div>
-          </div>
-
-          <div className="history-stat-card">
-            <div className="history-stat-icon">
-              <Activity size={19} />
-            </div>
-            <div>
-              <span>Avg. Confidence</span>
-              <strong>{history.length > 0 ? `${avgConfidence}%` : "—"}</strong>
-            </div>
-          </div>
-
-          <div className="history-stat-card">
-            <div className="history-stat-icon">
-              <Clock3 size={19} />
-            </div>
-            <div>
-              <span>Most Common</span>
-              <strong>{topClass}</strong>
-            </div>
-          </div>
-        </section>
-
-        {/* TOOLBAR */}
-        <section className="history-toolbar">
-          <div className="history-search">
-            <Search size={17} />
-            <input
-              type="text"
-              placeholder="Search by filename, ID or condition..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            {searchTerm && (
-              <button
-                type="button"
-                className="history-search-clear"
-                onClick={() => setSearchTerm("")}
-                aria-label="Clear search"
-              >
-                <X size={15} />
-              </button>
-            )}
-          </div>
-
-          <div className="history-filter">
-            <Filter size={16} />
-            <select
-              value={classFilter}
-              onChange={(e) => setClassFilter(e.target.value)}
-            >
-              <option value="All">All Conditions</option>
-              {classes.map((cls) => (
-                <option key={cls} value={cls}>
-                  {cls.replace("_", " ")}
-                </option>
-              ))}
-            </select>
-          </div>
-        </section>
-
-        {/* RESULTS COUNT */}
-        <div className="history-result-meta">
-          <span>
-            Showing <strong>{filteredHistory.length}</strong> of{" "}
-            <strong>{history.length}</strong> records
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        padding: "16px",
+        boxSizing: "border-box",
+        gap: "12px",
+      }}
+    >
+      {/* Title */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          <h2 style={{ fontSize: "18px", fontWeight: "800", color: "#fff", margin: 0 }}>
+            Scan History
+          </h2>
+          <span style={{ fontSize: "11px", color: "#94a3b8" }}>
+            {items.length} records in database
           </span>
-          {(searchTerm || classFilter !== "All") && (
+        </div>
+      </div>
+
+      {/* Search Input */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          background: "rgba(255, 255, 255, 0.04)",
+          border: "1px solid rgba(255, 255, 255, 0.08)",
+          borderRadius: "12px",
+          padding: "8px 12px",
+          gap: "8px",
+        }}
+      >
+        <Search size={16} color="#64748b" />
+        <input
+          type="text"
+          placeholder="Search by diagnosis or filename..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          style={{
+            background: "transparent",
+            border: "none",
+            color: "#fff",
+            fontSize: "13px",
+            outline: "none",
+            width: "100%",
+          }}
+        />
+      </div>
+
+      {/* Filter Chips Horizontal Carousel */}
+      <div
+        style={{
+          display: "flex",
+          gap: "6px",
+          overflowX: "auto",
+          paddingBottom: "4px",
+          scrollbarWidth: "none",
+        }}
+      >
+        {categories.map((cat) => {
+          const isActive = filterClass === cat;
+          return (
             <button
+              key={cat}
               type="button"
-              onClick={() => {
-                setSearchTerm("");
-                setClassFilter("All");
+              onClick={() => setFilterClass(cat)}
+              style={{
+                padding: "6px 12px",
+                borderRadius: "20px",
+                border: isActive ? "1px solid #38bdf8" : "1px solid rgba(255,255,255,0.08)",
+                background: isActive ? "rgba(56,189,248,0.2)" : "rgba(255,255,255,0.03)",
+                color: isActive ? "#38bdf8" : "#94a3b8",
+                fontSize: "11px",
+                fontWeight: "600",
+                whiteSpace: "nowrap",
+                cursor: "pointer",
               }}
             >
-              Reset filters
-              <ArrowRight size={13} />
+              {cat.replace("_", " ")}
             </button>
-          )}
-        </div>
+          );
+        })}
+      </div>
 
-        {/* LOADING */}
-        {loading && (
-          <div className="history-empty">
-            <div className="history-empty-icon">
-              <Loader2 size={28} className="spin" />
-            </div>
-            <h2>Loading history...</h2>
+      {/* Card List Area */}
+      <div
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          display: "flex",
+          flexDirection: "column",
+          gap: "10px",
+          scrollbarWidth: "none",
+        }}
+      >
+        {loading ? (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "180px" }}>
+            <Loader2 size={28} className="spin" color="#38bdf8" />
+            <span style={{ fontSize: "12px", color: "#94a3b8", marginTop: "8px" }}>Loading records...</span>
           </div>
-        )}
-
-        {/* ERROR */}
-        {error && !loading && (
-          <div className="history-empty">
-            <div className="history-empty-icon">
-              <AlertCircle size={28} />
+        ) : filteredItems.length === 0 ? (
+          <div
+            style={{
+              padding: "40px 20px",
+              textAlign: "center",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <FolderOpen size={40} color="#475569" style={{ marginBottom: "12px" }} />
+            <div style={{ color: "#fff", fontWeight: "700", fontSize: "15px" }}>No Scans Found</div>
+            <div style={{ color: "#94a3b8", fontSize: "12px", marginTop: "4px" }}>
+              Try another filter or scan an X-ray to start your history.
             </div>
-            <span className="section-label">ERROR</span>
-            <h2>Failed to Load History</h2>
-            <p>{error}</p>
-            <button
-              type="button"
-              className="history-empty-btn"
-              onClick={() => loadHistory(0)}
-            >
-              Retry
-            </button>
           </div>
-        )}
+        ) : (
+          filteredItems.map((item) => {
+            const classColor = CLASS_COLORS[item.predicted_class] || "#38bdf8";
+            const dateStr = item.timestamp
+              ? new Date(item.timestamp).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })
+              : "Recent";
 
-        {/* TABLE */}
-        {!loading && !error && filteredHistory.length > 0 && (
-          <section className="history-table-card">
-            <div className="history-table-wrapper">
-              <table className="history-table">
-                <thead>
-                  <tr>
-                    <th>PREDICTION</th>
-                    <th>FILE</th>
-                    <th>DATE &amp; TIME</th>
-                    <th>CONDITION</th>
-                    <th>CONFIDENCE</th>
-                    <th>ACTION</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredHistory.map((item) => {
-                    const color =
-                      CLASS_COLORS[item.predicted_class] || "#06b6d4";
-                    const pct = ((item.confidence || 0) * 100).toFixed(1);
-                    const dateStr = new Date(item.timestamp).toLocaleDateString(
-                      "en-IN",
-                      { day: "2-digit", month: "short", year: "numeric" }
-                    );
-                    const timeStr = new Date(item.timestamp).toLocaleTimeString(
-                      "en-IN",
-                      { hour: "2-digit", minute: "2-digit" }
-                    );
-                    return (
-                      <tr key={item.id}>
-                        <td>
-                          <div className="history-id-cell">
-                            <div className="history-record-icon">
-                              <FileImage size={16} />
-                            </div>
-                            <div>
-                              <strong title={item.id}>
-                                {item.id?.slice(0, 12)}...
-                              </strong>
-                              <span>05 Conditions</span>
-                            </div>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="history-file-cell">
-                            <strong title={item.image_filename}>
-                              {item.image_filename?.length > 20
-                                ? item.image_filename.slice(0, 20) + "..."
-                                : item.image_filename || "Unknown"}
-                            </strong>
-                            <span>Image</span>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="history-date-cell">
-                            <strong>{dateStr}</strong>
-                            <span>{timeStr}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <span
-                            className="history-status completed"
-                            style={{ color, borderColor: color + "44" }}
-                          >
-                            <i style={{ background: color }}></i>
-                            {item.predicted_class?.replace("_", " ") || "—"}
-                          </span>
-                        </td>
-                        <td>
-                          <strong className="history-confidence">
-                            {pct}%
-                          </strong>
-                        </td>
-                        <td>
-                          <div className="history-actions">
-                            <Link
-                              to={`/results?id=${item.id}`}
-                              className="history-view-btn"
-                              title="View result"
-                            >
-                              <Eye size={15} />
-                              View
-                            </Link>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        )}
-
-        {/* EMPTY STATE */}
-        {!loading && !error && filteredHistory.length === 0 && (
-          <section className="history-empty">
-            <div className="history-empty-icon">
-              {history.length === 0 ? (
-                <HistoryIcon size={28} />
-              ) : (
-                <Search size={28} />
-              )}
-            </div>
-            <span className="section-label">
-              {history.length === 0
-                ? "NO ANALYSIS RECORDS"
-                : "NO MATCHING RECORDS"}
-            </span>
-            <h2>
-              {history.length === 0
-                ? "Your analysis history is empty"
-                : "No records found"}
-            </h2>
-            <p>
-              {history.length === 0
-                ? "Upload a chest X-ray to create your first analysis record."
-                : "Try changing your search term or condition filter."}
-            </p>
-            {history.length === 0 ? (
-              <Link to="/detection" className="history-empty-btn">
-                <ScanLine size={16} />
-                Start New Analysis
-              </Link>
-            ) : (
-              <button
-                type="button"
-                className="history-empty-btn"
-                onClick={() => {
-                  setSearchTerm("");
-                  setClassFilter("All");
+            return (
+              <div
+                key={item.id}
+                onClick={() => navigate(`/results?id=${item.id}`)}
+                style={{
+                  background: "rgba(255, 255, 255, 0.03)",
+                  border: "1px solid rgba(255, 255, 255, 0.08)",
+                  borderRadius: "14px",
+                  padding: "12px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  cursor: "pointer",
+                  transition: "transform 0.15s ease",
                 }}
               >
-                <X size={16} />
-                Reset Filters
-              </button>
-            )}
-          </section>
-        )}
+                {/* Left: Thumbnail & Details */}
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <div
+                    style={{
+                      width: "44px",
+                      height: "44px",
+                      borderRadius: "10px",
+                      background: "#000",
+                      overflow: "hidden",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {item.heatmap_url ? (
+                      <img
+                        src={getStaticUrl(item.heatmap_url)}
+                        alt="Heatmap"
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      />
+                    ) : (
+                      <FileText size={20} color="#64748b" />
+                    )}
+                  </div>
 
-        {/* FOOTER NOTE */}
-        <section className="history-footer-note">
-          <div className="history-footer-note-icon">
-            <AlertCircle size={18} />
-          </div>
-          <div>
-            <span className="section-label">RECORD STORAGE</span>
-            <p>
-              Analysis records are securely stored in MongoDB and linked to your
-              authenticated account. Only your own records are visible.
-            </p>
-          </div>
-        </section>
-      </main>
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <span
+                        style={{
+                          fontSize: "13px",
+                          fontWeight: "700",
+                          color: classColor,
+                        }}
+                      >
+                        {item.predicted_class?.replace("_", " ")}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: "11px",
+                          fontWeight: "600",
+                          color: "#94a3b8",
+                          background: "rgba(255,255,255,0.05)",
+                          padding: "1px 6px",
+                          borderRadius: "4px",
+                        }}
+                      >
+                        {Math.round((item.confidence || 0) * 100)}%
+                      </span>
+                    </div>
+                    <div style={{ fontSize: "11px", color: "#64748b", marginTop: "2px" }}>
+                      {dateStr} • {item.image_filename?.slice(0, 16)}...
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right: PDF Download & Arrow */}
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <button
+                    type="button"
+                    onClick={(e) => handleDownload(e, item)}
+                    title="Download PDF"
+                    style={{
+                      padding: "8px",
+                      borderRadius: "8px",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      background: "rgba(255,255,255,0.04)",
+                      color: "#38bdf8",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    {downloadingId === item.id ? (
+                      <Loader2 size={14} className="spin" />
+                    ) : (
+                      <Download size={14} />
+                    )}
+                  </button>
+                  <ChevronRight size={18} color="#64748b" />
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
     </div>
   );
 }
-
-export default History;

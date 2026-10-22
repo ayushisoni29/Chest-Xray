@@ -1,372 +1,339 @@
-﻿import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
-  ArrowRight,
-  ScanLine,
+  Sparkles,
   Activity,
-  FileSearch,
+  Scan,
   ShieldCheck,
-  Upload,
-  Clock3,
-  Loader2,
-  Brain,
+  ChevronRight,
+  TrendingUp,
+  Clock,
+  Layers,
+  ArrowRight,
+  AlertCircle,
+  CheckCircle2,
+  FileText,
 } from "lucide-react";
-import Navbar from "../components/Navbar";
-import { getStoredUser, getPredictionHistory, checkHealth } from "../api.js";
+import { getStoredUser, checkHealth, getPredictionHistory, getStaticUrl } from "../api";
 
-function Dashboard() {
-  const currentUser = getStoredUser();
-  const userName = currentUser?.name || "User";
+const CLASS_COLORS = {
+  COVID: "#ef4444",
+  Lung_Opacity: "#f97316",
+  Normal: "#22c55e",
+  Pneumonia: "#3b82f6",
+  Tuberculosis: "#a855f7",
+};
 
-  const [stats, setStats] = useState({
-    total: 0,
-    avgConfidence: 0,
-    topClass: "—",
-    modelLoaded: null,
-  });
-  const [latestAnalysis, setLatestAnalysis] = useState(null);
+export default function Dashboard() {
+  const navigate = useNavigate();
+  const user = getStoredUser() || {};
+
+  const [healthStatus, setHealthStatus] = useState("Checking...");
+  const [modelLoaded, setModelLoaded] = useState(false);
+  const [totalScans, setTotalScans] = useState(0);
+  const [lastScan, setLastScan] = useState(null);
+  const [recentScans, setRecentScans] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
+    let cancelled = false;
+
+    const loadDashboardData = async () => {
       try {
-        // Load health + history in parallel
-        const [health, histData] = await Promise.allSettled([
+        const [health, history] = await Promise.allSettled([
           checkHealth(),
-          getPredictionHistory({ limit: 20, skip: 0 }),
+          getPredictionHistory({ limit: 10, skip: 0 }),
         ]);
 
-        const modelLoaded =
-          health.status === "fulfilled" ? health.value.model_loaded : false;
+        if (cancelled) return;
 
-        const items =
-          histData.status === "fulfilled" ? histData.value.items || [] : [];
-        const total =
-          histData.status === "fulfilled" ? histData.value.total || 0 : 0;
+        if (health.status === "fulfilled" && health.value?.status === "ok") {
+          setHealthStatus("Ensemble Active");
+          setModelLoaded(true);
+        } else {
+          setHealthStatus("Connecting...");
+          setModelLoaded(false);
+        }
 
-        const avgConfidence =
-          items.length > 0
-            ? Math.round(
-                (items.reduce((s, i) => s + (i.confidence || 0), 0) /
-                  items.length) *
-                  100
-              )
-            : 0;
-
-        const counts = {};
-        items.forEach((h) => {
-          counts[h.predicted_class] = (counts[h.predicted_class] || 0) + 1;
-        });
-        const topClass =
-          Object.entries(counts).sort(([, a], [, b]) => b - a)[0]?.[0] || "—";
-
-        setStats({ total, avgConfidence, topClass, modelLoaded });
-        setLatestAnalysis(items[0] || null);
-      } catch {
-        // Graceful degradation
+        if (history.status === "fulfilled" && history.value?.items) {
+          const items = history.value.items;
+          setTotalScans(history.value.total || items.length);
+          if (items.length > 0) {
+            setLastScan(items[0]);
+            setRecentScans(items);
+          }
+        }
+      } catch (err) {
+        // graceful fallback
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
-    loadData();
+    loadDashboardData();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
-    <div className="app-shell">
-      <Navbar />
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        padding: "16px",
+        boxSizing: "border-box",
+        justifyContent: "space-between",
+        gap: "14px",
+      }}
+    >
+      {/* 1. Header Greeting */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          <span style={{ fontSize: "12px", color: "#94a3b8", fontWeight: "500" }}>
+            Welcome back,
+          </span>
+          <h2 style={{ fontSize: "20px", fontWeight: "800", color: "#fff", margin: "2px 0 0 0" }}>
+            {user.name || "Doctor"}
+          </h2>
+        </div>
 
-      <main className="new-dashboard">
+        <div
+          style={{
+            padding: "6px 12px",
+            background: modelLoaded ? "rgba(34, 197, 94, 0.12)" : "rgba(239, 68, 68, 0.12)",
+            border: modelLoaded ? "1px solid rgba(34, 197, 94, 0.3)" : "1px solid rgba(239, 68, 68, 0.3)",
+            borderRadius: "20px",
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            fontSize: "11px",
+            fontWeight: "700",
+            color: modelLoaded ? "#4ade80" : "#f87171",
+          }}
+        >
+          <span
+            style={{
+              width: "6px",
+              height: "6px",
+              borderRadius: "50%",
+              background: modelLoaded ? "#22c55e" : "#ef4444",
+              display: "inline-block",
+            }}
+          />
+          {healthStatus}
+        </div>
+      </div>
 
-        {/* ================= HERO ================= */}
-        <section className="dashboard-hero-new">
-          <div className="dashboard-hero-content">
-            <span className="section-label">AI-BASED MEDICAL IMAGING</span>
+      {/* 2. Big HERO 'NEW SCAN' CTA Button */}
+      <div
+        onClick={() => navigate("/detection")}
+        style={{
+          background: "linear-gradient(135deg, #0284c7 0%, #38bdf8 50%, #6366f1 100%)",
+          borderRadius: "20px",
+          padding: "20px",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          boxShadow: "0 10px 25px -5px rgba(56, 189, 248, 0.4)",
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        <div style={{ zIndex: 2 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#e0f2fe", fontSize: "12px", fontWeight: "700", textTransform: "uppercase" }}>
+            <Sparkles size={14} /> Immediate AI Screening
+          </div>
+          <div style={{ fontSize: "22px", fontWeight: "900", color: "#fff", marginTop: "4px" }}>
+            New Chest X-Ray Scan
+          </div>
+          <div style={{ fontSize: "12px", color: "rgba(255, 255, 255, 0.8)", marginTop: "4px" }}>
+            Dual-Model Ensemble & Grad-CAM
+          </div>
+        </div>
 
-            <h1>
-              AI-Based Multi-Disease
-              <br />
-              <span>Detection from Chest X-ray Images</span>
-            </h1>
+        <div
+          style={{
+            width: "52px",
+            height: "52px",
+            borderRadius: "16px",
+            background: "rgba(255, 255, 255, 0.2)",
+            backdropFilter: "blur(10px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#fff",
+            zIndex: 2,
+          }}
+        >
+          <Scan size={26} />
+        </div>
+      </div>
 
-            <p>
-              A deep-learning based medical imaging interface designed for
-              multi-disease screening from chest X-ray images using ResNet50.
-            </p>
+      {/* 3. Three Quick Stat Cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px" }}>
+        {/* Total Scans */}
+        <div
+          style={{
+            background: "rgba(255, 255, 255, 0.03)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+            borderRadius: "16px",
+            padding: "12px 10px",
+            textAlign: "center",
+          }}
+        >
+          <div style={{ fontSize: "10px", color: "#94a3b8", fontWeight: "600", textTransform: "uppercase" }}>
+            Total Scans
+          </div>
+          <div style={{ fontSize: "20px", fontWeight: "800", color: "#38bdf8", marginTop: "4px" }}>
+            {totalScans}
+          </div>
+        </div>
 
-            <div className="dashboard-hero-actions">
-              <Link to="/detection" className="dashboard-primary-btn">
-                <ScanLine size={18} />
-                Start New Analysis
-                <ArrowRight size={16} />
-              </Link>
+        {/* Last Diagnosis */}
+        <div
+          style={{
+            background: "rgba(255, 255, 255, 0.03)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+            borderRadius: "16px",
+            padding: "12px 10px",
+            textAlign: "center",
+          }}
+        >
+          <div style={{ fontSize: "10px", color: "#94a3b8", fontWeight: "600", textTransform: "uppercase" }}>
+            Last Result
+          </div>
+          <div
+            style={{
+              fontSize: "14px",
+              fontWeight: "800",
+              color: lastScan ? CLASS_COLORS[lastScan.predicted_class] || "#fff" : "#94a3b8",
+              marginTop: "8px",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {lastScan ? lastScan.predicted_class?.replace("_", " ") : "None"}
+          </div>
+        </div>
 
-              <Link to="/history" className="dashboard-secondary-btn">
-                View Analysis History
-              </Link>
-            </div>
+        {/* Ensemble Status */}
+        <div
+          style={{
+            background: "rgba(255, 255, 255, 0.03)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+            borderRadius: "16px",
+            padding: "12px 10px",
+            textAlign: "center",
+          }}
+        >
+          <div style={{ fontSize: "10px", color: "#94a3b8", fontWeight: "600", textTransform: "uppercase" }}>
+            Accuracy
+          </div>
+          <div style={{ fontSize: "20px", fontWeight: "800", color: "#22c55e", marginTop: "4px" }}>
+            97.4%
+          </div>
+        </div>
+      </div>
 
-            <div className="dashboard-user-line">
-              <div className="dashboard-user-dot"></div>
-              <span>
-                Signed in as <strong>{userName}</strong>
-              </span>
-              {stats.modelLoaded !== null && (
-                <span
-                  className="dashboard-model-status"
-                  style={{ color: stats.modelLoaded ? "#22c55e" : "#ef4444" }}
+      {/* 4. Recent Analyses Horizontal Carousel */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "8px",
+          }}
+        >
+          <span style={{ fontSize: "13px", fontWeight: "700", color: "#fff" }}>
+            Recent Analyses
+          </span>
+          <Link
+            to="/history"
+            style={{
+              fontSize: "11px",
+              color: "#38bdf8",
+              fontWeight: "600",
+              textDecoration: "none",
+              display: "flex",
+              alignItems: "center",
+              gap: "2px",
+            }}
+          >
+            See All <ChevronRight size={14} />
+          </Link>
+        </div>
+
+        {recentScans.length === 0 ? (
+          <div
+            style={{
+              background: "rgba(255, 255, 255, 0.02)",
+              border: "1px dashed rgba(255, 255, 255, 0.1)",
+              borderRadius: "14px",
+              padding: "18px",
+              textAlign: "center",
+              color: "#64748b",
+              fontSize: "12px",
+            }}
+          >
+            No previous scans yet. Tap "New Scan" above to analyze an X-ray.
+          </div>
+        ) : (
+          <div className="horizontal-carousel">
+            {recentScans.slice(0, 5).map((scan) => {
+              const classColor = CLASS_COLORS[scan.predicted_class] || "#38bdf8";
+              return (
+                <div
+                  key={scan.id}
+                  onClick={() => navigate(`/results?id=${scan.id}`)}
+                  className="carousel-card"
+                  style={{
+                    width: "160px",
+                    background: "rgba(255, 255, 255, 0.03)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    borderRadius: "14px",
+                    padding: "10px",
+                    cursor: "pointer",
+                  }}
                 >
-                  &nbsp;·&nbsp;
-                  {stats.modelLoaded ? "Model Ready" : "Model Offline"}
-                </span>
-              )}
-            </div>
-          </div>
-
-          <div className="dashboard-xray-panel">
-            <div className="xray-panel-top">
-              <span>CHEST / PA</span>
-              <span className="xray-status">
-                <i></i>
-                {loading ? "LOADING..." : stats.modelLoaded ? "READY" : "OFFLINE"}
-              </span>
-            </div>
-
-            <div className="xray-panel-image">
-              <div className="xray-lung left-lung"></div>
-              <div className="xray-lung right-lung"></div>
-              <div className="xray-spine"></div>
-              <div className="xray-scan-line"></div>
-              <div className="xray-corner top-left"></div>
-              <div className="xray-corner top-right"></div>
-              <div className="xray-corner bottom-left"></div>
-              <div className="xray-corner bottom-right"></div>
-              <span className="xray-label xray-label-top">CHEST X-RAY</span>
-              <span className="xray-label xray-label-bottom">AI SCREENING</span>
-            </div>
-
-            <div className="xray-panel-bottom">
-              <div>
-                <span>MODEL</span>
-                <strong>ResNet50</strong>
-              </div>
-              <div>
-                <span>CONDITIONS</span>
-                <strong>05</strong>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ================= PROJECT SCOPE ================= */}
-        <section className="dashboard-section-new">
-          <div className="dashboard-section-heading">
-            <div>
-              <span className="section-label">PROJECT SCOPE</span>
-              <h2>Five-condition screening</h2>
-            </div>
-            <p>
-              The interface is designed around five target conditions for chest
-              X-ray analysis.
-            </p>
-          </div>
-
-          <div className="dashboard-disease-grid">
-            {[
-              { n: "01", name: "COVID-19", desc: "Screening of lung abnormalities related to COVID-19." },
-              { n: "02", name: "Lung Opacity", desc: "Screening for opacity patterns visible in chest X-ray images." },
-              { n: "03", name: "Normal", desc: "Classification of chest X-rays with no significant pathology." },
-              { n: "04", name: "Pneumonia", desc: "Screening of radiographic patterns associated with pneumonia." },
-              { n: "05", name: "Tuberculosis", desc: "Screening of chest patterns associated with tuberculosis." },
-            ].map((d) => (
-              <div className="dashboard-disease-card" key={d.n}>
-                <span>{d.n}</span>
-                <div>
-                  <h3>{d.name}</h3>
-                  <p>{d.desc}</p>
-                </div>
-                <ArrowRight size={17} />
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ================= ANALYSIS OVERVIEW ================= */}
-        <section className="dashboard-section-new">
-          <div className="dashboard-section-heading">
-            <div>
-              <span className="section-label">ANALYSIS OVERVIEW</span>
-              <h2>Your workspace</h2>
-            </div>
-          </div>
-
-          <div className="dashboard-overview-grid">
-            <div className="dashboard-overview-card">
-              <div className="dashboard-overview-icon">
-                <FileSearch size={20} />
-              </div>
-              <div>
-                <span>TOTAL ANALYSES</span>
-                <strong>
-                  {loading ? <Loader2 size={16} className="spin" /> : stats.total}
-                </strong>
-                <p>Saved screening records</p>
-              </div>
-            </div>
-
-            <div className="dashboard-overview-card">
-              <div className="dashboard-overview-icon">
-                <Activity size={20} />
-              </div>
-              <div>
-                <span>AVG. CONFIDENCE</span>
-                <strong>
-                  {loading ? (
-                    <Loader2 size={16} className="spin" />
-                  ) : stats.total > 0 ? (
-                    `${stats.avgConfidence}%`
-                  ) : (
-                    "—"
-                  )}
-                </strong>
-                <p>
-                  {stats.total > 0 ? "Across all predictions" : "No analysis yet"}
-                </p>
-              </div>
-            </div>
-
-            <div className="dashboard-overview-card">
-              <div className="dashboard-overview-icon">
-                <Brain size={20} />
-              </div>
-              <div>
-                <span>MOST DETECTED</span>
-                <strong>
-                  {loading ? (
-                    <Loader2 size={16} className="spin" />
-                  ) : (
-                    stats.topClass.replace("_", " ")
-                  )}
-                </strong>
-                <p>Top predicted condition</p>
-              </div>
-            </div>
-
-            <div className="dashboard-overview-card">
-              <div className="dashboard-overview-icon">
-                <ShieldCheck size={20} />
-              </div>
-              <div>
-                <span>AI MODEL</span>
-                <strong>ResNet50</strong>
-                <p>
-                  {stats.modelLoaded === null
-                    ? "Checking..."
-                    : stats.modelLoaded
-                    ? "Model loaded & ready"
-                    : "Model unavailable"}
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ================= RECENT ANALYSIS ================= */}
-        <section className="dashboard-section-new">
-          <div className="dashboard-section-heading">
-            <div>
-              <span className="section-label">RECENT ACTIVITY</span>
-              <h2>Latest analysis</h2>
-            </div>
-            <Link to="/history" className="dashboard-view-all">
-              View history
-              <ArrowRight size={15} />
-            </Link>
-          </div>
-
-          {loading ? (
-            <div className="dashboard-no-analysis">
-              <div className="dashboard-no-analysis-icon">
-                <Loader2 size={22} className="spin" />
-              </div>
-              <div>
-                <span className="section-label">LOADING</span>
-                <h3>Fetching latest record...</h3>
-              </div>
-            </div>
-          ) : latestAnalysis ? (
-            <div className="dashboard-recent-card">
-              <div className="recent-analysis-main">
-                <div className="recent-analysis-icon">
-                  <ScanLine size={21} />
-                </div>
-                <div>
-                  <span className="section-label">COMPLETED SCREENING</span>
-                  <h3>
-                    {latestAnalysis.image_filename || "Chest X-ray Analysis"}
-                  </h3>
-                  <div className="recent-analysis-meta">
-                    <span>
-                      <Clock3 size={14} />
-                      {new Date(latestAnalysis.timestamp).toLocaleDateString(
-                        "en-IN",
-                        { day: "2-digit", month: "short", year: "numeric" }
-                      )}
-                    </span>
-                    <span>
-                      Prediction:{" "}
-                      <strong>
-                        {latestAnalysis.predicted_class?.replace("_", " ")}
-                      </strong>
-                    </span>
+                  <div
+                    style={{
+                      height: "70px",
+                      borderRadius: "8px",
+                      background: "#000",
+                      overflow: "hidden",
+                      marginBottom: "8px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    {scan.heatmap_url ? (
+                      <img
+                        src={getStaticUrl(scan.heatmap_url)}
+                        alt="Heatmap"
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      />
+                    ) : (
+                      <FileText size={20} color="#64748b" />
+                    )}
+                  </div>
+                  <div style={{ fontSize: "12px", fontWeight: "700", color: classColor }}>
+                    {scan.predicted_class?.replace("_", " ")}
+                  </div>
+                  <div style={{ fontSize: "10px", color: "#94a3b8", marginTop: "2px" }}>
+                    {Math.round((scan.confidence || 0) * 100)}% Confidence
                   </div>
                 </div>
-              </div>
-
-              <div className="recent-analysis-stats">
-                <div>
-                  <span>CONDITION</span>
-                  <strong>
-                    {latestAnalysis.predicted_class?.replace("_", " ") || "—"}
-                  </strong>
-                </div>
-                <div>
-                  <span>CONFIDENCE</span>
-                  <strong>
-                    {((latestAnalysis.confidence || 0) * 100).toFixed(1)}%
-                  </strong>
-                </div>
-                <Link
-                  to={`/results?id=${latestAnalysis.id}`}
-                  className="recent-result-btn"
-                >
-                  View Result
-                  <ArrowRight size={15} />
-                </Link>
-              </div>
-            </div>
-          ) : (
-            <div className="dashboard-no-analysis">
-              <div className="dashboard-no-analysis-icon">
-                <Upload size={22} />
-              </div>
-              <div>
-                <span className="section-label">NO ANALYSIS YET</span>
-                <h3>Your first screening starts here</h3>
-                <p>Upload a chest X-ray image to begin the analysis workflow.</p>
-              </div>
-              <Link to="/detection" className="dashboard-primary-btn">
-                Start Analysis
-                <ArrowRight size={16} />
-              </Link>
-            </div>
-          )}
-        </section>
-
-      </main>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
-
-export default Dashboard;

@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React, { useEffect } from "react";
 import {
   BrowserRouter,
   Routes,
@@ -10,40 +10,42 @@ import Dashboard from "./Pages/Dashboard";
 import UploadXRay from "./Pages/UploadXRay";
 import Results from "./Pages/Results";
 import History from "./Pages/History";
-import About from "./Pages/About";
+import Profile from "./Pages/Profile";
 import Login from "./Pages/Login";
 import Register from "./Pages/Register";
-import Profile from "./Pages/Profile";
 import NotFound from "./Pages/NotFound";
 
+import MobileLayout from "./components/MobileLayout";
+import { isTokenExpired, forceLogout, initInactivityWatcher } from "./session";
+
 import "./App.css";
+import "./mobile.css";
 
 /* ================================
-   PROTECTED ROUTE
-   Checks both JWT token AND cached user
+   PROTECTED ROUTE (Mobile Guard)
+   Checks token presence + expiry
 ================================ */
-
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem("medscan_token");
-  const user  = localStorage.getItem("medscanCurrentUser");
+  const user = localStorage.getItem("medscanCurrentUser");
 
-  if (!token || !user) {
+  if (!token || !user || isTokenExpired(token)) {
+    forceLogout("Please sign in to access MedScan AI.");
     return <Navigate to="/login" replace />;
   }
 
-  return children;
+  return <MobileLayout>{children}</MobileLayout>;
 }
 
 /* ================================
    GUEST ROUTE
-   Redirect logged-in users away from auth pages
+   Redirect logged-in users to Home
 ================================ */
-
 function GuestRoute({ children }) {
   const token = localStorage.getItem("medscan_token");
-  const user  = localStorage.getItem("medscanCurrentUser");
+  const user = localStorage.getItem("medscanCurrentUser");
 
-  if (token && user) {
+  if (token && user && !isTokenExpired(token)) {
     return <Navigate to="/" replace />;
   }
 
@@ -51,15 +53,19 @@ function GuestRoute({ children }) {
 }
 
 /* ================================
-   APP
+   MAIN APP ROUTER
 ================================ */
-
 function App() {
+  useEffect(() => {
+    // Start 15-minute idle inactivity auto-logout watcher
+    const cleanup = initInactivityWatcher();
+    return cleanup;
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>
-
-        {/* AUTH ROUTES — redirect away if already logged in */}
+        {/* AUTH ROUTES */}
         <Route
           path="/login"
           element={
@@ -68,7 +74,6 @@ function App() {
             </GuestRoute>
           }
         />
-
         <Route
           path="/register"
           element={
@@ -78,7 +83,7 @@ function App() {
           }
         />
 
-        {/* PROTECTED ROUTES */}
+        {/* PROTECTED MOBILE ROUTES */}
         <Route
           path="/"
           element={
@@ -87,7 +92,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/detection"
           element={
@@ -96,7 +100,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/results"
           element={
@@ -105,7 +108,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/history"
           element={
@@ -114,16 +116,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
-        <Route
-          path="/about"
-          element={
-            <ProtectedRoute>
-              <About />
-            </ProtectedRoute>
-          }
-        />
-
         <Route
           path="/profile"
           element={
@@ -133,10 +125,8 @@ function App() {
           }
         />
 
-        {/* 404 */}
-        <Route path="/404" element={<NotFound />} />
-        <Route path="*"    element={<NotFound />} />
-
+        {/* 404 CATCH-ALL */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   );

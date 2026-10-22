@@ -1,295 +1,114 @@
-
-import React, { useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import {
+  Camera,
   Upload,
-  FileImage,
-  X,
-  ScanLine,
+  User,
+  ArrowRight,
   ArrowLeft,
   CheckCircle2,
-  ShieldCheck,
   AlertCircle,
-  RotateCcw,
   Loader2,
+  Sparkles,
+  FileCheck,
+  RotateCcw,
+  ShieldAlert,
 } from "lucide-react";
-import Navbar from "../components/Navbar";
-import { predictXRay, getStoredUser } from "../api.js";
+import { motion, AnimatePresence } from "framer-motion";
+import { predictXRay, getStoredUser } from "../api";
 
-function UploadXRay() {
+export default function UploadXRay() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
-  const fileCheckIdRef = useRef(0);
   const user = getStoredUser() || {};
 
-  const [patientName, setPatientName] = useState(user.name || "");
-  const [patientAge, setPatientAge] = useState("");
-  const [patientGender, setPatientGender] = useState("");
+  // Step state (1: Choose Image, 2: Patient Info, 3: AI Analyzing)
+  const [step, setStep] = useState(1);
+
+  // Form states
   const [selectedFile, setSelectedFile] = useState(null);
   const [preview, setPreview] = useState("");
-  const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState("");
-  const [isCheckingImage, setIsCheckingImage] = useState(false);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  const validateFile = (file) => {
-    if (!file) {
-      setError("Please select an image first.");
-      return false;
-    }
+  const [patientName, setPatientName] = useState("");
+  const [patientAge, setPatientAge] = useState("");
+  const [patientGender, setPatientGender] = useState("Male");
+  const [patientEmail, setPatientEmail] = useState("");
 
-    const allowedTypes = ["image/png", "image/jpeg", "image/webp"];
+  // Analysis progress animation
+  const [analysisProgress, setAnalysisProgress] = useState(10);
+  const [analysisStatus, setAnalysisStatus] = useState("Initializing neural pipeline...");
 
-    if (!allowedTypes.includes(file.type)) {
-      setError("Please select a PNG, JPG, JPEG or WEBP image.");
-      return false;
-    }
+  // Validate and load selected file
+  const handleFileSelection = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    if (file.size > 10 * 1024 * 1024) {
-      setError("File size must be less than 10 MB.");
-      return false;
-    }
-
-    return true;
-  };
-
-  // Estimate image sharpness using Laplacian variance.
-  const checkImageBlur = (file) =>
-    new Promise((resolve, reject) => {
-      const image = new Image();
-      const objectUrl = URL.createObjectURL(file);
-      let revoked = false;
-
-      const revokeUrl = () => {
-        if (!revoked) {
-          URL.revokeObjectURL(objectUrl);
-          revoked = true;
-        }
-      };
-
-      image.onload = () => {
-        try {
-          const canvas = document.createElement("canvas");
-          const context = canvas.getContext("2d");
-
-          if (!context) {
-            throw new Error("Unable to check image clarity.");
-          }
-
-          const maxSize = 512;
-          const scale = Math.min(
-            1,
-            maxSize / Math.max(image.width, image.height)
-          );
-
-          canvas.width = Math.max(1, Math.round(image.width * scale));
-          canvas.height = Math.max(1, Math.round(image.height * scale));
-
-          context.drawImage(image, 0, 0, canvas.width, canvas.height);
-
-          const { data } = context.getImageData(
-            0,
-            0,
-            canvas.width,
-            canvas.height
-          );
-
-          const width = canvas.width;
-          const height = canvas.height;
-          const gray = new Float32Array(width * height);
-
-          for (let i = 0; i < width * height; i++) {
-            const pixel = i * 4;
-            gray[i] =
-              0.299 * data[pixel] +
-              0.587 * data[pixel + 1] +
-              0.114 * data[pixel + 2];
-          }
-
-          let sum = 0;
-          let sumSquared = 0;
-          let count = 0;
-
-          for (let y = 1; y < height - 1; y++) {
-            for (let x = 1; x < width - 1; x++) {
-              const index = y * width + x;
-              const laplacian =
-                gray[index - width] +
-                gray[index + width] +
-                gray[index - 1] +
-                gray[index + 1] -
-                4 * gray[index];
-
-              sum += laplacian;
-              sumSquared += laplacian * laplacian;
-              count++;
-            }
-          }
-
-          const mean = count ? sum / count : 0;
-          const variance = count
-            ? Math.max(0, sumSquared / count - mean * mean)
-            : 0;
-
-          resolve(variance);
-        } catch (err) {
-          reject(err);
-        } finally {
-          revokeUrl();
-        }
-      };
-
-      image.onerror = () => {
-        revokeUrl();
-        reject(new Error("Unable to read this image."));
-      };
-
-      image.src = objectUrl;
-    });
-
-  const handleFile = async (file) => {
-    if (!file || isAnalyzing) return;
-
-    const checkId = ++fileCheckIdRef.current;
-
-    setSelectedFile(null);
-    setPreview("");
     setError("");
 
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+    // Validation: Image format
+    const validTypes = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
+    if (!validTypes.includes(file.type)) {
+      setError("Please select a standard X-ray image (PNG, JPG, or WEBP).");
+      return;
     }
 
-    if (!validateFile(file)) return;
-
-    setIsCheckingImage(true);
-    setError("Checking image clarity...");
-
-    try {
-      const blurScore = await checkImageBlur(file);
-
-      if (checkId !== fileCheckIdRef.current) return;
-      // Initial threshold: calibrate using real X-ray images.
-      console.log("X-ray blur score:", blurScore);
-      const BLUR_THRESHOLD = 20;
-
-      if (blurScore < BLUR_THRESHOLD) {
-        setError(
-          "This image appears blurred or out of focus. Please select a clearer chest X-ray."
-        );
-        return;
-      }
-
-      const reader = new FileReader();
-
-      reader.onload = (event) => {
-        if (checkId !== fileCheckIdRef.current) return;
-
-        setSelectedFile(file);
-        setPreview(event.target.result);
-        setError("");
-      };
-
-      reader.onerror = () => {
-        if (checkId !== fileCheckIdRef.current) return;
-
-        setSelectedFile(null);
-        setPreview("");
-        setError("Unable to read this image. Please try another file.");
-      };
-
-      reader.readAsDataURL(file);
-    } catch (err) {
-      if (checkId !== fileCheckIdRef.current) return;
-
-      setSelectedFile(null);
-      setPreview("");
-      setError(
-        err.message || "Unable to check image clarity. Please try another image."
-      );
-    } finally {
-      if (checkId === fileCheckIdRef.current) {
-        setIsCheckingImage(false);
-      }
-
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
+    // Validation: Max 15MB
+    if (file.size > 15 * 1024 * 1024) {
+      setError("Image file is too large. Maximum size is 15 MB.");
+      return;
     }
+
+    setSelectedFile(file);
+    const reader = new FileReader();
+    reader.onload = () => {
+      setPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
   };
 
-  const handleInputChange = (event) => {
-    const file = event.target.files?.[0];
-    if (file) void handleFile(file);
-    event.target.value = "";
-  };
-
-  const handleDrop = (event) => {
-    event.preventDefault();
-    setIsDragging(false);
-
-    const file = event.dataTransfer.files?.[0];
-    if (file) void handleFile(file);
-  };
-
-  const handleDragOver = (event) => {
-    event.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = () => setIsDragging(false);
-
-  const removeFile = () => {
-    if (isAnalyzing) return;
-
-    fileCheckIdRef.current += 1;
-    setIsCheckingImage(false);
-    setSelectedFile(null);
-    setPreview("");
-    setError("");
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
-  const handleAnalyze = async () => {
-    if (isCheckingImage || isAnalyzing) return;
-
+  const handleStartAnalysis = async () => {
+    // Validate Patient Info
     if (!patientName.trim()) {
       setError("Please enter the patient's name.");
       return;
     }
-
-    const age = Number(patientAge);
-
-    if (
-      !patientAge.trim() ||
-      !Number.isInteger(age) ||
-      age < 1 ||
-      age > 120
-    ) {
-      setError("Please enter a valid age between 1 and 120.");
+    const age = parseInt(patientAge, 10);
+    if (!patientAge || isNaN(age) || age < 1 || age > 120) {
+      setError("Please enter a valid patient age (1 - 120).");
       return;
     }
-
     if (!patientGender) {
-      setError("Please select the patient's gender.");
-      return;
-    }
-
-    if (!selectedFile) {
-      setError("Please upload a clear chest X-ray image first.");
+      setError("Please select patient gender.");
       return;
     }
 
     setError("");
-    setIsAnalyzing(true);
+    setStep(3); // Go to Analyzing Screen
+
+    // Simulated medical analysis stage steps
+    const progressTimer1 = setTimeout(() => {
+      setAnalysisProgress(35);
+      setAnalysisStatus("Validating chest anatomy & contrast clarity...");
+    }, 400);
+
+    const progressTimer2 = setTimeout(() => {
+      setAnalysisProgress(65);
+      setAnalysisStatus("Running dual-model ensemble (Super-Model v1 + v3)...");
+    }, 1100);
+
+    const progressTimer3 = setTimeout(() => {
+      setAnalysisProgress(88);
+      setAnalysisStatus("Generating Grad-CAM visual attention heatmap...");
+    }, 2000);
 
     try {
       const result = await predictXRay(selectedFile);
 
-      const analysis = {
+      setAnalysisProgress(100);
+      setAnalysisStatus("Diagnostic report finalized!");
+
+      const analysisPayload = {
         id: result.id || result.prediction_id || result.predictionId || null,
         fileName: selectedFile.name,
         fileType: selectedFile.type || "Image",
@@ -315,398 +134,500 @@ function UploadXRay() {
         status: "Completed",
         patient: {
           patientName: patientName.trim(),
-          patientEmail: user.email || "",
+          patientEmail: patientEmail.trim() || user.email || "",
           patientAge: age,
           patientGender,
         },
       };
 
-      sessionStorage.setItem("currentXRayAnalysis", JSON.stringify(analysis));
-      navigate("/results");
-    } catch (err) {
-      setError(
-        err.message ||
-          "Analysis failed. Please check that the backend is running."
+      // Store contract for Results page
+      sessionStorage.setItem(
+        "currentXRayAnalysis",
+        JSON.stringify(analysisPayload)
       );
-    } finally {
-      setIsAnalyzing(false);
+
+      setTimeout(() => {
+        navigate("/results");
+      }, 500);
+    } catch (err) {
+      clearTimeout(progressTimer1);
+      clearTimeout(progressTimer2);
+      clearTimeout(progressTimer3);
+      setStep(2);
+      setError(err.message || "Prediction failed. Please check server connection.");
     }
   };
 
-  const fieldStyle = {
-    width: "100%",
-    boxSizing: "border-box",
-    padding: "11px 12px",
-    border: "1px solid #d5e0ec",
-    borderRadius: "8px",
-    background: "#fff",
-    color: "#24364b",
-    fontSize: "14px",
-    outline: "none",
-  };
-
   return (
-    <div className="app-shell">
-      <Navbar />
-
-      <main className="upload-page">
-        <section className="upload-page-header">
-          <div>
-            <span className="section-label">CHEST X-RAY ANALYSIS</span>
-            <h1>Upload Chest X-ray</h1>
-            <p>
-              Enter patient details and upload a chest X-ray to begin the
-              screening workflow.
-            </p>
-          </div>
-
-          <Link to="/" className="upload-back-link">
-            <ArrowLeft size={15} />
-            Back to Overview
-          </Link>
-        </section>
-
-        {/* Patient information */}
-        <section
-          className="upload-card"
-          style={{ padding: "24px", marginBottom: "24px" }}
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        padding: "16px",
+        boxSizing: "border-box",
+        justifyContent: "space-between",
+      }}
+    >
+      {/* Top Stepper Indicator */}
+      <div>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: "12px",
+          }}
         >
-          <div className="upload-card-header" style={{ marginBottom: "20px" }}>
-            <div className="upload-step-number">00</div>
-            <div>
-              <span className="section-label">PATIENT INFORMATION</span>
-              <h2>Patient Details</h2>
-            </div>
-          </div>
+          <span style={{ fontSize: "16px", fontWeight: "800", color: "#fff" }}>
+            {step === 1 && "Step 1: Choose Scan"}
+            {step === 2 && "Step 2: Patient Info"}
+            {step === 3 && "Step 3: AI Inference"}
+          </span>
+          <span style={{ fontSize: "12px", color: "#38bdf8", fontWeight: "700" }}>
+            {step} of 3
+          </span>
+        </div>
 
+        {/* Stepper progress bars */}
+        <div style={{ display: "flex", gap: "6px", marginBottom: "16px" }}>
+          {[1, 2, 3].map((s) => (
+            <div
+              key={s}
+              style={{
+                flex: 1,
+                height: "4px",
+                borderRadius: "2px",
+                background: s <= step ? "#38bdf8" : "rgba(255, 255, 255, 0.1)",
+                transition: "background 0.3s ease",
+              }}
+            />
+          ))}
+        </div>
+
+        {error && (
           <div
             style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-              gap: "18px",
+              padding: "10px 12px",
+              background: "rgba(239, 68, 68, 0.12)",
+              border: "1px solid rgba(239, 68, 68, 0.3)",
+              borderRadius: "10px",
+              color: "#f87171",
+              fontSize: "12px",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              marginBottom: "14px",
             }}
           >
-            <label style={{ display: "block", fontSize: "13px", fontWeight: 600 }}>
-              Patient Name *
-              <input
-                type="text"
-                value={patientName}
-                onChange={(e) => setPatientName(e.target.value)}
-                placeholder="Enter patient name"
-                maxLength={100}
-                autoComplete="name"
-                style={{ ...fieldStyle, marginTop: "8px" }}
-                disabled={isAnalyzing}
-              />
-            </label>
-
-            <label style={{ display: "block", fontSize: "13px", fontWeight: 600 }}>
-              Patient Age *
-              <input
-                type="number"
-                value={patientAge}
-                onChange={(e) => setPatientAge(e.target.value)}
-                placeholder="Age in years"
-                min="1"
-                max="120"
-                step="1"
-                style={{ ...fieldStyle, marginTop: "8px" }}
-                disabled={isAnalyzing}
-              />
-            </label>
-
-            <label style={{ display: "block", fontSize: "13px", fontWeight: 600 }}>
-              Gender *
-              <select
-                value={patientGender}
-                onChange={(e) => setPatientGender(e.target.value)}
-                style={{ ...fieldStyle, marginTop: "8px" }}
-                disabled={isAnalyzing}
-              >
-                <option value="">Select gender</option>
-                <option value="Female">Female</option>
-                <option value="Male">Male</option>
-                <option value="Other">Other</option>
-                <option value="Prefer not to say">Prefer not to say</option>
-              </select>
-            </label>
+            <AlertCircle size={16} />
+            <span>{error}</span>
           </div>
+        )}
+      </div>
 
-          <p style={{ margin: "16px 0 0", fontSize: "12px", color: "#64748b" }}>
-            Signed-in account email: {user.email || "Not available"}
-          </p>
-        </section>
+      {/* Main Step Content Area (Strict Viewport Bound) */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <AnimatePresence mode="wait">
+          {/* STEP 1: IMAGE SELECTION & PREVIEW */}
+          {step === 1 && (
+            <motion.div
+              key="step1"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileSelection}
+                style={{ display: "none" }}
+              />
 
-        {/* Image upload */}
-        <section className="upload-main-grid">
-          <div className="upload-card">
-            <div className="upload-card-header">
-              <div className="upload-step-number">01</div>
-              <div>
-                <span className="section-label">SOURCE IMAGE</span>
-                <h2>Select X-ray Image</h2>
-              </div>
-            </div>
-
-            {!selectedFile ? (
-              <div
-                className={`upload-dropzone ${isDragging ? "dragging" : ""}`}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                onClick={() => {
-                  if (!isCheckingImage && !isAnalyzing) {
-                    fileInputRef.current?.click();
-                  }
-                }}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(event) => {
-                  if (
-                    (event.key === "Enter" || event.key === " ") &&
-                    !isCheckingImage &&
-                    !isAnalyzing
-                  ) {
-                    event.preventDefault();
-                    fileInputRef.current?.click();
-                  }
-                }}
-                aria-disabled={isCheckingImage || isAnalyzing}
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  onChange={handleInputChange}
-                  hidden
-                  disabled={isCheckingImage || isAnalyzing}
-                />
-
-                <div className="upload-drop-icon">
-                  {isCheckingImage ? (
-                    <Loader2 size={28} className="spin" />
-                  ) : (
-                    <Upload size={28} />
-                  )}
-                </div>
-
-                <h3>
-                  {isCheckingImage
-                    ? "Checking image clarity..."
-                    : "Drop your X-ray image here"}
-                </h3>
-                <p>
-                  {isCheckingImage
-                    ? "Please wait while we check the image."
-                    : "or click to browse files from your computer"}
-                </p>
-
-                {!isCheckingImage && (
-                  <span className="upload-browse-label">Browse X-ray</span>
-                )}
-
-                <div className="upload-format-info">
-                  <span>PNG / JPG / WEBP</span>
-                  <span>Max 10 MB</span>
-                  <span style={{ color: "#0284c7", background: "#f0f9ff", borderColor: "#bae6fd" }}>OOD Gated</span>
-                  <span style={{ color: "#7c3aed", background: "#f5f3ff", borderColor: "#ddd6fe" }}>TTA Invariance</span>
-                  <span style={{ color: "#059669", background: "#ecfdf5", borderColor: "#a7f3d0" }}>Calibrated Triaging</span>
-                </div>
-              </div>
-            ) : (
-              <div className="upload-preview-area">
-                <div className="upload-preview-header">
-                  <div>
-                    <span className="section-label">IMAGE PREVIEW</span>
-                    <h3>
-                      {isAnalyzing
-                        ? "Analyzing with AI model..."
-                        : "Ready for analysis"}
-                    </h3>
+              {!preview ? (
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{
+                    border: "2px dashed rgba(56, 189, 248, 0.35)",
+                    background: "rgba(56, 189, 248, 0.03)",
+                    borderRadius: "20px",
+                    padding: "36px 20px",
+                    textAlign: "center",
+                    cursor: "pointer",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: "12px",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "64px",
+                      height: "64px",
+                      borderRadius: "50%",
+                      background: "rgba(56, 189, 248, 0.1)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "#38bdf8",
+                    }}
+                  >
+                    <Camera size={32} />
                   </div>
-
+                  <div>
+                    <div style={{ fontSize: "16px", fontWeight: "700", color: "#fff", marginBottom: "4px" }}>
+                      Take Photo or Select X-Ray
+                    </div>
+                    <div style={{ fontSize: "12px", color: "#94a3b8" }}>
+                      Supports JPEG, PNG, WEBP (Max 15MB)
+                    </div>
+                  </div>
                   <button
                     type="button"
-                    className="upload-remove-btn"
-                    onClick={removeFile}
-                    disabled={isAnalyzing}
+                    style={{
+                      marginTop: "6px",
+                      padding: "10px 20px",
+                      background: "rgba(255, 255, 255, 0.08)",
+                      border: "1px solid rgba(255, 255, 255, 0.15)",
+                      color: "#fff",
+                      borderRadius: "10px",
+                      fontSize: "13px",
+                      fontWeight: "600",
+                    }}
                   >
-                    <X size={16} />
-                    Remove
+                    Browse Files
                   </button>
                 </div>
-
-                <div className="upload-preview-box">
-                  <img src={preview} alt="Selected chest X-ray" />
-
-                  <div className="upload-preview-overlay">
-                    <span>
-                      <ScanLine size={13} />
-                      CHEST X-RAY
-                    </span>
-                    <span>ORIGINAL INPUT</span>
-                  </div>
-                </div>
-
-                <div className="upload-file-details">
-                  <div className="upload-file-icon">
-                    <FileImage size={19} />
-                  </div>
-
-                  <div className="upload-file-text">
-                    <strong>{selectedFile.name}</strong>
-                    <span>
-                      {selectedFile.type || "Image"} &middot;{" "}
-                      {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
-                    </span>
-                  </div>
-
-                  <CheckCircle2 className="upload-file-check" size={20} />
-                </div>
-              </div>
-            )}
-
-            {error && (
-              <div
-                className="upload-error"
-                role="status"
-                aria-live="polite"
-              >
-                {error === "Checking image clarity..." ? (
-                  <Loader2 size={16} className="spin" />
-                ) : (
-                  <AlertCircle size={16} />
-                )}
-                <span>{error}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Workflow information */}
-          <aside className="upload-info-panel">
-            <div className="upload-info-heading">
-              <div className="upload-info-icon">
-                <ShieldCheck size={20} />
-              </div>
-              <div>
-                <span className="section-label">ANALYSIS WORKFLOW</span>
-              </div>
-            </div>
-
-            <div className="upload-workflow">
-              <div className="upload-workflow-item">
-                <span>01</span>
-                <div>
-                  <strong>Upload image</strong>
-                  <p>Select a clear chest X-ray image in a supported format.</p>
-                </div>
-              </div>
-
-              <div className="upload-workflow-line" />
-
-              <div className="upload-workflow-item">
-                <span>02</span>
-                <div>
-                  <strong>AI inference</strong>
-                  <p>
-                    The model classifies the image and may generate a Grad-CAM
-                    heatmap if supported by the backend.
-                  </p>
-                </div>
-              </div>
-
-              <div className="upload-workflow-line" />
-
-              <div className="upload-workflow-item">
-                <span>03</span>
-                <div>
-                  <strong>Review results</strong>
-                  <p>
-                    View condition-wise probabilities and the available
-                    explainability map.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="upload-condition-box">
-              <span className="section-label">DETECTABLE CONDITIONS</span>
-
-              <div className="upload-condition-list">
-                <span><i />COVID-19</span>
-                <span><i />Lung Opacity</span>
-                <span><i />Normal</span>
-                <span><i />Pneumonia</span>
-                <span><i />Tuberculosis</span>
-              </div>
-            </div>
-          </aside>
-        </section>
-
-        {/* Bottom action bar */}
-        <section className="upload-action-bar">
-          <div className="upload-action-status">
-            <div className="upload-status-dot" />
-
-            <div>
-              <strong>
-                {isAnalyzing
-                  ? "Running AI inference..."
-                  : isCheckingImage
-                  ? "Checking image clarity..."
-                  : selectedFile
-                  ? "Image ready for analysis"
-                  : "Waiting for image"}
-              </strong>
-
-              <span>
-                {isAnalyzing
-                  ? "The model is processing your X-ray..."
-                  : isCheckingImage
-                  ? "Please wait for the clarity check to finish."
-                  : selectedFile
-                  ? "Review the preview then click Analyze X-ray."
-                  : "Upload a chest X-ray to continue."}
-              </span>
-            </div>
-          </div>
-
-          <div className="upload-action-buttons">
-            <button
-              type="button"
-              className="upload-reset-btn"
-              onClick={removeFile}
-              disabled={(!selectedFile && !isCheckingImage) || isAnalyzing}
-            >
-              <RotateCcw size={15} />
-              Reset
-            </button>
-
-            <button
-              type="button"
-              className={`upload-analyze-btn ${
-                !selectedFile || isCheckingImage || isAnalyzing ? "disabled" : ""
-              }`}
-              onClick={handleAnalyze}
-              disabled={!selectedFile || isCheckingImage || isAnalyzing}
-            >
-              {isAnalyzing ? (
-                <>
-                  <Loader2 size={16} className="spin" />
-                  Analyzing X-ray...
-                </>
               ) : (
-                <>
-                  <ScanLine size={16} />
-                  Analyze X-ray
-                </>
+                <div
+                  style={{
+                    background: "rgba(255, 255, 255, 0.03)",
+                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                    borderRadius: "20px",
+                    padding: "16px",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: "12px",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "100%",
+                      height: "220px",
+                      borderRadius: "14px",
+                      overflow: "hidden",
+                      background: "#000",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      border: "1px solid rgba(255, 255, 255, 0.08)",
+                    }}
+                  >
+                    <img
+                      src={preview}
+                      alt="Selected X-ray"
+                      style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
+                    />
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      width: "100%",
+                      alignItems: "center",
+                      fontSize: "12px",
+                      color: "#94a3b8",
+                    }}
+                  >
+                    <span style={{ fontWeight: "600", color: "#e2e8f0" }}>
+                      {selectedFile?.name?.slice(0, 24)}...
+                    </span>
+                    <span>{(selectedFile?.size / 1024 / 1024).toFixed(2)} MB</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedFile(null);
+                      setPreview("");
+                    }}
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      color: "#f87171",
+                      fontSize: "12px",
+                      fontWeight: "600",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                    }}
+                  >
+                    <RotateCcw size={14} /> Choose Different Image
+                  </button>
+                </div>
               )}
+            </motion.div>
+          )}
+
+          {/* STEP 2: PATIENT DETAILS */}
+          {step === 2 && (
+            <motion.div
+              key="step2"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              style={{ display: "flex", flexDirection: "column", gap: "14px" }}
+            >
+              <div>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: "700", color: "#94a3b8", marginBottom: "6px" }}>
+                  PATIENT FULL NAME *
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. John Doe"
+                  value={patientName}
+                  onChange={(e) => setPatientName(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "12px 14px",
+                    background: "rgba(255, 255, 255, 0.05)",
+                    border: "1px solid rgba(255, 255, 255, 0.12)",
+                    borderRadius: "12px",
+                    color: "#fff",
+                    fontSize: "14px",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+
+              <div style={{ display: "flex", gap: "10px" }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: "block", fontSize: "11px", fontWeight: "700", color: "#94a3b8", marginBottom: "6px" }}>
+                    AGE *
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="e.g. 45"
+                    value={patientAge}
+                    onChange={(e) => setPatientAge(e.target.value)}
+                    min="1"
+                    max="120"
+                    style={{
+                      width: "100%",
+                      padding: "12px 14px",
+                      background: "rgba(255, 255, 255, 0.05)",
+                      border: "1px solid rgba(255, 255, 255, 0.12)",
+                      borderRadius: "12px",
+                      color: "#fff",
+                      fontSize: "14px",
+                      boxSizing: "border-box",
+                    }}
+                  />
+                </div>
+
+                <div style={{ flex: 1.5 }}>
+                  <label style={{ display: "block", fontSize: "11px", fontWeight: "700", color: "#94a3b8", marginBottom: "6px" }}>
+                    GENDER *
+                  </label>
+                  <div style={{ display: "flex", gap: "6px" }}>
+                    {["Male", "Female", "Other"].map((g) => (
+                      <button
+                        key={g}
+                        type="button"
+                        onClick={() => setPatientGender(g)}
+                        style={{
+                          flex: 1,
+                          padding: "12px 4px",
+                          borderRadius: "10px",
+                          border: patientGender === g ? "1px solid #38bdf8" : "1px solid rgba(255, 255, 255, 0.1)",
+                          background: patientGender === g ? "rgba(56, 189, 248, 0.15)" : "rgba(255, 255, 255, 0.04)",
+                          color: patientGender === g ? "#38bdf8" : "#94a3b8",
+                          fontSize: "12px",
+                          fontWeight: "700",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {g}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: "700", color: "#94a3b8", marginBottom: "6px" }}>
+                  PATIENT / CONTACT EMAIL (OPTIONAL)
+                </label>
+                <input
+                  type="email"
+                  placeholder="patient@example.com"
+                  value={patientEmail}
+                  onChange={(e) => setPatientEmail(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "12px 14px",
+                    background: "rgba(255, 255, 255, 0.05)",
+                    border: "1px solid rgba(255, 255, 255, 0.12)",
+                    borderRadius: "12px",
+                    color: "#fff",
+                    fontSize: "14px",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+            </motion.div>
+          )}
+
+          {/* STEP 3: ANALYZING (ANIMATED RADAR SCANNER) */}
+          {step === 3 && (
+            <motion.div
+              key="step3"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                textAlign: "center",
+                padding: "20px 0",
+              }}
+            >
+              <div
+                style={{
+                  position: "relative",
+                  width: "140px",
+                  height: "140px",
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "radial-gradient(circle, rgba(56,189,248,0.2) 0%, rgba(2,6,23,0) 70%)",
+                  marginBottom: "24px",
+                }}
+              >
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    borderRadius: "50%",
+                    border: "2px solid transparent",
+                    borderTopColor: "#38bdf8",
+                    borderRightColor: "#6366f1",
+                  }}
+                />
+                <Sparkles size={48} color="#38bdf8" />
+              </div>
+
+              <div style={{ fontSize: "18px", fontWeight: "800", color: "#fff", marginBottom: "8px" }}>
+                Analyzing Chest X-Ray
+              </div>
+              <div style={{ fontSize: "13px", color: "#94a3b8", marginBottom: "20px", minHeight: "20px" }}>
+                {analysisStatus}
+              </div>
+
+              <div
+                style={{
+                  width: "100%",
+                  maxWidth: "280px",
+                  height: "6px",
+                  background: "rgba(255, 255, 255, 0.1)",
+                  borderRadius: "3px",
+                  overflow: "hidden",
+                }}
+              >
+                <motion.div
+                  animate={{ width: `${analysisProgress}%` }}
+                  transition={{ ease: "easeOut", duration: 0.4 }}
+                  style={{
+                    height: "100%",
+                    background: "linear-gradient(90deg, #38bdf8, #6366f1)",
+                  }}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Bottom Action Buttons */}
+      <div style={{ paddingTop: "12px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+        {step === 1 && (
+          <button
+            type="button"
+            disabled={!selectedFile}
+            onClick={() => setStep(2)}
+            style={{
+              width: "100%",
+              padding: "16px",
+              borderRadius: "14px",
+              border: "none",
+              background: selectedFile
+                ? "linear-gradient(135deg, #38bdf8 0%, #6366f1 100%)"
+                : "rgba(255, 255, 255, 0.08)",
+              color: selectedFile ? "#fff" : "#64748b",
+              fontWeight: "700",
+              fontSize: "15px",
+              cursor: selectedFile ? "pointer" : "not-allowed",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px",
+              boxShadow: selectedFile ? "0 4px 15px rgba(56, 189, 248, 0.4)" : "none",
+            }}
+          >
+            Continue to Patient Info <ArrowRight size={18} />
+          </button>
+        )}
+
+        {step === 2 && (
+          <div style={{ display: "flex", gap: "10px" }}>
+            <button
+              type="button"
+              onClick={() => setStep(1)}
+              style={{
+                flex: 1,
+                padding: "16px",
+                borderRadius: "14px",
+                border: "1px solid rgba(255, 255, 255, 0.15)",
+                background: "transparent",
+                color: "#cbd5e1",
+                fontWeight: "700",
+                fontSize: "14px",
+                cursor: "pointer",
+              }}
+            >
+              Back
+            </button>
+            <button
+              type="button"
+              onClick={handleStartAnalysis}
+              style={{
+                flex: 2,
+                padding: "16px",
+                borderRadius: "14px",
+                border: "none",
+                background: "linear-gradient(135deg, #38bdf8 0%, #6366f1 100%)",
+                color: "#fff",
+                fontWeight: "700",
+                fontSize: "15px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
+                boxShadow: "0 4px 15px rgba(56, 189, 248, 0.4)",
+              }}
+            >
+              Start AI Analysis <Sparkles size={18} />
             </button>
           </div>
-        </section>
-      </main>
+        )}
+      </div>
     </div>
   );
 }
-
-export default UploadXRay;

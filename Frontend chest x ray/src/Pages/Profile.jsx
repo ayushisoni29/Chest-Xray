@@ -1,244 +1,427 @@
-﻿import React, { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   User,
   Mail,
-  CalendarDays,
-  ScanLine,
-  History,
+  Calendar,
   LogOut,
-  ArrowLeft,
+  Info,
+  Server,
+  Code2,
+  CheckCircle2,
+  AlertCircle,
+  X,
+  ChevronRight,
+  Shield,
+  Layers,
+  Cpu,
+  Sparkles,
   Loader2,
-  Activity,
-  ShieldCheck,
 } from "lucide-react";
-import Navbar from "../components/Navbar";
-import { getMe, getPredictionHistory, logoutUser } from "../api.js";
+import Tabs from "../components/Tabs";
+import {
+  getStoredUser,
+  logoutUser,
+  getBaseUrl,
+  setCustomBaseUrl,
+  checkHealth,
+  getModelMetrics,
+} from "../api";
 
-function Profile() {
+export default function Profile() {
   const navigate = useNavigate();
+  const user = getStoredUser() || {};
 
-  const [user, setUser] = useState(null);
-  const [stats, setStats] = useState({ total: 0, avgConfidence: 0, topClass: "—" });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [serverStatus, setServerStatus] = useState("Checking...");
+  const [showAboutSheet, setShowAboutSheet] = useState(false);
+  const [aboutTab, setAboutTab] = useState("overview");
+
+  // Developer settings modal for custom backend URL
+  const [showDevModal, setShowDevModal] = useState(false);
+  const [devUrl, setDevUrl] = useState(getBaseUrl());
+  const [testingDev, setTestingDev] = useState(false);
+  const [devStatus, setDevStatus] = useState(null);
 
   useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      try {
-        const me = await getMe();
-        setUser(me);
-
-        // Load prediction stats
-        try {
-          const histData = await getPredictionHistory({ limit: 100, skip: 0 });
-          const items = histData.items || [];
-          const total = histData.total || items.length;
-          const avg =
-            items.length > 0
-              ? Math.round(
-                  (items.reduce((s, i) => s + (i.confidence || 0), 0) /
-                    items.length) *
-                    100
-                )
-              : 0;
-
-          const counts = {};
-          items.forEach((h) => {
-            counts[h.predicted_class] = (counts[h.predicted_class] || 0) + 1;
-          });
-          const top =
-            Object.entries(counts).sort(([, a], [, b]) => b - a)[0]?.[0] || "—";
-
-          setStats({ total, avgConfidence: avg, topClass: top });
-        } catch {
-          // non-critical
+    checkHealth()
+      .then((res) => {
+        if (res && res.status === "ok") {
+          setServerStatus("Online (Port 8000)");
+        } else {
+          setServerStatus("Degraded");
         }
-      } catch (err) {
-        setError(err.message || "Failed to load profile.");
-        // Token might be expired — redirect to login
-        setTimeout(() => {
-          logoutUser();
-          navigate("/login");
-        }, 2000);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    load();
-  }, [navigate]);
+      })
+      .catch(() => setServerStatus("Offline / Unreachable"));
+  }, []);
 
   const handleLogout = () => {
     logoutUser();
     navigate("/login");
   };
 
-  if (loading) {
-    return (
-      <div className="app-shell">
-        <Navbar />
-        <main className="profile-page">
-          <div className="profile-container">
-            <div className="profile-header" style={{ justifyContent: "center" }}>
-              <Loader2 size={36} className="spin" />
-            </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
+  const handleSaveDevUrl = async () => {
+    setTestingDev(true);
+    setDevStatus(null);
+    try {
+      const clean = devUrl.trim().replace(/\/+$/, "");
+      const res = await fetch(`${clean}/health`);
+      if (res.ok) {
+        setCustomBaseUrl(clean);
+        setDevStatus({ success: true, message: "Connected & saved!" });
+      } else {
+        setDevStatus({ success: false, message: `Server replied HTTP ${res.status}` });
+      }
+    } catch (err) {
+      setDevStatus({ success: false, message: "Failed to connect to URL." });
+    } finally {
+      setTestingDev(false);
+    }
+  };
 
-  if (error || !user) {
-    return (
-      <div className="app-shell">
-        <Navbar />
-        <main className="profile-page">
-          <div className="profile-container">
-            <p style={{ color: "#ef4444", textAlign: "center" }}>{error}</p>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
-  const joinedDate = user.created_at
-    ? new Date(user.created_at).toLocaleDateString("en-IN", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      })
-    : "N/A";
+  const aboutTabs = [
+    { id: "overview", label: "Overview", icon: Info },
+    { id: "workflow", label: "Workflow", icon: Layers },
+    { id: "tech", label: "Tech Stack", icon: Cpu },
+  ];
 
   return (
-    <div className="app-shell">
-      <Navbar />
-      <main className="profile-page">
-        <div className="profile-container">
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        padding: "16px",
+        boxSizing: "border-box",
+        justifyContent: "space-between",
+        gap: "14px",
+      }}
+    >
+      {/* 1. Header & User Info Card */}
+      <div>
+        <h2 style={{ fontSize: "18px", fontWeight: "800", color: "#fff", marginBottom: "14px" }}>
+          Clinician Profile
+        </h2>
 
-          {/* BACK */}
-          <Link to="/" className="profile-back">
-            <ArrowLeft size={16} />
-            Back to Overview
-          </Link>
+        <div
+          style={{
+            background: "rgba(255, 255, 255, 0.03)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+            borderRadius: "20px",
+            padding: "18px",
+            display: "flex",
+            alignItems: "center",
+            gap: "16px",
+          }}
+        >
+          <div
+            style={{
+              width: "56px",
+              height: "56px",
+              borderRadius: "50%",
+              background: "linear-gradient(135deg, #38bdf8 0%, #6366f1 100%)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#fff",
+              fontWeight: "800",
+              fontSize: "20px",
+              boxShadow: "0 4px 15px rgba(56, 189, 248, 0.35)",
+            }}
+          >
+            {user.name ? user.name[0].toUpperCase() : "U"}
+          </div>
 
-          {/* HEADER */}
-          <section className="profile-header">
-            <div className="profile-avatar">
-              <User size={38} />
+          <div>
+            <div style={{ fontSize: "16px", fontWeight: "800", color: "#fff" }}>
+              {user.name || "Medical Practitioner"}
+            </div>
+            <div style={{ fontSize: "12px", color: "#94a3b8", marginTop: "2px" }}>
+              {user.email || "practitioner@hospital.org"}
+            </div>
+            <div
+              style={{
+                display: "inline-block",
+                marginTop: "6px",
+                padding: "2px 8px",
+                borderRadius: "4px",
+                background: "rgba(56, 189, 248, 0.1)",
+                color: "#38bdf8",
+                fontSize: "10px",
+                fontWeight: "700",
+              }}
+            >
+              AUTHORIZED CLINICIAN
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. Menu Options List */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "8px", flex: 1, justifyContent: "center" }}>
+        {/* About App (Opens Bottom Sheet) */}
+        <div
+          onClick={() => setShowAboutSheet(true)}
+          style={{
+            background: "rgba(255, 255, 255, 0.03)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+            borderRadius: "14px",
+            padding: "14px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            cursor: "pointer",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "rgba(56, 189, 248, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#38bdf8" }}>
+              <Info size={16} />
             </div>
             <div>
-              <span className="section-label">CHEST X-RAY AI ACCOUNT</span>
-              <h1>{user.name}</h1>
-              <p>Manage your account and view your analysis activity.</p>
+              <div style={{ fontSize: "13px", fontWeight: "700", color: "#fff" }}>About MedScan AI</div>
+              <div style={{ fontSize: "11px", color: "#94a3b8" }}>Clinical model, pipeline & explainability</div>
             </div>
-          </section>
+          </div>
+          <ChevronRight size={18} color="#64748b" />
+        </div>
 
-          {/* ACCOUNT INFORMATION */}
-          <section className="profile-section">
-            <div className="profile-section-heading">
-              <span className="section-label">ACCOUNT INFORMATION</span>
-              <h2>Profile Details</h2>
+        {/* Server & API Status */}
+        <div
+          style={{
+            background: "rgba(255, 255, 255, 0.03)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+            borderRadius: "14px",
+            padding: "14px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "rgba(34, 197, 94, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#4ade80" }}>
+              <Server size={16} />
             </div>
-            <div className="profile-details-grid">
-              <div className="profile-detail-card">
-                <div className="profile-detail-icon">
-                  <User size={19} />
-                </div>
-                <div>
-                  <span>FULL NAME</span>
-                  <strong>{user.name}</strong>
-                </div>
-              </div>
-
-              <div className="profile-detail-card">
-                <div className="profile-detail-icon">
-                  <Mail size={19} />
-                </div>
-                <div>
-                  <span>EMAIL ADDRESS</span>
-                  <strong>{user.email}</strong>
-                </div>
-              </div>
-
-              <div className="profile-detail-card">
-                <div className="profile-detail-icon">
-                  <CalendarDays size={19} />
-                </div>
-                <div>
-                  <span>MEMBER SINCE</span>
-                  <strong>{joinedDate}</strong>
-                </div>
-              </div>
-
-              <div className="profile-detail-card">
-                <div className="profile-detail-icon">
-                  <ScanLine size={19} />
-                </div>
-                <div>
-                  <span>TOTAL ANALYSES</span>
-                  <strong>{stats.total}</strong>
-                </div>
-              </div>
-
-              <div className="profile-detail-card">
-                <div className="profile-detail-icon">
-                  <Activity size={19} />
-                </div>
-                <div>
-                  <span>AVG. CONFIDENCE</span>
-                  <strong>
-                    {stats.total > 0 ? `${stats.avgConfidence}%` : "—"}
-                  </strong>
-                </div>
-              </div>
-
-              <div className="profile-detail-card">
-                <div className="profile-detail-icon">
-                  <ShieldCheck size={19} />
-                </div>
-                <div>
-                  <span>MOST DETECTED</span>
-                  <strong>{stats.topClass.replace("_", " ")}</strong>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* ACTIONS */}
-          <section className="profile-actions-section">
             <div>
-              <span className="section-label">QUICK ACTIONS</span>
-              <h2>Continue with Chest X-ray AI</h2>
-              <p>
-                Start a new chest X-ray analysis or review your previous records.
-              </p>
+              <div style={{ fontSize: "13px", fontWeight: "700", color: "#fff" }}>Backend Service</div>
+              <div style={{ fontSize: "11px", color: "#4ade80" }}>{serverStatus}</div>
             </div>
-            <div className="profile-actions">
-              <Link to="/detection" className="profile-primary-btn">
-                <ScanLine size={17} />
-                New Analysis
-              </Link>
-              <Link to="/history" className="profile-secondary-btn">
-                <History size={17} />
-                View History
-              </Link>
+          </div>
+          <span style={{ fontSize: "11px", color: "#64748b" }}>FastAPI</span>
+        </div>
+
+        {/* Developer Server Configuration Modal */}
+        <div
+          onClick={() => setShowDevModal(true)}
+          style={{
+            background: "rgba(255, 255, 255, 0.03)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+            borderRadius: "14px",
+            padding: "14px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            cursor: "pointer",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "rgba(245, 158, 11, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fbbf24" }}>
+              <Code2 size={16} />
+            </div>
+            <div>
+              <div style={{ fontSize: "13px", fontWeight: "700", color: "#fff" }}>Developer Server URL</div>
+              <div style={{ fontSize: "11px", color: "#94a3b8" }}>Override API host for local/cloud tunnel</div>
+            </div>
+          </div>
+          <ChevronRight size={18} color="#64748b" />
+        </div>
+      </div>
+
+      {/* 3. App Version & Logout Button */}
+      <div>
+        <button
+          type="button"
+          onClick={handleLogout}
+          style={{
+            width: "100%",
+            padding: "14px",
+            background: "rgba(239, 68, 68, 0.12)",
+            border: "1px solid rgba(239, 68, 68, 0.25)",
+            borderRadius: "14px",
+            color: "#f87171",
+            fontWeight: "700",
+            fontSize: "14px",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "8px",
+          }}
+        >
+          <LogOut size={16} /> Sign Out
+        </button>
+
+        <div style={{ textAlign: "center", marginTop: "10px", fontSize: "11px", color: "#475569" }}>
+          MedScan AI Mobile • Version 1.0.0 (Build 36)
+        </div>
+      </div>
+
+      {/* ABOUT BOTTOM SHEET (Overview | Workflow | Tech Stack) */}
+      {showAboutSheet && (
+        <div className="bottom-sheet-backdrop" onClick={() => setShowAboutSheet(false)}>
+          <div className="bottom-sheet-content" onClick={(e) => e.stopPropagation()}>
+            <div className="bottom-sheet-handle" />
+
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
+              <h3 style={{ fontSize: "16px", fontWeight: "800", color: "#fff", margin: 0 }}>
+                About MedScan AI
+              </h3>
               <button
                 type="button"
-                className="profile-logout-btn"
-                onClick={handleLogout}
+                onClick={() => setShowAboutSheet(false)}
+                style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer" }}
               >
-                <LogOut size={17} />
-                Logout
+                <X size={20} />
               </button>
             </div>
-          </section>
 
+            {/* Tabs switcher inside bottom sheet */}
+            <Tabs tabs={aboutTabs} activeTab={aboutTab} onChange={setAboutTab} />
+
+            <div style={{ marginTop: "16px", minHeight: "180px", fontSize: "12px", color: "#cbd5e1", lineHeight: "1.6" }}>
+              {aboutTab === "overview" && (
+                <div>
+                  <h4 style={{ color: "#fff", fontSize: "13px", marginBottom: "6px" }}>Clinical Objective</h4>
+                  <p style={{ marginBottom: "10px" }}>
+                    MedScan AI provides rapid, automated preliminary screening of chest radiographs
+                    across 5 distinct pathological classes: <strong>COVID-19</strong>, <strong>Normal</strong>,
+                    <strong>Pneumonia</strong>, <strong>Tuberculosis</strong>, and <strong>Lung Opacity</strong>.
+                  </p>
+                  <p>
+                    Verified held-out test accuracy is <strong>97.40%</strong> with clinical sensitivity
+                    calibration for emergency triage.
+                  </p>
+                </div>
+              )}
+
+              {aboutTab === "workflow" && (
+                <div>
+                  <h4 style={{ color: "#fff", fontSize: "13px", marginBottom: "6px" }}>Dual-Model Ensemble</h4>
+                  <p style={{ marginBottom: "8px" }}>
+                    1. <strong>Image Quality & Contrast Check:</strong> Laplacian blur and domain validation.
+                  </p>
+                  <p style={{ marginBottom: "8px" }}>
+                    2. <strong>Ensemble Inference:</strong> Predictions from fine-tuned v3 (~120MB) and
+                    v1 (~240MB) are blended using Test-Time Augmentation (TTA).
+                  </p>
+                  <p>
+                    3. <strong>Grad-CAM Visual Explanations:</strong> High-resolution attention heatmaps
+                    are generated from final convolutional layers to provide transparent AI decision auditing.
+                  </p>
+                </div>
+              )}
+
+              {aboutTab === "tech" && (
+                <div>
+                  <h4 style={{ color: "#fff", fontSize: "13px", marginBottom: "6px" }}>Architecture</h4>
+                  <ul style={{ paddingLeft: "18px", display: "flex", flexDirection: "column", gap: "6px" }}>
+                    <li><strong>AI Engine:</strong> TensorFlow / Keras 2.16 with Grad-CAM</li>
+                    <li><strong>Backend API:</strong> FastAPI + Uvicorn + MongoDB Atlas</li>
+                    <li><strong>Mobile Client:</strong> React 19 + Capacitor 8 Android Shell</li>
+                    <li><strong>Security:</strong> JWT tokens with bcrypt hash verification</li>
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      </main>
+      )}
+
+      {/* DEVELOPER URL MODAL */}
+      {showDevModal && (
+        <div className="bottom-sheet-backdrop" onClick={() => setShowDevModal(false)}>
+          <div className="bottom-sheet-content" onClick={(e) => e.stopPropagation()}>
+            <div className="bottom-sheet-handle" />
+            <h3 style={{ fontSize: "16px", fontWeight: "800", color: "#fff", marginBottom: "8px" }}>
+              Developer Server Configuration
+            </h3>
+            <p style={{ fontSize: "12px", color: "#94a3b8", marginBottom: "14px" }}>
+              Enter your live Codespace or tunnel URL. Leave empty to use default.
+            </p>
+
+            <input
+              type="text"
+              placeholder="https://xxxx-8000.app.github.dev"
+              value={devUrl}
+              onChange={(e) => setDevUrl(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "12px",
+                background: "rgba(255, 255, 255, 0.05)",
+                border: "1px solid rgba(255, 255, 255, 0.15)",
+                borderRadius: "10px",
+                color: "#fff",
+                fontSize: "13px",
+                marginBottom: "12px",
+                boxSizing: "border-box",
+              }}
+            />
+
+            {devStatus && (
+              <div
+                style={{
+                  padding: "10px",
+                  borderRadius: "8px",
+                  fontSize: "12px",
+                  marginBottom: "14px",
+                  background: devStatus.success ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)",
+                  color: devStatus.success ? "#4ade80" : "#f87171",
+                  border: `1px solid ${devStatus.success ? "rgba(34,197,94,0.3)" : "rgba(239,68,68,0.3)"}`,
+                }}
+              >
+                {devStatus.message}
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setDevUrl("");
+                  setCustomBaseUrl("");
+                  setShowDevModal(false);
+                }}
+                style={{
+                  padding: "10px 14px",
+                  background: "transparent",
+                  border: "1px solid rgba(255, 255, 255, 0.15)",
+                  color: "#94a3b8",
+                  borderRadius: "8px",
+                  fontSize: "12px",
+                  cursor: "pointer",
+                }}
+              >
+                Reset Default
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveDevUrl}
+                disabled={testingDev}
+                style={{
+                  padding: "10px 16px",
+                  background: "linear-gradient(135deg, #38bdf8 0%, #6366f1 100%)",
+                  border: "none",
+                  color: "#fff",
+                  borderRadius: "8px",
+                  fontSize: "12px",
+                  fontWeight: "700",
+                  cursor: testingDev ? "not-allowed" : "pointer",
+                }}
+              >
+                {testingDev ? "Testing..." : "Test & Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
-export default Profile;
