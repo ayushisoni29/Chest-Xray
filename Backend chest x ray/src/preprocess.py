@@ -77,7 +77,7 @@ def validate_image_file_content(
 
             if extension and extension not in valid_extensions:
                 raise ValueError(
-                    "Image content format does not match its file extension."
+                    f"Image content format mismatch: file extension '.{extension}' does not match detected image format '{img_format.upper()}'."
                 )
 
             width, height = pil_img.size
@@ -90,8 +90,7 @@ def validate_image_file_content(
 
             if width > max_dimension or height > max_dimension:
                 raise ValueError(
-                    f"Image resolution ({width}x{height}) exceeds "
-                    f"the maximum dimension of {max_dimension} pixels."
+                    f"Image resolution ({width}x{height}) exceeds maximum allowed dimensions of {max_dimension}x{max_dimension} pixels."
                 )
 
             total_pixels = width * height

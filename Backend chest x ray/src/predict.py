@@ -50,10 +50,11 @@ def _get_model_v1():
     return _model_v1
 
 
-def predict_image(image_path: str) -> dict:
+def predict_image(image_path: str, use_tta: bool = True) -> dict:
     """
-    Runs ensemble inference on a chest X-ray image using both models (V1 + V3).
-    Predictions from both models are averaged for 97.40% verified held-out test accuracy.
+    Runs ensemble inference on a chest X-ray image using both models (V1 + V3)
+    augmented with Test-Time Augmentation (TTA) for increased diagnostic robustness.
+    Predictions from both models are averaged for verified held-out test accuracy.
 
     Returns:
     {
@@ -70,20 +71,32 @@ def predict_image(image_path: str) -> dict:
     """
     class_names = load_class_names()
     img_array = preprocess_image(image_path)
+    img_flip = np.flip(img_array, axis=2) if use_tta else None
 
     # Get predictions from V3 (always available)
     model_v3 = _get_model_v3()
     preds_v3 = model_v3(img_array, training=False).numpy()[0]
+    if use_tta and img_flip is not None:
+        preds_v3_flip = model_v3(img_flip, training=False).numpy()[0]
+        preds_v3 = (preds_v3 + preds_v3_flip) / 2.0
 
     # Get predictions from V1 (if available) — ensemble
     model_v1 = _get_model_v1()
     if model_v1 is not None:
         preds_v1 = model_v1(img_array, training=False).numpy()[0]
+        if use_tta and img_flip is not None:
+            preds_v1_flip = model_v1(img_flip, training=False).numpy()[0]
+            preds_v1 = (preds_v1 + preds_v1_flip) / 2.0
         # Average both model predictions (ensemble)
         preds = (preds_v1 + preds_v3) / 2.0
     else:
         # Fallback: use only V3
         preds = preds_v3
+
+    # Normalize probabilities to ensure precision
+    sum_preds = float(np.sum(preds))
+    if sum_preds > 0:
+        preds = preds / sum_preds
 
     class_idx = int(np.argmax(preds))
 
