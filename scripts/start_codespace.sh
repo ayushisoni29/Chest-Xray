@@ -25,6 +25,29 @@ fi
 pip install -r requirements.txt
 pip install opencv-python-headless
 
+# Ensure MongoDB is running on port 27017
+echo "[+] Checking MongoDB status on port 27017..."
+if ! timeout 1 bash -c "echo > /dev/tcp/localhost/27017" 2>/dev/null; then
+    echo "[+] MongoDB not detected on 27017. Attempting automatic start..."
+    if command -v docker &> /dev/null && docker info &> /dev/null; then
+        echo "[+] Launching MongoDB via Docker container..."
+        docker run -d --restart unless-stopped -p 27017:27017 --name mongodb mongo:latest 2>/dev/null || docker start mongodb 2>/dev/null || true
+    fi
+
+    if ! timeout 1 bash -c "echo > /dev/tcp/localhost/27017" 2>/dev/null; then
+        if command -v service &> /dev/null; then
+            sudo service mongodb start 2>/dev/null || true
+        fi
+    fi
+
+    if ! timeout 1 bash -c "echo > /dev/tcp/localhost/27017" 2>/dev/null; then
+        if command -v apt-get &> /dev/null; then
+            sudo apt-get install -y -qq mongodb-server mongodb 2>/dev/null || true
+            sudo service mongodb start 2>/dev/null || true
+        fi
+    fi
+fi
+
 # Allow external mobile app CORS
 export ALLOWED_ORIGINS="*"
 
