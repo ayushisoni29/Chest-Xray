@@ -12,9 +12,12 @@ import {
   Loader2,
   ChevronRight,
   Activity,
-  ArrowLeft
+  ArrowLeft,
+  Settings,
+  CheckCircle2,
+  AlertCircle
 } from "lucide-react";
-import { loginUser } from "../api.js";
+import { loginUser, getBaseUrl, setCustomBaseUrl } from "../api.js";
 
 function Login() {
   const navigate = useNavigate();
@@ -23,6 +26,35 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const [showServerModal, setShowServerModal] = useState(false);
+  const [serverUrlInput, setServerUrlInput] = useState(getBaseUrl());
+  const [serverStatus, setServerStatus] = useState(null);
+  const [testingServer, setTestingServer] = useState(false);
+
+  const handleTestAndSaveServer = async () => {
+    const cleanUrl = serverUrlInput.trim().replace(/\/+$/, "");
+    setTestingServer(true);
+    setServerStatus(null);
+    try {
+      const endpoint = cleanUrl ? `${cleanUrl}/health` : "/health";
+      const res = await fetch(endpoint, { method: "GET" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setCustomBaseUrl(cleanUrl);
+      setServerStatus({
+        success: true,
+        message: `Connected! Model status: ${data.model_loaded ? "Loaded" : "Ready"}`
+      });
+    } catch (err) {
+      setServerStatus({
+        success: false,
+        message: `Connection failed: ${err.message}`
+      });
+    } finally {
+      setTestingServer(false);
+    }
+  };
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -214,9 +246,166 @@ function Login() {
             <div style={{ textAlign: 'center', marginTop: '24px', fontSize: '13px', color: '#94a3b8' }}>
               Don't have an account? <Link to="/register" style={{ color: '#38bdf8', textDecoration: 'none', fontWeight: '600' }}>Create account</Link>
             </div>
+
+            {/* Server Settings for Mobile APK / Remote Cloud Demo */}
+            <div style={{ textAlign: 'center', marginTop: '16px', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '16px' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setServerUrlInput(getBaseUrl());
+                  setServerStatus(null);
+                  setShowServerModal(true);
+                }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#64748b',
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '4px 8px',
+                  borderRadius: '6px'
+                }}
+              >
+                <Settings size={14} /> Server: {getBaseUrl() ? getBaseUrl().replace(/^https?:\/\//, '') : "Local / Default"}
+              </button>
+            </div>
           </div>
         )}
       </div>
+
+      {/* Server Settings Modal */}
+      {showServerModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.7)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '20px'
+        }}>
+          <div style={{
+            background: '#0f172a',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: '20px',
+            padding: '24px',
+            maxWidth: '440px',
+            width: '100%',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.6)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+              <Settings size={20} color="#38bdf8" />
+              <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '700' }}>Backend Server Configuration</h3>
+            </div>
+            <p style={{ fontSize: '13px', color: '#94a3b8', margin: '0 0 16px 0', lineHeight: '1.5' }}>
+              Connect this app to your remote Codespace or live API. Leave blank for default local server.
+            </p>
+            <div style={{ marginBottom: '14px' }}>
+              <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '6px', fontWeight: '600' }}>
+                Server HTTPS URL
+              </label>
+              <input
+                type="text"
+                placeholder="https://your-codespace-8000.app.github.dev"
+                value={serverUrlInput}
+                onChange={(e) => setServerUrlInput(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: '10px',
+                  color: '#fff',
+                  fontSize: '13px',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+            {serverStatus && (
+              <div style={{
+                marginBottom: '14px',
+                padding: '10px 12px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: serverStatus.success ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+                border: `1px solid ${serverStatus.success ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                color: serverStatus.success ? '#4ade80' : '#f87171'
+              }}>
+                {serverStatus.success ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+                <span>{serverStatus.message}</span>
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setServerUrlInput("");
+                  setCustomBaseUrl("");
+                  setShowServerModal(false);
+                }}
+                style={{
+                  padding: '10px 14px',
+                  background: 'transparent',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  color: '#cbd5e1',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                  cursor: 'pointer'
+                }}
+              >
+                Reset Default
+              </button>
+              <button
+                type="button"
+                onClick={handleTestAndSaveServer}
+                disabled={testingServer}
+                style={{
+                  padding: '10px 18px',
+                  background: 'linear-gradient(135deg, #38bdf8 0%, #818cf8 100%)',
+                  border: 'none',
+                  color: '#fff',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                  fontWeight: '700',
+                  cursor: testingServer ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                {testingServer ? <Loader2 size={14} className="spin" /> : null}
+                {testingServer ? "Testing..." : "Test & Save"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowServerModal(false)}
+                style={{
+                  padding: '10px 14px',
+                  background: 'rgba(255,255,255,0.08)',
+                  border: 'none',
+                  color: '#fff',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                  cursor: 'pointer'
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Basic keyframes for smooth fade in */}
       <style>{`

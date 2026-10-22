@@ -5,8 +5,25 @@
 // In production, deploy frontend behind the same origin or set
 // BASE_URL to the deployed backend URL.
 // ============================================================
+export function getBaseUrl() {
+  const custom = localStorage.getItem("medscan_api_url");
+  if (custom && custom.trim()) {
+    return custom.trim().replace(/\/+$/, "");
+  }
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  if (envUrl && envUrl.trim()) {
+    return envUrl.trim().replace(/\/+$/, "");
+  }
+  return "";
+}
 
-const BASE_URL = ""; // Empty = relative URLs, handled by Vite proxy
+export function setCustomBaseUrl(url) {
+  if (!url || !url.trim()) {
+    localStorage.removeItem("medscan_api_url");
+  } else {
+    localStorage.setItem("medscan_api_url", url.trim().replace(/\/+$/, ""));
+  }
+}
 
 
 // -------------------------------------------------------
@@ -60,7 +77,7 @@ async function apiFetch(path, options = {}) {
     delete headers["Content-Type"];
   }
 
-  const response = await fetch(`${BASE_URL}${path}`, {
+  const response = await fetch(`${getBaseUrl()}${path}`, {
     ...options,
     headers,
   });
@@ -158,7 +175,7 @@ export async function predictXRay(file) {
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${BASE_URL}/predict`, {
+  const response = await fetch(`${getBaseUrl()}/predict`, {
     method: "POST",
     headers,
     body: formData,
@@ -209,7 +226,7 @@ export async function getModelMetrics() {
 export function getStaticUrl(relativePath) {
   if (!relativePath) return null;
   if (relativePath.startsWith("http")) return relativePath;
-  return `${BASE_URL}${relativePath}`;
+  return `${getBaseUrl()}${relativePath}`;
 }
 
 
@@ -234,7 +251,7 @@ export async function downloadPredictionReport(predictionId, patient = {}) {
 
   const query = params.toString();
   const reportUrl =
-    `${BASE_URL}/predictions/${encodeURIComponent(predictionId)}/report` +
+    `${getBaseUrl()}/predictions/${encodeURIComponent(predictionId)}/report` +
     (query ? `?${query}` : "");
 
   const response = await fetch(reportUrl, {

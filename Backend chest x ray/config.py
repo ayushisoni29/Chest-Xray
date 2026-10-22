@@ -97,7 +97,17 @@ ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
     "http://127.0.0.1:5173",
     "http://127.0.0.1:8501",
+    "capacitor://localhost",
+    "https://localhost",
+    "http://localhost",
 ]
+
+_custom_origins = os.getenv("ALLOWED_ORIGINS", "")
+if _custom_origins:
+    for _orig in _custom_origins.split(","):
+        _orig_clean = _orig.strip()
+        if _orig_clean and _orig_clean not in ALLOWED_ORIGINS:
+            ALLOWED_ORIGINS.append(_orig_clean)
 
 # Automatic Cleanup & Retention Settings (Step 9)
 # Files referenced by MongoDB prediction records are NEVER deleted by routine cleanup.

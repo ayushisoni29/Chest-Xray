@@ -1,0 +1,9 @@
+{
+  "appId": "com.chestxray.ai",
+  "appName": "Chest X-Ray AI",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true
+  }
+}

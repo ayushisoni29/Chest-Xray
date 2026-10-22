@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Chest X-Ray AI</string>
+    <string name="title_activity_main">Chest X-Ray AI</string>
+    <string name="package_name">com.chestxray.ai</string>
+    <string name="custom_url_scheme">com.chestxray.ai</string>
+</resources>
