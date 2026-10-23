@@ -6,6 +6,7 @@ import {
   Navigate,
 } from "react-router-dom";
 
+import Splash from "./Pages/Splash";
 import Dashboard from "./Pages/Dashboard";
 import UploadXRay from "./Pages/UploadXRay";
 import Results from "./Pages/Results";
@@ -31,7 +32,7 @@ function ProtectedRoute({ children }) {
 
   if (!token || !user || isTokenExpired(token)) {
     forceLogout("Please sign in to access MedScan AI.");
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/welcome" replace />;
   }
 
   return <MobileLayout>{children}</MobileLayout>;
@@ -46,10 +47,28 @@ function GuestRoute({ children }) {
   const user = localStorage.getItem("medscanCurrentUser");
 
   if (token && user && !isTokenExpired(token)) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return children;
+}
+
+/* ================================
+   ROOT ROUTE (Splash Screen First)
+================================ */
+function RootRoute() {
+  const token = localStorage.getItem("medscan_token");
+  const user = localStorage.getItem("medscanCurrentUser");
+
+  if (token && user && !isTokenExpired(token)) {
+    return (
+      <ProtectedRoute>
+        <Dashboard />
+      </ProtectedRoute>
+    );
+  }
+
+  return <Splash />;
 }
 
 /* ================================
@@ -65,6 +84,10 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* FRONT / SPLASH ROUTE (Seen before Sign in) */}
+        <Route path="/" element={<RootRoute />} />
+        <Route path="/welcome" element={<Splash />} />
+
         {/* AUTH ROUTES */}
         <Route
           path="/login"
@@ -85,7 +108,7 @@ function App() {
 
         {/* PROTECTED MOBILE ROUTES */}
         <Route
-          path="/"
+          path="/dashboard"
           element={
             <ProtectedRoute>
               <Dashboard />

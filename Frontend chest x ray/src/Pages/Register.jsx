@@ -6,11 +6,12 @@ import {
   Lock,
   Eye,
   EyeOff,
-  ArrowRight,
   Loader2,
-  Stethoscope,
   AlertCircle,
+  Plus,
   Server,
+  X,
+  CheckCircle2,
 } from "lucide-react";
 import { registerUser, getBaseUrl, setCustomBaseUrl } from "../api";
 
@@ -31,7 +32,7 @@ export default function Register() {
   const [testingServer, setTestingServer] = useState(false);
   const [serverStatus, setServerStatus] = useState(null);
 
-  // Password validation: min 8 chars with at least one letter and one number
+  // Password validation: min 8 chars with letters & numbers
   const validate = () => {
     if (!name.trim()) {
       setError("Please enter your full clinical name.");
@@ -71,7 +72,7 @@ export default function Register() {
       });
       navigate("/");
     } catch (err) {
-      setError(err.message || "Registration failed. Please check server connection.");
+      setError(err.message || "Registration failed. Please verify server connection.");
     } finally {
       setLoading(false);
     }
@@ -107,32 +108,43 @@ export default function Register() {
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        padding: "20px 20px",
+        padding: "20px 22px 14px 22px",
         boxSizing: "border-box",
-        background: "radial-gradient(circle at top right, #0f172a 0%, #020617 100%)",
-        color: "#fff",
-        overflow: "hidden",
+        background: "#f4f8f6",
+        color: "#0d281e",
+        overflowY: "auto",
+        boxShadow: "0 0 60px rgba(0, 0, 0, 0.4)",
+        fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
       }}
     >
-      {/* Header */}
       <div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        {/* Header */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "14px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <div
               style={{
                 width: "36px",
                 height: "36px",
                 borderRadius: "10px",
-                background: "linear-gradient(135deg, #38bdf8 0%, #6366f1 100%)",
+                background: "#081d15",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: "0 4px 15px rgba(56, 189, 248, 0.4)",
               }}
             >
-              <Stethoscope size={18} color="#fff" />
+              <Plus size={20} color="#ffffff" strokeWidth={3} />
             </div>
-            <span style={{ fontSize: "16px", fontWeight: "900" }}>MedScan AI</span>
+            <div>
+              <span style={{ fontSize: "16px", fontWeight: "800", color: "#081d15" }}>MedScan AI</span>
+              <div style={{ fontSize: "11px", color: "#526e62" }}>Clinical Imaging Workspace</div>
+            </div>
           </div>
 
           <button
@@ -143,298 +155,350 @@ export default function Register() {
               setShowServerModal(true);
             }}
             style={{
-              background: "rgba(255, 255, 255, 0.05)",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
+              background: "#dcfce7",
+              border: "1px solid #bbf7d0",
               borderRadius: "20px",
               padding: "4px 10px",
               display: "flex",
               alignItems: "center",
-              gap: "4px",
-              color: "#38bdf8",
+              gap: "6px",
+              color: "#166534",
               fontSize: "11px",
               fontWeight: "600",
               cursor: "pointer",
             }}
           >
-            <Server size={12} />
-            <span>Server</span>
+            <span
+              style={{
+                width: "7px",
+                height: "7px",
+                borderRadius: "50%",
+                background: "#22c55e",
+                display: "inline-block",
+              }}
+            />
+            <span>Server online</span>
           </button>
         </div>
 
-        <h2 style={{ fontSize: "20px", fontWeight: "800", color: "#fff", margin: "0 0 2px 0" }}>
-          Create Account
-        </h2>
-        <span style={{ fontSize: "12px", color: "#94a3b8" }}>Register new clinical staff</span>
-      </div>
-
-      {/* Main Single-Viewport Form */}
-      <form onSubmit={handleRegister} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-        {error && (
-          <div
-            style={{
-              padding: "8px 12px",
-              borderRadius: "10px",
-              background: "rgba(239, 68, 68, 0.12)",
-              border: "1px solid rgba(239, 68, 68, 0.25)",
-              color: "#f87171",
-              fontSize: "11px",
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-            }}
-          >
-            <AlertCircle size={14} style={{ flexShrink: 0 }} />
-            <span>{error}</span>
-          </div>
-        )}
-
-        {/* Full Name */}
-        <div>
-          <label style={{ display: "block", fontSize: "10px", fontWeight: "700", color: "#94a3b8", marginBottom: "4px" }}>
-            FULL NAME
-          </label>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              background: "rgba(255, 255, 255, 0.04)",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
-              borderRadius: "10px",
-              padding: "0 12px",
-            }}
-          >
-            <User size={15} color="#64748b" />
-            <input
-              type="text"
-              placeholder="Dr. Ayushi Soni"
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value);
-                setError("");
-              }}
-              style={{ width: "100%", padding: "11px 8px", background: "transparent", border: "none", color: "#fff", fontSize: "13px", outline: "none" }}
-            />
-          </div>
+        {/* Title */}
+        <div style={{ marginBottom: "12px" }}>
+          <h2 style={{ fontSize: "23px", fontWeight: "800", color: "#081d15", margin: "0 0 4px 0" }}>
+            Create Account
+          </h2>
+          <span style={{ fontSize: "12px", color: "#476356" }}>Register authorized clinical staff</span>
         </div>
 
-        {/* Email */}
-        <div>
-          <label style={{ display: "block", fontSize: "10px", fontWeight: "700", color: "#94a3b8", marginBottom: "4px" }}>
-            EMAIL ADDRESS
-          </label>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              background: "rgba(255, 255, 255, 0.04)",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
-              borderRadius: "10px",
-              padding: "0 12px",
-            }}
-          >
-            <Mail size={15} color="#64748b" />
+        {/* Form */}
+        <form onSubmit={handleRegister} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+          {error && (
+            <div
+              style={{
+                padding: "8px 12px",
+                borderRadius: "8px",
+                background: "#fef2f2",
+                border: "1px solid #fecaca",
+                color: "#991b1b",
+                fontSize: "12px",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+            >
+              <AlertCircle size={15} style={{ flexShrink: 0 }} />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* Full Name */}
+          <div>
+            <label style={{ display: "block", fontSize: "11px", fontWeight: "700", color: "#081d15", marginBottom: "4px" }}>
+              FULL NAME
+            </label>
+            <div style={{ position: "relative" }}>
+              <input
+                type="text"
+                placeholder="Dr. Rajesh Sharma"
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  setError("");
+                }}
+                style={{
+                  width: "100%",
+                  padding: "10px 14px",
+                  background: "#ffffff",
+                  border: "1.5px solid #cbd5e1",
+                  borderRadius: "9px",
+                  fontSize: "13.5px",
+                  color: "#081d15",
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Email */}
+          <div>
+            <label style={{ display: "block", fontSize: "11px", fontWeight: "700", color: "#081d15", marginBottom: "4px" }}>
+              HOSPITAL EMAIL
+            </label>
             <input
               type="email"
-              placeholder="ayushi@hospital.org"
+              placeholder="clinician@hospital.org"
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);
                 setError("");
               }}
-              style={{ width: "100%", padding: "11px 8px", background: "transparent", border: "none", color: "#fff", fontSize: "13px", outline: "none" }}
-            />
-          </div>
-        </div>
-
-        {/* Password */}
-        <div>
-          <label style={{ display: "block", fontSize: "10px", fontWeight: "700", color: "#94a3b8", marginBottom: "4px" }}>
-            PASSWORD (MIN 8 CHARACTERS WITH LETTERS & NUMBERS)
-          </label>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              background: "rgba(255, 255, 255, 0.04)",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
-              borderRadius: "10px",
-              padding: "0 12px",
-            }}
-          >
-            <Lock size={15} color="#64748b" />
-            <input
-              type={showPassword ? "text" : "password"}
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                setError("");
+              style={{
+                width: "100%",
+                padding: "10px 14px",
+                background: "#ffffff",
+                border: "1.5px solid #065f46",
+                borderRadius: "9px",
+                fontSize: "13.5px",
+                color: "#081d15",
+                outline: "none",
+                boxSizing: "border-box",
               }}
-              style={{ width: "100%", padding: "11px 8px", background: "transparent", border: "none", color: "#fff", fontSize: "13px", outline: "none" }}
             />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              style={{ background: "transparent", border: "none", color: "#64748b", cursor: "pointer", padding: 0 }}
-            >
-              {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-            </button>
           </div>
-        </div>
 
-        {/* Confirm Password */}
-        <div>
-          <label style={{ display: "block", fontSize: "10px", fontWeight: "700", color: "#94a3b8", marginBottom: "4px" }}>
-            CONFIRM PASSWORD
-          </label>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              background: "rgba(255, 255, 255, 0.04)",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
-              borderRadius: "10px",
-              padding: "0 12px",
-            }}
-          >
-            <Lock size={15} color="#64748b" />
+          {/* Password */}
+          <div>
+            <label style={{ display: "block", fontSize: "11px", fontWeight: "700", color: "#081d15", marginBottom: "4px" }}>
+              PASSWORD (min 8 chars, letters + numbers)
+            </label>
+            <div style={{ position: "relative" }}>
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Min 8 characters"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setError("");
+                }}
+                style={{
+                  width: "100%",
+                  padding: "10px 38px 10px 14px",
+                  background: "#ffffff",
+                  border: "1.5px solid #cbd5e1",
+                  borderRadius: "9px",
+                  fontSize: "13.5px",
+                  color: "#081d15",
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: "absolute",
+                  right: "12px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "none",
+                  border: "none",
+                  color: "#64748b",
+                  cursor: "pointer",
+                  display: "flex",
+                }}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+          </div>
+
+          {/* Confirm Password */}
+          <div>
+            <label style={{ display: "block", fontSize: "11px", fontWeight: "700", color: "#081d15", marginBottom: "4px" }}>
+              CONFIRM PASSWORD
+            </label>
             <input
               type={showPassword ? "text" : "password"}
-              placeholder="••••••••"
+              placeholder="Re-enter password"
               value={confirmPassword}
               onChange={(e) => {
                 setConfirmPassword(e.target.value);
                 setError("");
               }}
-              style={{ width: "100%", padding: "11px 8px", background: "transparent", border: "none", color: "#fff", fontSize: "13px", outline: "none" }}
+              style={{
+                width: "100%",
+                padding: "10px 14px",
+                background: "#ffffff",
+                border: "1.5px solid #cbd5e1",
+                borderRadius: "9px",
+                fontSize: "13.5px",
+                color: "#081d15",
+                outline: "none",
+                boxSizing: "border-box",
+              }}
             />
           </div>
-        </div>
 
-        {/* Submit */}
-        <button
-          type="submit"
-          disabled={loading}
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              width: "100%",
+              padding: "12px",
+              background: "#065f46",
+              color: "#ffffff",
+              border: "none",
+              borderRadius: "9px",
+              fontSize: "14px",
+              fontWeight: "700",
+              cursor: "pointer",
+              boxShadow: "0 3px 10px rgba(6, 95, 70, 0.25)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px",
+              marginTop: "4px",
+            }}
+          >
+            {loading ? <Loader2 size={16} className="animate-spin" /> : "Complete Registration"}
+          </button>
+
+          {/* Back to Login */}
+          <div style={{ textAlign: "center", fontSize: "12px", color: "#475569" }}>
+            Already registered?{" "}
+            <Link to="/login" style={{ color: "#065f46", fontWeight: "700", textDecoration: "none" }}>
+              Sign In
+            </Link>
+          </div>
+        </form>
+      </div>
+
+      <div style={{ textAlign: "center", fontSize: "10.5px", color: "#64748b", marginTop: "10px" }}>
+        Encrypted clinical registration · SSIPMT Major Project
+      </div>
+
+      {/* Server Config Modal */}
+      {showServerModal && (
+        <div
           style={{
-            width: "100%",
-            padding: "14px",
-            background: "linear-gradient(135deg, #38bdf8 0%, #6366f1 100%)",
-            color: "#fff",
-            border: "none",
-            borderRadius: "12px",
-            fontSize: "14px",
-            fontWeight: "700",
-            cursor: loading ? "not-allowed" : "pointer",
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0, 0, 0, 0.6)",
+            backdropFilter: "blur(6px)",
+            zIndex: 100,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: "8px",
-            marginTop: "4px",
-            boxShadow: "0 4px 15px rgba(56, 189, 248, 0.4)",
+            padding: "20px",
           }}
         >
-          {loading ? (
-            <>
-              <Loader2 size={16} className="spin" /> Creating Account...
-            </>
-          ) : (
-            <>
-              Register & Sign In <ArrowRight size={16} />
-            </>
-          )}
-        </button>
-      </form>
+          <div
+            style={{
+              background: "#ffffff",
+              borderRadius: "16px",
+              padding: "20px",
+              width: "100%",
+              maxWidth: "380px",
+              boxShadow: "0 20px 40px rgba(0,0,0,0.25)",
+              color: "#081d15",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <Server size={18} color="#065f46" />
+                <h3 style={{ margin: 0, fontSize: "15px", fontWeight: "700", color: "#081d15" }}>
+                  Backend Server Address
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowServerModal(false)}
+                style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer" }}
+              >
+                <X size={18} />
+              </button>
+            </div>
 
-      {/* Bottom Switcher */}
-      <div style={{ textAlign: "center", fontSize: "12px", color: "#94a3b8" }}>
-        Already have an account?{" "}
-        <Link to="/login" style={{ color: "#38bdf8", fontWeight: "700", textDecoration: "none" }}>
-          Sign In
-        </Link>
-      </div>
-
-      {/* Server Configuration Bottom Sheet */}
-      {showServerModal && (
-        <div className="bottom-sheet-backdrop" onClick={() => setShowServerModal(false)}>
-          <div className="bottom-sheet-content" onClick={(e) => e.stopPropagation()}>
-            <div className="bottom-sheet-handle" />
-            <h3 style={{ fontSize: "16px", fontWeight: "800", color: "#fff", marginBottom: "8px" }}>
-              Backend AI Server Configuration
-            </h3>
-            <p style={{ fontSize: "12px", color: "#94a3b8", marginBottom: "14px" }}>
-              Enter your live Codespace or tunnel URL.
+            <p style={{ fontSize: "12px", color: "#526e62", margin: "0 0 12px 0" }}>
+              Point the mobile client to your local or deployed FastAPI server.
             </p>
 
             <input
               type="text"
-              placeholder="https://your-codespace-8000.app.github.dev"
               value={serverUrl}
               onChange={(e) => setServerUrl(e.target.value)}
+              placeholder="http://127.0.0.1:8000"
               style={{
                 width: "100%",
-                padding: "12px",
-                background: "rgba(255, 255, 255, 0.05)",
-                border: "1px solid rgba(255, 255, 255, 0.15)",
-                borderRadius: "10px",
-                color: "#fff",
+                padding: "10px 12px",
+                background: "#f8fafc",
+                border: "1.5px solid #cbd5e1",
+                borderRadius: "8px",
                 fontSize: "13px",
-                marginBottom: "12px",
+                color: "#081d15",
+                outline: "none",
                 boxSizing: "border-box",
+                marginBottom: "12px",
               }}
             />
 
             {serverStatus && (
               <div
                 style={{
-                  padding: "10px",
+                  padding: "8px 12px",
                   borderRadius: "8px",
+                  background: serverStatus.success ? "#dcfce7" : "#fee2e2",
+                  color: serverStatus.success ? "#166534" : "#991b1b",
                   fontSize: "12px",
-                  marginBottom: "14px",
-                  background: serverStatus.success ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)",
-                  color: serverStatus.success ? "#4ade80" : "#f87171",
-                  border: `1px solid ${serverStatus.success ? "rgba(34,197,94,0.3)" : "rgba(239,68,68,0.3)"}`,
+                  marginBottom: "12px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
                 }}
               >
-                {serverStatus.message}
+                {serverStatus.success ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
+                <span>{serverStatus.message}</span>
               </div>
             )}
 
-            <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
-              <button
-                type="button"
-                onClick={() => {
-                  setServerUrl("");
-                  setCustomBaseUrl("");
-                  setShowServerModal(false);
-                }}
-                style={{
-                  padding: "10px 14px",
-                  background: "transparent",
-                  border: "1px solid rgba(255, 255, 255, 0.15)",
-                  color: "#94a3b8",
-                  borderRadius: "8px",
-                  fontSize: "12px",
-                  cursor: "pointer",
-                }}
-              >
-                Reset Default
-              </button>
+            <div style={{ display: "flex", gap: "10px" }}>
               <button
                 type="button"
                 onClick={handleSaveServer}
                 disabled={testingServer}
                 style={{
-                  padding: "10px 16px",
-                  background: "linear-gradient(135deg, #38bdf8 0%, #6366f1 100%)",
-                  border: "none",
+                  flex: 1,
+                  padding: "10px",
+                  background: "#065f46",
                   color: "#fff",
+                  border: "none",
                   borderRadius: "8px",
-                  fontSize: "12px",
+                  fontSize: "13px",
                   fontWeight: "700",
-                  cursor: testingServer ? "not-allowed" : "pointer",
+                  cursor: "pointer",
                 }}
               >
-                {testingServer ? "Testing..." : "Test & Save"}
+                {testingServer ? "Connecting..." : "Test & Save"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setCustomBaseUrl("");
+                  setServerUrl(getBaseUrl());
+                  setShowServerModal(false);
+                }}
+                style={{
+                  padding: "10px 14px",
+                  background: "#f1f5f9",
+                  color: "#475569",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "13px",
+                  cursor: "pointer",
+                }}
+              >
+                Reset Default
               </button>
             </div>
           </div>

@@ -34,11 +34,11 @@ export default function MobileLayout({ children }) {
                 width: "28px",
                 height: "28px",
                 borderRadius: "8px",
-                background: "linear-gradient(135deg, #38bdf8 0%, #6366f1 100%)",
+                background: "linear-gradient(135deg, #10b981 0%, #065f46 100%)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: "0 2px 10px rgba(56, 189, 248, 0.4)",
+                boxShadow: "0 2px 10px rgba(16, 185, 129, 0.4)",
               }}
             >
               <Stethoscope size={16} color="#fff" />
