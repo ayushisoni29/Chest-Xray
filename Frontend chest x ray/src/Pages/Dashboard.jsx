@@ -234,7 +234,7 @@ export default function Dashboard() {
             Accuracy
           </div>
           <div style={{ fontSize: "20px", fontWeight: "800", color: "#22c55e", marginTop: "4px" }}>
-            97.4%
+            98.15%
           </div>
         </div>
       </div>

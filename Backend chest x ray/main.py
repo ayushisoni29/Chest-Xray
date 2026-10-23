@@ -896,11 +896,11 @@ async def download_prediction_report(
                     styles["BodySmall"],
                 ),
                 Paragraph(
-                    "<b>Calibrated Cutoff</b>",
+                    "<b>Calibrated Cutoff (Reference)</b>",
                     styles["BodySmall"],
                 ),
                 Paragraph(
-                    "<b>Model Probability & Finding</b>",
+                    "<b>Patient Finding (AI Probability)</b>",
                     styles["BodySmall"],
                 ),
             ]

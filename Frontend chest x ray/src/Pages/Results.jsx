@@ -452,9 +452,9 @@ export default function Results() {
                 <strong style={{ color: "#fff" }}>{analysisData.date} {analysisData.time}</strong>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ color: "#94a3b8" }}>Calibrated Threshold</span>
+                <span style={{ color: "#94a3b8" }}>Clinical Baseline Cutoff</span>
                 <strong style={{ color: "#38bdf8" }}>
-                  {(calibrated_thresholds[predicted_class] || 0.5) * 100}%
+                  {(calibrated_thresholds[predicted_class] || 0.5) * 100}% (Standard Ref)
                 </strong>
               </div>
             </div>

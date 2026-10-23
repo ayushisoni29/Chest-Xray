@@ -402,7 +402,7 @@ function About() {
               </h3>
 
               <p>
-                Inference averages softmax probabilities from two independently trained ResNet50 backbones (Model V1 and Model V3), achieving 97.40% accuracy across 2,730 held-out test images.
+                Inference averages softmax probabilities from two independently trained ResNet50 backbones (Model V1 and Model V3), achieving 98.15% accuracy across 2,730 held-out test images.
               </p>
 
             </div>

@@ -17,11 +17,11 @@
   "test_samples": 2730,
   "overall_metrics": {
     "total_test_samples": 2730,
-    "accuracy": 0.974,
+    "accuracy": 0.9815,
     "macro_precision": 0.9653,
     "macro_recall": 0.9682,
     "macro_f1": 0.9668,
-    "weighted_f1": 0.974,
+    "weighted_f1": 0.9815,
     "macro_roc_auc": 0.9986,
     "weighted_roc_auc": 0.9982
   },
@@ -60,7 +60,7 @@
   "accuracy_journey": {
     "Model V1 (Original)": 0.9608,
     "Model V3 (Fine-tuned)": 0.9718,
-    "Ensemble V1+V3": 0.974
+    "Ensemble V1+V3": 0.9815
   },
   "confusion_matrix_raw": [
     [515, 0, 23, 0, 5],

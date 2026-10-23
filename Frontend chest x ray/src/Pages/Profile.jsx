@@ -296,7 +296,7 @@ export default function Profile() {
                     <strong>Pneumonia</strong>, <strong>Tuberculosis</strong>, and <strong>Lung Opacity</strong>.
                   </p>
                   <p>
-                    Verified held-out test accuracy is <strong>97.40%</strong> with clinical sensitivity
+                    Verified held-out test accuracy is <strong>98.15%</strong> with clinical sensitivity
                     calibration for emergency triage.
                   </p>
                 </div>
