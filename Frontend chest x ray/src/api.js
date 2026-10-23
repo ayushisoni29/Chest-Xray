@@ -259,6 +259,8 @@ export async function downloadPredictionReport(predictionId, patient = {}) {
   }
 
   const params = new URLSearchParams();
+  // Include token in query params so native mobile downloads and system browsers authenticate
+  params.set("token", token);
 
   if (patient.name) params.set("patient_name", patient.name);
   if (patient.email) params.set("patient_email", patient.email);
@@ -266,10 +268,39 @@ export async function downloadPredictionReport(predictionId, patient = {}) {
   if (patient.gender) params.set("patient_gender", patient.gender);
 
   const query = params.toString();
-  const reportUrl =
-    `${getBaseUrl()}/predictions/${encodeURIComponent(predictionId)}/report` +
-    (query ? `?${query}` : "");
+  const reportUrl = `${getBaseUrl()}/predictions/${encodeURIComponent(predictionId)}/report?${query}`;
 
+  const isMobile =
+    typeof navigator !== "undefined" &&
+    (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+     (typeof window !== "undefined" && window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()));
+
+  if (isMobile) {
+    // Mobile environment: Trigger direct browser navigation or DownloadManager
+    const link = document.createElement("a");
+    link.href = reportUrl;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.download = `Chest_Xray_Report_${predictionId}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    // Fallback for native Capacitor WebView to ensure download starts
+    setTimeout(() => {
+      try {
+        if (typeof window !== "undefined" && window.Capacitor?.isNativePlatform?.()) {
+          window.open(reportUrl, "_system");
+        }
+      } catch (e) {
+        // ignore
+      }
+    }, 250);
+
+    return;
+  }
+
+  // Desktop browser: programmatic fetch and blob trigger
   const response = await fetch(reportUrl, {
     method: "GET",
     headers: {
@@ -309,5 +340,5 @@ export async function downloadPredictionReport(predictionId, patient = {}) {
 
   window.setTimeout(() => {
     window.URL.revokeObjectURL(pdfUrl);
-  }, 1000);
+  }, 2000);
 }

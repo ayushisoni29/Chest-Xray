@@ -1101,6 +1101,10 @@ async def download_prediction_report(
             pdf_path,
             media_type="application/pdf",
             filename=f"chest_xray_report_{prediction_id}.pdf",
+            headers={
+                "Content-Disposition": f'attachment; filename="chest_xray_report_{prediction_id}.pdf"',
+                "Access-Control-Expose-Headers": "Content-Disposition",
+            },
             background=BackgroundTask(os.remove, pdf_path),
         )
 

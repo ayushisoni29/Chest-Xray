@@ -5,7 +5,7 @@ from typing import Optional, Dict, Any
 
 import bcrypt
 from jose import jwt, JWTError
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Query
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from config import (
@@ -85,15 +85,16 @@ async def get_current_user_optional(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(
         bearer_scheme
     ),
+    token: Optional[str] = Query(default=None),
 ) -> Optional[Dict[str, Any]]:
     """Return the current user, or None if authentication is missing or invalid."""
 
-    token = credentials.credentials if credentials else None
+    raw_token = credentials.credentials if credentials else token
 
-    if not token:
+    if not raw_token:
         return None
 
-    payload = decode_access_token(token)
+    payload = decode_access_token(raw_token)
 
     if payload is None:
         return None
@@ -124,8 +125,9 @@ async def get_current_user_required(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(
         bearer_scheme
     ),
+    token: Optional[str] = Query(default=None),
 ) -> Dict[str, Any]:
-    """Require a valid JWT and return the authenticated user."""
+    """Require a valid JWT (from Bearer header or token query parameter) and return the authenticated user."""
 
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -133,12 +135,12 @@ async def get_current_user_required(
         headers={"WWW-Authenticate": "Bearer"},
     )
 
-    token = credentials.credentials if credentials else None
+    raw_token = credentials.credentials if credentials else token
 
-    if not token:
+    if not raw_token:
         raise credentials_exception
 
-    payload = decode_access_token(token)
+    payload = decode_access_token(raw_token)
 
     if payload is None:
         raise credentials_exception

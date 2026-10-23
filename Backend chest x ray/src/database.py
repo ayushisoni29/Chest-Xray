@@ -226,8 +226,8 @@ def _sqlite_get_user_prediction_by_id(prediction_id: str, user_id: str) -> Optio
     try:
         cur = conn.cursor()
         cur.execute(
-            """SELECT id, image_filename, predicted_class, confidence, probabilities, timestamp
-               FROM predictions WHERE id = ? AND user_id = ?""",
+            """SELECT id, image_filename, image_path, predicted_class, confidence, probabilities, heatmap_path, timestamp
+               FROM predictions WHERE id = ? AND (user_id = ? OR user_id IS NULL)""",
             (str(prediction_id), str(user_id))
         )
         row = cur.fetchone()
@@ -245,6 +245,8 @@ def _sqlite_get_user_prediction_by_id(prediction_id: str, user_id: str) -> Optio
         return {
             "id": row["id"],
             "image_filename": img_name,
+            "image_path": row["image_path"],
+            "heatmap_path": row["heatmap_path"],
             "predicted_class": row["predicted_class"],
             "confidence": float(row["confidence"]),
             "probabilities": probs,
@@ -482,17 +484,20 @@ def get_user_prediction_by_id(
     collection = get_predictions_collection()
     if collection is not None:
         try:
+            user_condition = {"$or": [{"user_id": str(user_id)}, {"user_id": None}]}
             try:
                 obj_id = ObjectId(prediction_id) if isinstance(prediction_id, str) and len(prediction_id) == 24 else prediction_id
-                doc = collection.find_one({"_id": obj_id, "user_id": str(user_id)})
+                doc = collection.find_one({"_id": obj_id, **user_condition})
             except Exception:
-                doc = collection.find_one({"_id": str(prediction_id), "user_id": str(user_id)})
+                doc = collection.find_one({"_id": str(prediction_id), **user_condition})
 
             if doc:
                 img_name = doc.get("image_filename", "")
                 return {
                     "id": str(doc["_id"]),
                     "image_filename": img_name,
+                    "image_path": doc.get("image_path"),
+                    "heatmap_path": doc.get("heatmap_path"),
                     "predicted_class": doc.get("predicted_class", ""),
                     "confidence": float(doc.get("confidence", 0.0)),
                     "probabilities": {str(k): float(v) for k, v in doc.get("probabilities", {}).items()},
