@@ -86,31 +86,32 @@ export default function Dashboard() {
         boxSizing: "border-box",
         justifyContent: "space-between",
         gap: "14px",
+        background: "#f4f8f6",
       }}
     >
       {/* 1. Header Greeting */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
-          <span style={{ fontSize: "12px", color: "#94a3b8", fontWeight: "500" }}>
+          <span style={{ fontSize: "12px", color: "#526e62", fontWeight: "500" }}>
             Welcome back,
           </span>
-          <h2 style={{ fontSize: "20px", fontWeight: "800", color: "#fff", margin: "2px 0 0 0" }}>
+          <h2 style={{ fontSize: "20px", fontWeight: "800", color: "#081d15", margin: "2px 0 0 0" }}>
             {user.name || "Doctor"}
           </h2>
         </div>
 
         <div
           style={{
-            padding: "6px 12px",
-            background: modelLoaded ? "rgba(34, 197, 94, 0.12)" : "rgba(239, 68, 68, 0.12)",
-            border: modelLoaded ? "1px solid rgba(34, 197, 94, 0.3)" : "1px solid rgba(239, 68, 68, 0.3)",
+            padding: "5px 11px",
+            background: modelLoaded ? "#dcfce7" : "#fee2e2",
+            border: modelLoaded ? "1px solid #bbf7d0" : "1px solid #fecaca",
             borderRadius: "20px",
             display: "flex",
             alignItems: "center",
             gap: "6px",
             fontSize: "11px",
             fontWeight: "700",
-            color: modelLoaded ? "#4ade80" : "#f87171",
+            color: modelLoaded ? "#166534" : "#991b1b",
           }}
         >
           <span
@@ -126,68 +127,69 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* 2. Big HERO 'NEW SCAN' CTA Button */}
+      {/* 2. Big HERO 'NEW SCAN' CTA Button — Emerald Clinical Gradient */}
       <div
         onClick={() => navigate("/detection")}
         style={{
-          background: "linear-gradient(135deg, #0284c7 0%, #38bdf8 50%, #6366f1 100%)",
-          borderRadius: "20px",
-          padding: "20px",
+          background: "linear-gradient(135deg, #065f46 0%, #047857 50%, #064e3b 100%)",
+          borderRadius: "18px",
+          padding: "18px",
           cursor: "pointer",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          boxShadow: "0 10px 25px -5px rgba(56, 189, 248, 0.4)",
+          boxShadow: "0 8px 22px rgba(6, 95, 70, 0.28)",
           position: "relative",
           overflow: "hidden",
         }}
       >
         <div style={{ zIndex: 2 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#e0f2fe", fontSize: "12px", fontWeight: "700", textTransform: "uppercase" }}>
-            <Sparkles size={14} /> Immediate AI Screening
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#a7f3d0", fontSize: "11.5px", fontWeight: "700", textTransform: "uppercase" }}>
+            <Sparkles size={14} color="#a7f3d0" /> Immediate AI Screening
           </div>
-          <div style={{ fontSize: "22px", fontWeight: "900", color: "#fff", marginTop: "4px" }}>
+          <div style={{ fontSize: "21px", fontWeight: "900", color: "#ffffff", marginTop: "4px", letterSpacing: "-0.3px" }}>
             New Chest X-Ray Scan
           </div>
-          <div style={{ fontSize: "12px", color: "rgba(255, 255, 255, 0.8)", marginTop: "4px" }}>
+          <div style={{ fontSize: "12px", color: "rgba(255, 255, 255, 0.85)", marginTop: "4px" }}>
             Dual-Model Ensemble & Grad-CAM
           </div>
         </div>
 
         <div
           style={{
-            width: "52px",
-            height: "52px",
-            borderRadius: "16px",
+            width: "50px",
+            height: "50px",
+            borderRadius: "14px",
             background: "rgba(255, 255, 255, 0.2)",
             backdropFilter: "blur(10px)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "#fff",
+            color: "#ffffff",
             zIndex: 2,
           }}
         >
-          <Scan size={26} />
+          <Scan size={24} />
         </div>
       </div>
 
-      {/* 3. Three Quick Stat Cards */}
+      {/* 3. Three Quick Stat Cards — Crisp White Cards */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px" }}>
         {/* Total Scans */}
         <div
           style={{
-            background: "rgba(255, 255, 255, 0.03)",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
-            borderRadius: "16px",
+            background: "#ffffff",
+            border: "1.5px solid #e2ede6",
+            borderRadius: "14px",
             padding: "12px 10px",
             textAlign: "center",
+            boxShadow: "0 2px 6px rgba(0, 0, 0, 0.03)",
           }}
         >
-          <div style={{ fontSize: "10px", color: "#94a3b8", fontWeight: "600", textTransform: "uppercase" }}>
+          <div style={{ fontSize: "10px", color: "#526e62", fontWeight: "700", textTransform: "uppercase" }}>
             Total Scans
           </div>
-          <div style={{ fontSize: "20px", fontWeight: "800", color: "#38bdf8", marginTop: "4px" }}>
+          <div style={{ fontSize: "20px", fontWeight: "800", color: "#065f46", marginTop: "4px" }}>
             {totalScans}
           </div>
         </div>
@@ -195,21 +197,22 @@ export default function Dashboard() {
         {/* Last Diagnosis */}
         <div
           style={{
-            background: "rgba(255, 255, 255, 0.03)",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
-            borderRadius: "16px",
+            background: "#ffffff",
+            border: "1.5px solid #e2ede6",
+            borderRadius: "14px",
             padding: "12px 10px",
             textAlign: "center",
+            boxShadow: "0 2px 6px rgba(0, 0, 0, 0.03)",
           }}
         >
-          <div style={{ fontSize: "10px", color: "#94a3b8", fontWeight: "600", textTransform: "uppercase" }}>
+          <div style={{ fontSize: "10px", color: "#526e62", fontWeight: "700", textTransform: "uppercase" }}>
             Last Result
           </div>
           <div
             style={{
-              fontSize: "14px",
+              fontSize: "13px",
               fontWeight: "800",
-              color: lastScan ? CLASS_COLORS[lastScan.predicted_class] || "#fff" : "#94a3b8",
+              color: lastScan ? CLASS_COLORS[lastScan.predicted_class] || "#081d15" : "#64748b",
               marginTop: "8px",
               whiteSpace: "nowrap",
               overflow: "hidden",
@@ -220,20 +223,21 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Ensemble Status */}
+        {/* Ensemble Accuracy */}
         <div
           style={{
-            background: "rgba(255, 255, 255, 0.03)",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
-            borderRadius: "16px",
+            background: "#ffffff",
+            border: "1.5px solid #e2ede6",
+            borderRadius: "14px",
             padding: "12px 10px",
             textAlign: "center",
+            boxShadow: "0 2px 6px rgba(0, 0, 0, 0.03)",
           }}
         >
-          <div style={{ fontSize: "10px", color: "#94a3b8", fontWeight: "600", textTransform: "uppercase" }}>
+          <div style={{ fontSize: "10px", color: "#526e62", fontWeight: "700", textTransform: "uppercase" }}>
             Accuracy
           </div>
-          <div style={{ fontSize: "20px", fontWeight: "800", color: "#22c55e", marginTop: "4px" }}>
+          <div style={{ fontSize: "20px", fontWeight: "800", color: "#047857", marginTop: "4px" }}>
             98.15%
           </div>
         </div>
@@ -249,30 +253,30 @@ export default function Dashboard() {
             marginBottom: "8px",
           }}
         >
-          <span style={{ fontSize: "13px", fontWeight: "700", color: "#fff" }}>
+          <span style={{ fontSize: "13px", fontWeight: "700", color: "#081d15" }}>
             Recent Analyses
           </span>
           <Link
             to="/history"
             style={{
               fontSize: "11px",
-              color: "#38bdf8",
-              fontWeight: "600",
+              color: "#065f46",
+              fontWeight: "700",
               textDecoration: "none",
               display: "flex",
               alignItems: "center",
               gap: "2px",
             }}
           >
-            See All <ChevronRight size={14} />
+            See All <ChevronRight size={14} color="#065f46" />
           </Link>
         </div>
 
         {recentScans.length === 0 ? (
           <div
             style={{
-              background: "rgba(255, 255, 255, 0.02)",
-              border: "1px dashed rgba(255, 255, 255, 0.1)",
+              background: "#ffffff",
+              border: "1px dashed #cbd5e1",
               borderRadius: "14px",
               padding: "18px",
               textAlign: "center",
@@ -285,7 +289,7 @@ export default function Dashboard() {
         ) : (
           <div className="horizontal-carousel">
             {recentScans.slice(0, 5).map((scan) => {
-              const classColor = CLASS_COLORS[scan.predicted_class] || "#38bdf8";
+              const classColor = CLASS_COLORS[scan.predicted_class] || "#065f46";
               return (
                 <div
                   key={scan.id}
@@ -293,18 +297,19 @@ export default function Dashboard() {
                   className="carousel-card"
                   style={{
                     width: "160px",
-                    background: "rgba(255, 255, 255, 0.03)",
-                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    background: "#ffffff",
+                    border: "1.5px solid #e2ede6",
                     borderRadius: "14px",
                     padding: "10px",
                     cursor: "pointer",
+                    boxShadow: "0 2px 6px rgba(0, 0, 0, 0.03)",
                   }}
                 >
                   <div
                     style={{
                       height: "70px",
                       borderRadius: "8px",
-                      background: "#000",
+                      background: "#081d15",
                       overflow: "hidden",
                       marginBottom: "8px",
                       display: "flex",
@@ -325,7 +330,7 @@ export default function Dashboard() {
                   <div style={{ fontSize: "12px", fontWeight: "700", color: classColor }}>
                     {scan.predicted_class?.replace("_", " ")}
                   </div>
-                  <div style={{ fontSize: "10px", color: "#94a3b8", marginTop: "2px" }}>
+                  <div style={{ fontSize: "10px", color: "#526e62", marginTop: "2px", fontWeight: "500" }}>
                     {Math.round((scan.confidence || 0) * 100)}% Confidence
                   </div>
                 </div>

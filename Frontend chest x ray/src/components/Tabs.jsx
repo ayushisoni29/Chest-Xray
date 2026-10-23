@@ -13,10 +13,10 @@ export default function Tabs({ tabs = [], activeTab, onChange, className = "" })
       className={`tabs-switcher-wrapper ${className}`}
       style={{
         display: "flex",
-        background: "rgba(255, 255, 255, 0.04)",
+        background: "#e4f1ea",
         padding: "4px",
-        borderRadius: "14px",
-        border: "1px solid rgba(255, 255, 255, 0.08)",
+        borderRadius: "12px",
+        border: "1px solid #cce2d6",
         position: "relative",
         gap: "4px",
         width: "100%",
@@ -35,10 +35,10 @@ export default function Tabs({ tabs = [], activeTab, onChange, className = "" })
             style={{
               flex: 1,
               position: "relative",
-              padding: "10px 8px",
+              padding: "9px 8px",
               border: "none",
               background: "transparent",
-              color: isActive ? "#ffffff" : "#94a3b8",
+              color: isActive ? "#065f46" : "#526e62",
               fontSize: "12px",
               fontWeight: isActive ? "700" : "500",
               cursor: "pointer",
@@ -46,13 +46,13 @@ export default function Tabs({ tabs = [], activeTab, onChange, className = "" })
               alignItems: "center",
               justifyContent: "center",
               gap: "6px",
-              borderRadius: "10px",
+              borderRadius: "9px",
               zIndex: 1,
               transition: "color 0.2s ease",
               WebkitTapHighlightColor: "transparent",
             }}
           >
-            {Icon && <Icon size={15} color={isActive ? "#38bdf8" : "#64748b"} />}
+            {Icon && <Icon size={15} color={isActive ? "#065f46" : "#64748b"} />}
             <span>{tab.label}</span>
 
             {isActive && (
@@ -62,11 +62,11 @@ export default function Tabs({ tabs = [], activeTab, onChange, className = "" })
                 style={{
                   position: "absolute",
                   inset: 0,
-                  background: "rgba(56, 189, 248, 0.15)",
-                  border: "1px solid rgba(56, 189, 248, 0.35)",
-                  borderRadius: "10px",
+                  background: "#ffffff",
+                  border: "1px solid #a7f3d0",
+                  borderRadius: "9px",
                   zIndex: -1,
-                  boxShadow: "0 2px 8px rgba(56, 189, 248, 0.2)",
+                  boxShadow: "0 2px 6px rgba(6, 95, 70, 0.12)",
                 }}
               />
             )}

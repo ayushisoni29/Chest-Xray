@@ -34,41 +34,49 @@ export default function MobileLayout({ children }) {
                 width: "28px",
                 height: "28px",
                 borderRadius: "8px",
-                background: "linear-gradient(135deg, #10b981 0%, #065f46 100%)",
+                background: "#081d15",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: "0 2px 10px rgba(16, 185, 129, 0.4)",
+                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.12)",
               }}
             >
-              <Stethoscope size={16} color="#fff" />
+              <Stethoscope size={15} color="#fff" />
             </div>
             <span
               style={{
                 fontWeight: "800",
                 fontSize: "15px",
                 letterSpacing: "-0.3px",
-                background: "linear-gradient(90deg, #ffffff 0%, #94a3b8 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
+                color: "#081d15",
               }}
             >
               MedScan AI
             </span>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              background: "#dcfce7",
+              border: "1px solid #bbf7d0",
+              borderRadius: "16px",
+              padding: "3px 9px",
+            }}
+          >
             <span
               style={{
-                width: "7px",
-                height: "7px",
+                width: "6px",
+                height: "6px",
                 borderRadius: "50%",
                 background: "#22c55e",
-                boxShadow: "0 0 8px #22c55e",
+                boxShadow: "0 0 6px #22c55e",
                 display: "inline-block",
               }}
             />
-            <span style={{ fontSize: "11px", color: "#94a3b8", fontWeight: "600" }}>
+            <span style={{ fontSize: "11px", color: "#166534", fontWeight: "600" }}>
               AI Online
             </span>
           </div>
