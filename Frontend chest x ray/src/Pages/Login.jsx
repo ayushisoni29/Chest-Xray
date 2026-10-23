@@ -90,8 +90,12 @@ export default function Login() {
 
   return (
     <div
+      className="mobile-auth-screen"
       style={{
         height: "100dvh",
+        maxWidth: "440px",
+        width: "100%",
+        margin: "0 auto",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
