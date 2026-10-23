@@ -15,6 +15,7 @@ import {
   FileText,
 } from "lucide-react";
 import { getStoredUser, checkHealth, getPredictionHistory, getStaticUrl } from "../api";
+import { useLanguage } from "../context/LanguageContext";
 
 const CLASS_COLORS = {
   COVID: "#ef4444",
@@ -27,6 +28,7 @@ const CLASS_COLORS = {
 export default function Dashboard() {
   const navigate = useNavigate();
   const user = getStoredUser() || {};
+  const { t } = useLanguage();
 
   const [healthStatus, setHealthStatus] = useState("Checking...");
   const [modelLoaded, setModelLoaded] = useState(false);
@@ -93,10 +95,10 @@ export default function Dashboard() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <span style={{ fontSize: "12px", color: "#526e62", fontWeight: "500" }}>
-            Welcome back,
+            {t("welcome_back")}
           </span>
           <h2 style={{ fontSize: "20px", fontWeight: "800", color: "#081d15", margin: "2px 0 0 0" }}>
-            {user.name || "Doctor"}
+            {user.name || "User"}
           </h2>
         </div>
 
@@ -145,13 +147,13 @@ export default function Dashboard() {
       >
         <div style={{ zIndex: 2 }}>
           <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#a7f3d0", fontSize: "11.5px", fontWeight: "700", textTransform: "uppercase" }}>
-            <Sparkles size={14} color="#a7f3d0" /> Immediate AI Screening
+            <Sparkles size={14} color="#a7f3d0" /> {t("immediate_screening")}
           </div>
           <div style={{ fontSize: "21px", fontWeight: "900", color: "#ffffff", marginTop: "4px", letterSpacing: "-0.3px" }}>
-            New Chest X-Ray Scan
+            {t("new_scan_cta")}
           </div>
           <div style={{ fontSize: "12px", color: "rgba(255, 255, 255, 0.85)", marginTop: "4px" }}>
-            Dual-Model Ensemble & Grad-CAM
+            {t("ensemble_subtitle")}
           </div>
         </div>
 
@@ -187,7 +189,7 @@ export default function Dashboard() {
           }}
         >
           <div style={{ fontSize: "10px", color: "#526e62", fontWeight: "700", textTransform: "uppercase" }}>
-            Total Scans
+            {t("total_scans")}
           </div>
           <div style={{ fontSize: "20px", fontWeight: "800", color: "#065f46", marginTop: "4px" }}>
             {totalScans}
@@ -206,7 +208,7 @@ export default function Dashboard() {
           }}
         >
           <div style={{ fontSize: "10px", color: "#526e62", fontWeight: "700", textTransform: "uppercase" }}>
-            Last Result
+            {t("last_result")}
           </div>
           <div
             style={{
@@ -219,7 +221,7 @@ export default function Dashboard() {
               textOverflow: "ellipsis",
             }}
           >
-            {lastScan ? lastScan.predicted_class?.replace("_", " ") : "None"}
+            {lastScan ? (t(lastScan.predicted_class) || lastScan.predicted_class?.replace("_", " ")) : "None"}
           </div>
         </div>
 
@@ -235,7 +237,7 @@ export default function Dashboard() {
           }}
         >
           <div style={{ fontSize: "10px", color: "#526e62", fontWeight: "700", textTransform: "uppercase" }}>
-            Accuracy
+            {t("accuracy")}
           </div>
           <div style={{ fontSize: "20px", fontWeight: "800", color: "#047857", marginTop: "4px" }}>
             98.15%
@@ -254,7 +256,7 @@ export default function Dashboard() {
           }}
         >
           <span style={{ fontSize: "13px", fontWeight: "700", color: "#081d15" }}>
-            Recent Analyses
+            {t("recent_analyses")}
           </span>
           <Link
             to="/history"
@@ -268,7 +270,7 @@ export default function Dashboard() {
               gap: "2px",
             }}
           >
-            See All <ChevronRight size={14} color="#065f46" />
+            {t("see_all")} <ChevronRight size={14} color="#065f46" />
           </Link>
         </div>
 
@@ -284,7 +286,7 @@ export default function Dashboard() {
               fontSize: "12px",
             }}
           >
-            No previous scans yet. Tap "New Scan" above to analyze an X-ray.
+            {t("no_recent_scans")}
           </div>
         ) : (
           <div className="horizontal-carousel">

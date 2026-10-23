@@ -16,11 +16,13 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { predictXRay, getStoredUser } from "../api";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function UploadXRay() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
   const user = getStoredUser() || {};
+  const { t } = useLanguage();
 
   // Step state (1: Choose Image, 2: Patient Info, 3: AI Analyzing)
   const [step, setStep] = useState(1);
@@ -180,12 +182,12 @@ export default function UploadXRay() {
           }}
         >
           <span style={{ fontSize: "16px", fontWeight: "800", color: "#081d15" }}>
-            {step === 1 && "Step 1: Choose Scan"}
-            {step === 2 && "Step 2: Patient Info"}
-            {step === 3 && "Step 3: AI Inference"}
+            {step === 1 && t("step1_title")}
+            {step === 2 && t("step2_title")}
+            {step === 3 && t("step3_title")}
           </span>
           <span style={{ fontSize: "12px", color: "#065f46", fontWeight: "700" }}>
-            {step} of 3
+            {step} {t("step_of")}
           </span>
         </div>
 
@@ -279,10 +281,10 @@ export default function UploadXRay() {
                   </div>
                   <div>
                     <div style={{ fontSize: "16px", fontWeight: "700", color: "#081d15", marginBottom: "4px" }}>
-                      Take Photo or Select X-Ray
+                      {t("upload_heading")}
                     </div>
                     <div style={{ fontSize: "12px", color: "#526e62" }}>
-                      Supports JPEG, PNG, WEBP (Max 15MB)
+                      {t("upload_hint")}
                     </div>
                   </div>
                   <button
@@ -300,7 +302,7 @@ export default function UploadXRay() {
                       boxShadow: "0 2px 8px rgba(6, 95, 70, 0.25)",
                     }}
                   >
-                    Browse Files
+                    {t("browse_files")}
                   </button>
                 </div>
               ) : (
@@ -369,7 +371,7 @@ export default function UploadXRay() {
                       gap: "4px",
                     }}
                   >
-                    <RotateCcw size={14} /> Choose Different Image
+                    <RotateCcw size={14} /> {t("choose_different")}
                   </button>
                 </div>
               )}
@@ -396,7 +398,7 @@ export default function UploadXRay() {
             >
               <div>
                 <label style={{ display: "block", fontSize: "11px", fontWeight: "700", color: "#081d15", marginBottom: "6px", textTransform: "uppercase" }}>
-                  Patient Full Name *
+                  {t("patient_name")}
                 </label>
                 <input
                   type="text"
@@ -421,7 +423,7 @@ export default function UploadXRay() {
               <div style={{ display: "flex", gap: "10px" }}>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: "block", fontSize: "11px", fontWeight: "700", color: "#081d15", marginBottom: "6px", textTransform: "uppercase" }}>
-                    Age *
+                    {t("patient_age")}
                   </label>
                   <input
                     type="number"
@@ -447,7 +449,7 @@ export default function UploadXRay() {
 
                 <div style={{ flex: 1.5 }}>
                   <label style={{ display: "block", fontSize: "11px", fontWeight: "700", color: "#081d15", marginBottom: "6px", textTransform: "uppercase" }}>
-                    Gender *
+                    {t("patient_gender")}
                   </label>
                   <div style={{ display: "flex", gap: "6px" }}>
                     {["Male", "Female", "Other"].map((g) => (
@@ -467,7 +469,7 @@ export default function UploadXRay() {
                           cursor: "pointer",
                         }}
                       >
-                        {g}
+                        {g === "Male" ? t("male") : g === "Female" ? t("female") : t("other")}
                       </button>
                     ))}
                   </div>
@@ -476,7 +478,7 @@ export default function UploadXRay() {
 
               <div>
                 <label style={{ display: "block", fontSize: "11px", fontWeight: "700", color: "#081d15", marginBottom: "6px", textTransform: "uppercase" }}>
-                  Patient / Contact Email (Optional)
+                  {t("patient_email")}
                 </label>
                 <input
                   type="email"
@@ -599,7 +601,7 @@ export default function UploadXRay() {
               boxShadow: selectedFile ? "0 4px 15px rgba(6, 95, 70, 0.35)" : "none",
             }}
           >
-            Continue to Patient Info <ArrowRight size={18} />
+            {t("continue_patient")} <ArrowRight size={18} />
           </button>
         )}
 
@@ -620,7 +622,7 @@ export default function UploadXRay() {
                 cursor: "pointer",
               }}
             >
-              Back
+              {t("back_btn")}
             </button>
             <button
               type="button"
@@ -642,7 +644,7 @@ export default function UploadXRay() {
                 boxShadow: "0 4px 15px rgba(6, 95, 70, 0.35)",
               }}
             >
-              Start AI Analysis <Sparkles size={18} />
+              {t("start_analysis")} <Sparkles size={18} />
             </button>
           </div>
         )}

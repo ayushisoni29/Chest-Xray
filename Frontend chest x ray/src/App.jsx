@@ -18,6 +18,7 @@ import NotFound from "./Pages/NotFound";
 
 import MobileLayout from "./components/MobileLayout";
 import { isTokenExpired, forceLogout, initInactivityWatcher } from "./session";
+import { LanguageProvider } from "./context/LanguageContext";
 
 import "./App.css";
 import "./mobile.css";
@@ -82,76 +83,78 @@ function App() {
   }, []);
 
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* FRONT / SPLASH ROUTE (Seen before Sign in) */}
-        <Route path="/" element={<RootRoute />} />
-        <Route path="/welcome" element={<Splash />} />
+    <LanguageProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* FRONT / SPLASH ROUTE (Seen before Sign in) */}
+          <Route path="/" element={<RootRoute />} />
+          <Route path="/welcome" element={<Splash />} />
 
-        {/* AUTH ROUTES */}
-        <Route
-          path="/login"
-          element={
-            <GuestRoute>
-              <Login />
-            </GuestRoute>
-          }
-        />
-        <Route
-          path="/register"
-          element={
-            <GuestRoute>
-              <Register />
-            </GuestRoute>
-          }
-        />
+          {/* AUTH ROUTES */}
+          <Route
+            path="/login"
+            element={
+              <GuestRoute>
+                <Login />
+              </GuestRoute>
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <GuestRoute>
+                <Register />
+              </GuestRoute>
+            }
+          />
 
-        {/* PROTECTED MOBILE ROUTES */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/detection"
-          element={
-            <ProtectedRoute>
-              <UploadXRay />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/results"
-          element={
-            <ProtectedRoute>
-              <Results />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/history"
-          element={
-            <ProtectedRoute>
-              <History />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <Profile />
-            </ProtectedRoute>
-          }
-        />
+          {/* PROTECTED MOBILE ROUTES */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/detection"
+            element={
+              <ProtectedRoute>
+                <UploadXRay />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/results"
+            element={
+              <ProtectedRoute>
+                <Results />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/history"
+            element={
+              <ProtectedRoute>
+                <History />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
 
-        {/* 404 CATCH-ALL */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </BrowserRouter>
+          {/* 404 CATCH-ALL */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </LanguageProvider>
   );
 }
 

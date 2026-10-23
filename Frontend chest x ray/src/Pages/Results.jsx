@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import {
   Download,
@@ -14,10 +14,13 @@ import {
   CheckCircle2,
   Loader2,
   ChevronLeft,
+  ChevronsLeftRight,
+  SlidersHorizontal,
 } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from "recharts";
 import Tabs from "../components/Tabs";
 import { getPredictionById, getStaticUrl, downloadPredictionReport } from "../api";
+import { useLanguage } from "../context/LanguageContext";
 
 const CLASS_COLORS = {
   COVID: "#ef4444",
@@ -30,13 +33,18 @@ const CLASS_COLORS = {
 export default function Results() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const [activeTab, setActiveTab] = useState("result");
   const [analysisData, setAnalysisData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [showHeatmapToggle, setShowHeatmapToggle] = useState(true);
   const [downloadingReport, setDownloadingReport] = useState(false);
   const [downloadError, setDownloadError] = useState("");
+
+  // Interactive Split Slider (Grad-CAM vs Original)
+  const [sliderPos, setSliderPos] = useState(50); // 0 to 100%
+  const [isDragging, setIsDragging] = useState(false);
+  const sliderContainerRef = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -182,10 +190,19 @@ export default function Results() {
     prob: Math.round(val * 100),
   }));
 
+  const handlePointerMove = (e) => {
+    if (!sliderContainerRef.current) return;
+    const rect = sliderContainerRef.current.getBoundingClientRect();
+    const clientX = e.clientX ?? (e.touches && e.touches[0]?.clientX) ?? 0;
+    const offsetX = clientX - rect.left;
+    const pct = Math.max(0, Math.min(100, (offsetX / rect.width) * 100));
+    setSliderPos(Math.round(pct));
+  };
+
   const tabsConfig = [
-    { id: "result", label: "Result", icon: Activity },
-    { id: "gradcam", label: "Grad-CAM", icon: Eye },
-    { id: "details", label: "Details", icon: FileText },
+    { id: "result", label: t("tab_result"), icon: Activity },
+    { id: "gradcam", label: t("tab_gradcam"), icon: Eye },
+    { id: "details", label: t("tab_details"), icon: FileText },
   ];
 
   return (
@@ -202,7 +219,7 @@ export default function Results() {
       {/* Disclaimer Banner — Always Visible */}
       <div className="disclaimer-banner">
         <ShieldAlert size={16} color="#065f46" style={{ flexShrink: 0 }} />
-        <span>AI-assisted preliminary screening — not a definitive medical diagnosis.</span>
+        <span>{t("disclaimer")}</span>
       </div>
 
       {/* Low Confidence Warning If Triggered */}
@@ -256,13 +273,13 @@ export default function Results() {
             >
               <div style={{ textAlign: "left" }}>
                 <span style={{ fontSize: "11px", color: "#526e62", fontWeight: "700", textTransform: "uppercase" }}>
-                  Primary Classification
+                  {t("primary_classification")}
                 </span>
                 <div style={{ fontSize: "24px", fontWeight: "800", color: classColor, marginTop: "2px" }}>
-                  {predicted_class.replace("_", " ")}
+                  {t(predicted_class) || predicted_class.replace("_", " ")}
                 </div>
                 <div style={{ fontSize: "11px", color: "#526e62", marginTop: "2px" }}>
-                  Patient: {patient.patientName || "Anonymous"} ({patient.patientAge || "?"}y, {patient.patientGender || "?"})
+                  {t("patient_label")}: {patient.patientName || "Anonymous"} ({patient.patientAge || "?"}y, {patient.patientGender || "?"})
                 </div>
               </div>
 
@@ -282,7 +299,7 @@ export default function Results() {
                 }}
               >
                 <span style={{ fontSize: "18px", fontWeight: "900", color: "#081d15" }}>{confPercent}%</span>
-                <span style={{ fontSize: "9px", color: "#526e62", fontWeight: "700" }}>CONFIDENCE</span>
+                <span style={{ fontSize: "9px", color: "#526e62", fontWeight: "700" }}>{t("confidence").toUpperCase()}</span>
               </div>
             </div>
 
@@ -301,7 +318,7 @@ export default function Results() {
               }}
             >
               <span style={{ fontSize: "12px", color: "#081d15", fontWeight: "700", marginBottom: "8px" }}>
-                Multi-Class Confidence Distribution
+                {t("multi_class_dist")}
               </span>
               <div style={{ width: "100%", height: "135px" }}>
                 <ResponsiveContainer width="100%" height="100%">
@@ -324,95 +341,230 @@ export default function Results() {
           </div>
         )}
 
-        {/* TAB 2: GRAD-CAM ATTENTION HEATMAP */}
+        {/* TAB 2: GRAD-CAM ATTENTION HEATMAP WITH INTERACTIVE SPLIT SLIDER */}
         {activeTab === "gradcam" && (
           <div
             style={{
               flex: 1,
               display: "flex",
               flexDirection: "column",
-              gap: "10px",
+              gap: "8px",
               justifyContent: "center",
             }}
           >
-            {/* View Mode Toggle Pill */}
-            <div style={{ display: "flex", justifyContent: "center", gap: "8px" }}>
+            {/* Quick Preset Buttons (Original / 50-50 Split / Heatmap) */}
+            <div style={{ display: "flex", justifyContent: "center", gap: "6px" }}>
               <button
                 type="button"
-                onClick={() => setShowHeatmapToggle(false)}
+                onClick={() => setSliderPos(0)}
                 style={{
-                  padding: "6px 14px",
+                  padding: "5px 12px",
                   borderRadius: "20px",
-                  border: !showHeatmapToggle ? "1.5px solid #065f46" : "1.5px solid #e2ede6",
-                  background: !showHeatmapToggle ? "#ecfdf5" : "#ffffff",
-                  color: !showHeatmapToggle ? "#065f46" : "#526e62",
-                  fontSize: "12px",
+                  border: sliderPos === 0 ? "1.5px solid #065f46" : "1.5px solid #e2ede6",
+                  background: sliderPos === 0 ? "#ecfdf5" : "#ffffff",
+                  color: sliderPos === 0 ? "#065f46" : "#526e62",
+                  fontSize: "11px",
                   fontWeight: "700",
                   cursor: "pointer",
                 }}
               >
-                Original Scan
+                {t("original_scan")}
               </button>
               <button
                 type="button"
-                onClick={() => setShowHeatmapToggle(true)}
+                onClick={() => setSliderPos(50)}
                 style={{
-                  padding: "6px 14px",
+                  padding: "5px 12px",
                   borderRadius: "20px",
-                  border: showHeatmapToggle ? "1.5px solid #065f46" : "1.5px solid #e2ede6",
-                  background: showHeatmapToggle ? "#ecfdf5" : "#ffffff",
-                  color: showHeatmapToggle ? "#065f46" : "#526e62",
-                  fontSize: "12px",
+                  border: sliderPos > 0 && sliderPos < 100 ? "1.5px solid #065f46" : "1.5px solid #e2ede6",
+                  background: sliderPos > 0 && sliderPos < 100 ? "#ecfdf5" : "#ffffff",
+                  color: sliderPos > 0 && sliderPos < 100 ? "#065f46" : "#526e62",
+                  fontSize: "11px",
                   fontWeight: "700",
                   cursor: "pointer",
                 }}
               >
-                Grad-CAM Heatmap
+                Split (50%)
+              </button>
+              <button
+                type="button"
+                onClick={() => setSliderPos(100)}
+                style={{
+                  padding: "5px 12px",
+                  borderRadius: "20px",
+                  border: sliderPos === 100 ? "1.5px solid #065f46" : "1.5px solid #e2ede6",
+                  background: sliderPos === 100 ? "#ecfdf5" : "#ffffff",
+                  color: sliderPos === 100 ? "#065f46" : "#526e62",
+                  fontSize: "11px",
+                  fontWeight: "700",
+                  cursor: "pointer",
+                }}
+              >
+                {t("gradcam_heatmap")}
               </button>
             </div>
 
-            {/* Heatmap Image Viewer */}
+            {/* Interactive Before/After Split Viewer Container */}
             <div
+              ref={sliderContainerRef}
+              onPointerDown={(e) => {
+                setIsDragging(true);
+                handlePointerMove(e);
+              }}
+              onPointerMove={(e) => {
+                if (isDragging) handlePointerMove(e);
+              }}
+              onPointerUp={() => setIsDragging(false)}
+              onPointerLeave={() => setIsDragging(false)}
               style={{
                 width: "100%",
-                height: "220px",
+                height: "230px",
                 background: "#081d15",
                 borderRadius: "16px",
                 overflow: "hidden",
                 border: "1.5px solid #e2ede6",
+                position: "relative",
+                cursor: "ew-resize",
+                touchAction: "none",
+                userSelect: "none",
+              }}
+            >
+              {/* Layer 1: Base Original X-Ray */}
+              <img
+                src={image_url ? getStaticUrl(image_url) : preview}
+                alt="Original Radiograph"
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                  pointerEvents: "none",
+                }}
+              />
+
+              {/* Layer 2: Grad-CAM Heatmap (Clipped by slider percentage) */}
+              {heatmap_url && (
+                <img
+                  src={getStaticUrl(heatmap_url)}
+                  alt="Grad-CAM Heatmap"
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "contain",
+                    pointerEvents: "none",
+                    clipPath: `polygon(0 0, ${sliderPos}% 0, ${sliderPos}% 100%, 0 100%)`,
+                  }}
+                />
+              )}
+
+              {/* Split Line & Draggable Knob */}
+              <div
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  bottom: 0,
+                  left: `${sliderPos}%`,
+                  width: "2px",
+                  background: "#10b981",
+                  boxShadow: "0 0 8px rgba(16, 185, 129, 0.8)",
+                  zIndex: 10,
+                  transform: "translateX(-50%)",
+                }}
+              >
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    width: "32px",
+                    height: "32px",
+                    borderRadius: "50%",
+                    background: "#065f46",
+                    border: "2.5px solid #ffffff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#ffffff",
+                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.4)",
+                  }}
+                >
+                  <ChevronsLeftRight size={16} />
+                </div>
+              </div>
+
+              {/* Corner Badges */}
+              <div
+                style={{
+                  position: "absolute",
+                  top: "8px",
+                  left: "8px",
+                  background: "rgba(6, 95, 70, 0.85)",
+                  backdropFilter: "blur(4px)",
+                  padding: "2px 8px",
+                  borderRadius: "6px",
+                  fontSize: "10px",
+                  fontWeight: "700",
+                  color: "#a7f3d0",
+                  zIndex: 5,
+                }}
+              >
+                Heatmap ({sliderPos}%)
+              </div>
+
+              <div
+                style={{
+                  position: "absolute",
+                  top: "8px",
+                  right: "8px",
+                  background: "rgba(0, 0, 0, 0.65)",
+                  backdropFilter: "blur(4px)",
+                  padding: "2px 8px",
+                  borderRadius: "6px",
+                  fontSize: "10px",
+                  fontWeight: "700",
+                  color: "#ffffff",
+                  zIndex: 5,
+                }}
+              >
+                Original ({100 - sliderPos}%)
+              </div>
+            </div>
+
+            {/* Drag Hint */}
+            <div
+              style={{
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                position: "relative",
+                gap: "5px",
+                fontSize: "11px",
+                color: "#526e62",
+                fontWeight: "500",
               }}
             >
-              <img
-                src={
-                  showHeatmapToggle && heatmap_url
-                    ? getStaticUrl(heatmap_url)
-                    : image_url
-                    ? getStaticUrl(image_url)
-                    : preview
-                }
-                alt="Radiograph visual explanation"
-                style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
-              />
+              <SlidersHorizontal size={13} color="#065f46" />
+              <span>{t("slider_instruction")}</span>
             </div>
 
+            {/* Explanation box */}
             <div
               style={{
                 background: "#ffffff",
                 border: "1.5px solid #e2ede6",
                 borderRadius: "12px",
-                padding: "10px 12px",
+                padding: "8px 12px",
                 fontSize: "11px",
                 color: "#526e62",
                 lineHeight: "1.4",
                 boxShadow: "0 2px 6px rgba(0, 0, 0, 0.02)",
               }}
             >
-              <strong style={{ color: "#081d15" }}>Grad-CAM Explanation:</strong> Warmer red/yellow regions
-              highlight visual features that most heavily influenced the neural ensemble's classification.
+              <strong style={{ color: "#081d15" }}>{t("gradcam_explanation_title")}</strong>{" "}
+              {t("gradcam_explanation_body")}
             </div>
           </div>
         )}
@@ -455,11 +607,11 @@ export default function Results() {
                 <strong style={{ color: "#081d15" }}>{analysisData.fileName || "xray.png"}</strong>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ color: "#526e62" }}>Scan Timestamp</span>
+                <span style={{ color: "#526e62" }}>{t("scan_timestamp")}</span>
                 <strong style={{ color: "#081d15" }}>{analysisData.date} {analysisData.time}</strong>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ color: "#526e62" }}>Clinical Baseline Cutoff</span>
+                <span style={{ color: "#526e62" }}>{t("baseline_cutoff")}</span>
                 <strong style={{ color: "#065f46" }}>
                   {(calibrated_thresholds[predicted_class] || 0.5) * 100}% (Standard Ref)
                 </strong>
@@ -496,11 +648,11 @@ export default function Results() {
             >
               {downloadingReport ? (
                 <>
-                  <Loader2 size={16} className="spin" /> Generating Clinical PDF...
+                  <Loader2 size={16} className="spin" /> {t("generating_pdf")}
                 </>
               ) : (
                 <>
-                  <Download size={16} /> Download Official PDF Report
+                  <Download size={16} /> {t("download_pdf_btn")}
                 </>
               )}
             </button>

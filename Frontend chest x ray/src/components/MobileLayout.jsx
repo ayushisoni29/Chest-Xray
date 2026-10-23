@@ -1,18 +1,20 @@
 import React from "react";
 import { Link, useLocation, Outlet } from "react-router-dom";
-import { Home, Scan, History, User, Stethoscope } from "lucide-react";
+import { Home, Scan, History, User, Stethoscope, Languages } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function MobileLayout({ children }) {
   const location = useLocation();
   const currentPath = location.pathname;
+  const { lang, toggleLanguage, t } = useLanguage();
 
   // Bottom navigation items
   const navItems = [
-    { label: "Home", path: "/", icon: Home },
-    { label: "Scan", path: "/detection", icon: Scan, isFab: true },
-    { label: "History", path: "/history", icon: History },
-    { label: "Profile", path: "/profile", icon: User },
+    { label: t("nav_home"), path: "/", icon: Home },
+    { label: t("nav_scan"), path: "/detection", icon: Scan, isFab: true },
+    { label: t("nav_history"), path: "/history", icon: History },
+    { label: t("nav_profile"), path: "/profile", icon: User },
   ];
 
   return (
@@ -51,34 +53,62 @@ export default function MobileLayout({ children }) {
                 color: "#081d15",
               }}
             >
-              MedScan AI
+              {t("app_title")}
             </span>
           </div>
 
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              background: "#dcfce7",
-              border: "1px solid #bbf7d0",
-              borderRadius: "16px",
-              padding: "3px 9px",
-            }}
-          >
-            <span
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            {/* Language Switcher Toggle Pill */}
+            <button
+              type="button"
+              onClick={toggleLanguage}
+              title="Switch Language / भाषा बदलें"
               style={{
-                width: "6px",
-                height: "6px",
-                borderRadius: "50%",
-                background: "#22c55e",
-                boxShadow: "0 0 6px #22c55e",
-                display: "inline-block",
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+                background: "#ffffff",
+                border: "1.5px solid #065f46",
+                borderRadius: "16px",
+                padding: "3px 8px",
+                cursor: "pointer",
+                fontSize: "11px",
+                fontWeight: "800",
+                color: "#065f46",
+                boxShadow: "0 1px 4px rgba(6, 95, 70, 0.15)",
+                transition: "all 0.2s ease",
               }}
-            />
-            <span style={{ fontSize: "11px", color: "#166534", fontWeight: "600" }}>
-              AI Online
-            </span>
+            >
+              <Languages size={13} color="#065f46" />
+              <span>{lang === "en" ? "हिंदी" : "EN"}</span>
+            </button>
+
+            {/* AI Online Status */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                background: "#dcfce7",
+                border: "1px solid #bbf7d0",
+                borderRadius: "16px",
+                padding: "3px 9px",
+              }}
+            >
+              <span
+                style={{
+                  width: "6px",
+                  height: "6px",
+                  borderRadius: "50%",
+                  background: "#22c55e",
+                  boxShadow: "0 0 6px #22c55e",
+                  display: "inline-block",
+                }}
+              />
+              <span style={{ fontSize: "11px", color: "#166534", fontWeight: "600" }}>
+                {t("ai_online")}
+              </span>
+            </div>
           </div>
         </div>
       </header>
