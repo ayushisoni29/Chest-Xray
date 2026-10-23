@@ -19,6 +19,30 @@ logger = logging.getLogger("chest_xray_api.database")
 _mongo_client: Optional[MongoClient] = None
 
 
+import subprocess
+
+def _try_autostart_mongodb():
+    """Attempts to auto-launch MongoDB in Linux/Codespaces via Docker or service."""
+    try:
+        subprocess.run(["docker", "start", "mongodb"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=3)
+        return
+    except Exception:
+        pass
+    try:
+        subprocess.run(
+            ["docker", "run", "-d", "--restart", "unless-stopped", "-p", "27017:27017", "--name", "mongodb", "mongo:latest"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=5,
+        )
+        return
+    except Exception:
+        pass
+    try:
+        subprocess.run(["sudo", "service", "mongodb", "start"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=3)
+    except Exception:
+        pass
+
 def get_mongo_client() -> Optional[MongoClient]:
     """
     Returns a thread-safe singleton MongoClient instance.
@@ -35,9 +59,26 @@ def get_mongo_client() -> Optional[MongoClient]:
                 serverSelectionTimeoutMS=2000,
                 connectTimeoutMS=2000,
             )
+            # Test ping
+            _mongo_client.admin.command("ping")
             logger.info("MongoDB client initialized.")
             ensure_indexes(_mongo_client)
         except Exception as e:
+            # If running in Linux/Codespaces and MongoDB was not started yet, try auto-starting it
+            if ("localhost" in MONGODB_URI or "127.0.0.1" in MONGODB_URI) and os.name != "nt":
+                try:
+                    _try_autostart_mongodb()
+                    _mongo_client = MongoClient(
+                        MONGODB_URI,
+                        serverSelectionTimeoutMS=2000,
+                        connectTimeoutMS=2000,
+                    )
+                    _mongo_client.admin.command("ping")
+                    logger.info("MongoDB auto-started and connected successfully.")
+                    ensure_indexes(_mongo_client)
+                    return _mongo_client
+                except Exception:
+                    pass
             logger.error(f"Failed to initialize MongoDB client: {e}")
             _mongo_client = None
     return _mongo_client
