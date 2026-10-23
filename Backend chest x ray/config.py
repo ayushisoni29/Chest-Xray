@@ -88,19 +88,8 @@ MIN_IMG_DIMENSION = 32
 MAX_IMG_DIMENSION = 4096
 MAX_TOTAL_PIXELS = 16_000_000  # 16 Megapixels - decompression bomb protection
 
-# CORS Origins
-ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://localhost:5173",
-    "http://localhost:8080",
-    "http://localhost:8501",
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:5173",
-    "http://127.0.0.1:8501",
-    "capacitor://localhost",
-    "https://localhost",
-    "http://localhost",
-]
+# CORS Origins — Allow all origins for mobile app, LAN Wi-Fi, and Codespaces access
+ALLOWED_ORIGINS = ["*"]
 
 _custom_origins = os.getenv("ALLOWED_ORIGINS", "")
 if _custom_origins:

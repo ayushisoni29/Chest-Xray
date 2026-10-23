@@ -76,6 +76,7 @@ export default function Login() {
       if (res.ok) {
         setCustomBaseUrl(clean);
         setServerStatus({ success: true, message: "Connected to AI server!" });
+        setTimeout(() => setShowServerModal(false), 1000);
       } else {
         setServerStatus({ success: false, message: `Server replied HTTP ${res.status}` });
       }

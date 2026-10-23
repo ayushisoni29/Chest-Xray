@@ -1,0 +1,23 @@
+{
+  "name": "Chest X-Ray AI Multi-Disease Platform",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+  "forwardPorts": [8000, 5173, 27017],
+  "portsAttributes": {
+    "8000": {
+      "label": "FastAPI AI Backend",
+      "onAutoForward": "notify",
+      "visibility": "public"
+    },
+    "5173": {
+      "label": "React Vite Web Dashboard",
+      "onAutoForward": "notify",
+      "visibility": "public"
+    },
+    "27017": {
+      "label": "MongoDB Database",
+      "onAutoForward": "silent",
+      "visibility": "private"
+    }
+  },
+  "postCreateCommand": "bash scripts/start_codespace.sh"
+}
