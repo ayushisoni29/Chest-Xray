@@ -400,7 +400,8 @@ export default function UploadXRay() {
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. John Doe"
+                  placeholder=""
+                  autoComplete="off"
                   value={patientName}
                   onChange={(e) => setPatientName(e.target.value)}
                   style={{
@@ -424,7 +425,8 @@ export default function UploadXRay() {
                   </label>
                   <input
                     type="number"
-                    placeholder="e.g. 45"
+                    placeholder=""
+                    autoComplete="off"
                     value={patientAge}
                     onChange={(e) => setPatientAge(e.target.value)}
                     min="1"
@@ -478,7 +480,8 @@ export default function UploadXRay() {
                 </label>
                 <input
                   type="email"
-                  placeholder="patient@example.com"
+                  placeholder=""
+                  autoComplete="off"
                   value={patientEmail}
                   onChange={(e) => setPatientEmail(e.target.value)}
                   style={{

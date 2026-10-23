@@ -333,16 +333,17 @@ export default function Login() {
             <input
               type="email"
               value={email}
+              autoComplete="off"
               onChange={(e) => {
                 setEmail(e.target.value);
                 setError("");
               }}
-              placeholder="clinician@hospital.org"
+              placeholder=""
               style={{
                 width: "100%",
                 padding: "12px 14px",
                 background: "#ffffff",
-                border: "1.6px solid #065f46",
+                border: "1.5px solid #cbd5e1",
                 borderRadius: "9px",
                 fontSize: "14px",
                 color: "#081d15",
@@ -370,11 +371,12 @@ export default function Login() {
               <input
                 type={showPassword ? "text" : "password"}
                 value={password}
+                autoComplete="new-password"
                 onChange={(e) => {
                   setPassword(e.target.value);
                   setError("");
                 }}
-                placeholder="Enter password"
+                placeholder=""
                 style={{
                   width: "100%",
                   padding: "12px 40px 12px 14px",

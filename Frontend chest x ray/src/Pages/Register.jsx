@@ -218,7 +218,8 @@ export default function Register() {
             <div style={{ position: "relative" }}>
               <input
                 type="text"
-                placeholder="Dr. Rajesh Sharma"
+                placeholder=""
+                autoComplete="off"
                 value={name}
                 onChange={(e) => {
                   setName(e.target.value);
@@ -246,7 +247,8 @@ export default function Register() {
             </label>
             <input
               type="email"
-              placeholder="clinician@hospital.org"
+              placeholder=""
+              autoComplete="off"
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);
@@ -256,7 +258,7 @@ export default function Register() {
                 width: "100%",
                 padding: "10px 14px",
                 background: "#ffffff",
-                border: "1.5px solid #065f46",
+                border: "1.5px solid #cbd5e1",
                 borderRadius: "9px",
                 fontSize: "13.5px",
                 color: "#081d15",
@@ -274,7 +276,8 @@ export default function Register() {
             <div style={{ position: "relative" }}>
               <input
                 type={showPassword ? "text" : "password"}
-                placeholder="Min 8 characters"
+                placeholder=""
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
@@ -319,7 +322,8 @@ export default function Register() {
             </label>
             <input
               type={showPassword ? "text" : "password"}
-              placeholder="Re-enter password"
+              placeholder=""
+              autoComplete="new-password"
               value={confirmPassword}
               onChange={(e) => {
                 setConfirmPassword(e.target.value);
