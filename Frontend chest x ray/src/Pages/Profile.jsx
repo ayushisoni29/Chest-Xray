@@ -98,19 +98,20 @@ export default function Profile() {
     >
       {/* 1. Header & User Info Card */}
       <div>
-        <h2 style={{ fontSize: "18px", fontWeight: "800", color: "#fff", marginBottom: "14px" }}>
+        <h2 style={{ fontSize: "18px", fontWeight: "800", color: "#081d15", marginBottom: "14px" }}>
           Clinician Profile
         </h2>
 
         <div
           style={{
-            background: "rgba(255, 255, 255, 0.03)",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
+            background: "#ffffff",
+            border: "1.5px solid #e2ede6",
             borderRadius: "20px",
             padding: "18px",
             display: "flex",
             alignItems: "center",
             gap: "16px",
+            boxShadow: "0 2px 10px rgba(0, 0, 0, 0.03)",
           }}
         >
           <div
@@ -118,24 +119,24 @@ export default function Profile() {
               width: "56px",
               height: "56px",
               borderRadius: "50%",
-              background: "linear-gradient(135deg, #38bdf8 0%, #6366f1 100%)",
+              background: "linear-gradient(135deg, #059669 0%, #065f46 100%)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               color: "#fff",
               fontWeight: "800",
               fontSize: "20px",
-              boxShadow: "0 4px 15px rgba(56, 189, 248, 0.35)",
+              boxShadow: "0 4px 15px rgba(6, 95, 70, 0.35)",
             }}
           >
             {user.name ? user.name[0].toUpperCase() : "U"}
           </div>
 
           <div>
-            <div style={{ fontSize: "16px", fontWeight: "800", color: "#fff" }}>
+            <div style={{ fontSize: "16px", fontWeight: "800", color: "#081d15" }}>
               {user.name || "Medical Practitioner"}
             </div>
-            <div style={{ fontSize: "12px", color: "#94a3b8", marginTop: "2px" }}>
+            <div style={{ fontSize: "12px", color: "#526e62", marginTop: "2px" }}>
               {user.email || "practitioner@hospital.org"}
             </div>
             <div
@@ -144,8 +145,9 @@ export default function Profile() {
                 marginTop: "6px",
                 padding: "2px 8px",
                 borderRadius: "4px",
-                background: "rgba(56, 189, 248, 0.1)",
-                color: "#38bdf8",
+                background: "#ecfdf5",
+                color: "#065f46",
+                border: "1px solid #a7f3d0",
                 fontSize: "10px",
                 fontWeight: "700",
               }}
@@ -162,76 +164,79 @@ export default function Profile() {
         <div
           onClick={() => setShowAboutSheet(true)}
           style={{
-            background: "rgba(255, 255, 255, 0.03)",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
+            background: "#ffffff",
+            border: "1.5px solid #e2ede6",
             borderRadius: "14px",
             padding: "14px",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
             cursor: "pointer",
+            boxShadow: "0 2px 6px rgba(0, 0, 0, 0.02)",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "rgba(56, 189, 248, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#38bdf8" }}>
+            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "#ecfdf5", display: "flex", alignItems: "center", justifyContent: "center", color: "#065f46" }}>
               <Info size={16} />
             </div>
             <div>
-              <div style={{ fontSize: "13px", fontWeight: "700", color: "#fff" }}>About MedScan AI</div>
-              <div style={{ fontSize: "11px", color: "#94a3b8" }}>Clinical model, pipeline & explainability</div>
+              <div style={{ fontSize: "13px", fontWeight: "700", color: "#081d15" }}>About MedScan AI</div>
+              <div style={{ fontSize: "11px", color: "#526e62" }}>Clinical model, pipeline & explainability</div>
             </div>
           </div>
-          <ChevronRight size={18} color="#64748b" />
+          <ChevronRight size={18} color="#94a3b8" />
         </div>
 
         {/* Server & API Status */}
         <div
           style={{
-            background: "rgba(255, 255, 255, 0.03)",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
+            background: "#ffffff",
+            border: "1.5px solid #e2ede6",
             borderRadius: "14px",
             padding: "14px",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
+            boxShadow: "0 2px 6px rgba(0, 0, 0, 0.02)",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "rgba(34, 197, 94, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#4ade80" }}>
+            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "#dcfce7", display: "flex", alignItems: "center", justifyContent: "center", color: "#166534" }}>
               <Server size={16} />
             </div>
             <div>
-              <div style={{ fontSize: "13px", fontWeight: "700", color: "#fff" }}>Backend Service</div>
-              <div style={{ fontSize: "11px", color: "#4ade80" }}>{serverStatus}</div>
+              <div style={{ fontSize: "13px", fontWeight: "700", color: "#081d15" }}>Backend Service</div>
+              <div style={{ fontSize: "11px", color: "#166534", fontWeight: "600" }}>{serverStatus}</div>
             </div>
           </div>
-          <span style={{ fontSize: "11px", color: "#64748b" }}>FastAPI</span>
+          <span style={{ fontSize: "11px", color: "#526e62", fontWeight: "600" }}>FastAPI</span>
         </div>
 
         {/* Developer Server Configuration Modal */}
         <div
           onClick={() => setShowDevModal(true)}
           style={{
-            background: "rgba(255, 255, 255, 0.03)",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
+            background: "#ffffff",
+            border: "1.5px solid #e2ede6",
             borderRadius: "14px",
             padding: "14px",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
             cursor: "pointer",
+            boxShadow: "0 2px 6px rgba(0, 0, 0, 0.02)",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "rgba(245, 158, 11, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fbbf24" }}>
+            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "#fef3c7", display: "flex", alignItems: "center", justifyContent: "center", color: "#b45309" }}>
               <Code2 size={16} />
             </div>
             <div>
-              <div style={{ fontSize: "13px", fontWeight: "700", color: "#fff" }}>Developer Server URL</div>
-              <div style={{ fontSize: "11px", color: "#94a3b8" }}>Override API host for local/cloud tunnel</div>
+              <div style={{ fontSize: "13px", fontWeight: "700", color: "#081d15" }}>Developer Server URL</div>
+              <div style={{ fontSize: "11px", color: "#526e62" }}>Override API host for local/cloud tunnel</div>
             </div>
           </div>
-          <ChevronRight size={18} color="#64748b" />
+          <ChevronRight size={18} color="#94a3b8" />
         </div>
       </div>
 
@@ -243,10 +248,10 @@ export default function Profile() {
           style={{
             width: "100%",
             padding: "14px",
-            background: "rgba(239, 68, 68, 0.12)",
-            border: "1px solid rgba(239, 68, 68, 0.25)",
+            background: "#fef2f2",
+            border: "1.5px solid #fecaca",
             borderRadius: "14px",
-            color: "#f87171",
+            color: "#dc2626",
             fontWeight: "700",
             fontSize: "14px",
             cursor: "pointer",
@@ -259,7 +264,7 @@ export default function Profile() {
           <LogOut size={16} /> Sign Out
         </button>
 
-        <div style={{ textAlign: "center", marginTop: "10px", fontSize: "11px", color: "#475569" }}>
+        <div style={{ textAlign: "center", marginTop: "10px", fontSize: "11px", color: "#526e62" }}>
           MedScan AI Mobile • Version 1.0.0 (Build 36)
         </div>
       </div>
@@ -271,13 +276,13 @@ export default function Profile() {
             <div className="bottom-sheet-handle" />
 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
-              <h3 style={{ fontSize: "16px", fontWeight: "800", color: "#fff", margin: 0 }}>
+              <h3 style={{ fontSize: "16px", fontWeight: "800", color: "#081d15", margin: 0 }}>
                 About MedScan AI
               </h3>
               <button
                 type="button"
                 onClick={() => setShowAboutSheet(false)}
-                style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer" }}
+                style={{ background: "transparent", border: "none", color: "#526e62", cursor: "pointer" }}
               >
                 <X size={20} />
               </button>
@@ -286,17 +291,17 @@ export default function Profile() {
             {/* Tabs switcher inside bottom sheet */}
             <Tabs tabs={aboutTabs} activeTab={aboutTab} onChange={setAboutTab} />
 
-            <div style={{ marginTop: "16px", minHeight: "180px", fontSize: "12px", color: "#cbd5e1", lineHeight: "1.6" }}>
+            <div style={{ marginTop: "16px", minHeight: "180px", fontSize: "12px", color: "#526e62", lineHeight: "1.6" }}>
               {aboutTab === "overview" && (
                 <div>
-                  <h4 style={{ color: "#fff", fontSize: "13px", marginBottom: "6px" }}>Clinical Objective</h4>
+                  <h4 style={{ color: "#081d15", fontSize: "13px", marginBottom: "6px" }}>Clinical Objective</h4>
                   <p style={{ marginBottom: "10px" }}>
                     MedScan AI provides rapid, automated preliminary screening of chest radiographs
                     across 5 distinct pathological classes: <strong>COVID-19</strong>, <strong>Normal</strong>,
                     <strong>Pneumonia</strong>, <strong>Tuberculosis</strong>, and <strong>Lung Opacity</strong>.
                   </p>
                   <p>
-                    Verified held-out test accuracy is <strong>98.15%</strong> with clinical sensitivity
+                    Verified held-out test accuracy is <strong style={{ color: "#065f46" }}>98.15%</strong> with clinical sensitivity
                     calibration for emergency triage.
                   </p>
                 </div>
@@ -304,7 +309,7 @@ export default function Profile() {
 
               {aboutTab === "workflow" && (
                 <div>
-                  <h4 style={{ color: "#fff", fontSize: "13px", marginBottom: "6px" }}>Dual-Model Ensemble</h4>
+                  <h4 style={{ color: "#081d15", fontSize: "13px", marginBottom: "6px" }}>Dual-Model Ensemble</h4>
                   <p style={{ marginBottom: "8px" }}>
                     1. <strong>Image Quality & Contrast Check:</strong> Laplacian blur and domain validation.
                   </p>
@@ -321,7 +326,7 @@ export default function Profile() {
 
               {aboutTab === "tech" && (
                 <div>
-                  <h4 style={{ color: "#fff", fontSize: "13px", marginBottom: "6px" }}>Architecture</h4>
+                  <h4 style={{ color: "#081d15", fontSize: "13px", marginBottom: "6px" }}>Architecture</h4>
                   <ul style={{ paddingLeft: "18px", display: "flex", flexDirection: "column", gap: "6px" }}>
                     <li><strong>AI Engine:</strong> TensorFlow / Keras 2.16 with Grad-CAM</li>
                     <li><strong>Backend API:</strong> FastAPI + Uvicorn + MongoDB Atlas</li>
@@ -340,10 +345,10 @@ export default function Profile() {
         <div className="bottom-sheet-backdrop" onClick={() => setShowDevModal(false)}>
           <div className="bottom-sheet-content" onClick={(e) => e.stopPropagation()}>
             <div className="bottom-sheet-handle" />
-            <h3 style={{ fontSize: "16px", fontWeight: "800", color: "#fff", marginBottom: "8px" }}>
+            <h3 style={{ fontSize: "16px", fontWeight: "800", color: "#081d15", marginBottom: "8px" }}>
               Developer Server Configuration
             </h3>
-            <p style={{ fontSize: "12px", color: "#94a3b8", marginBottom: "14px" }}>
+            <p style={{ fontSize: "12px", color: "#526e62", marginBottom: "14px" }}>
               Enter your live Codespace or tunnel URL. Leave empty to use default.
             </p>
 
@@ -355,13 +360,14 @@ export default function Profile() {
               style={{
                 width: "100%",
                 padding: "12px",
-                background: "rgba(255, 255, 255, 0.05)",
-                border: "1px solid rgba(255, 255, 255, 0.15)",
+                background: "#ffffff",
+                border: "1.5px solid #cbd5e1",
                 borderRadius: "10px",
-                color: "#fff",
+                color: "#081d15",
                 fontSize: "13px",
                 marginBottom: "12px",
                 boxSizing: "border-box",
+                outline: "none",
               }}
             />
 
@@ -372,9 +378,9 @@ export default function Profile() {
                   borderRadius: "8px",
                   fontSize: "12px",
                   marginBottom: "14px",
-                  background: devStatus.success ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)",
-                  color: devStatus.success ? "#4ade80" : "#f87171",
-                  border: `1px solid ${devStatus.success ? "rgba(34,197,94,0.3)" : "rgba(239,68,68,0.3)"}`,
+                  background: devStatus.success ? "#dcfce7" : "#fee2e2",
+                  color: devStatus.success ? "#166534" : "#991b1b",
+                  border: `1px solid ${devStatus.success ? "#bbf7d0" : "#fecaca"}`,
                 }}
               >
                 {devStatus.message}
@@ -391,11 +397,12 @@ export default function Profile() {
                 }}
                 style={{
                   padding: "10px 14px",
-                  background: "transparent",
-                  border: "1px solid rgba(255, 255, 255, 0.15)",
-                  color: "#94a3b8",
+                  background: "#ffffff",
+                  border: "1.5px solid #cbd5e1",
+                  color: "#526e62",
                   borderRadius: "8px",
                   fontSize: "12px",
+                  fontWeight: "600",
                   cursor: "pointer",
                 }}
               >
@@ -407,13 +414,14 @@ export default function Profile() {
                 disabled={testingDev}
                 style={{
                   padding: "10px 16px",
-                  background: "linear-gradient(135deg, #38bdf8 0%, #6366f1 100%)",
+                  background: "linear-gradient(135deg, #059669 0%, #065f46 100%)",
                   border: "none",
-                  color: "#fff",
+                  color: "#ffffff",
                   borderRadius: "8px",
                   fontSize: "12px",
                   fontWeight: "700",
                   cursor: testingDev ? "not-allowed" : "pointer",
+                  boxShadow: "0 2px 8px rgba(6, 95, 70, 0.25)",
                 }}
               >
                 {testingDev ? "Testing..." : "Test & Save"}

@@ -179,12 +179,12 @@ export default function UploadXRay() {
             marginBottom: "12px",
           }}
         >
-          <span style={{ fontSize: "16px", fontWeight: "800", color: "#fff" }}>
+          <span style={{ fontSize: "16px", fontWeight: "800", color: "#081d15" }}>
             {step === 1 && "Step 1: Choose Scan"}
             {step === 2 && "Step 2: Patient Info"}
             {step === 3 && "Step 3: AI Inference"}
           </span>
-          <span style={{ fontSize: "12px", color: "#38bdf8", fontWeight: "700" }}>
+          <span style={{ fontSize: "12px", color: "#065f46", fontWeight: "700" }}>
             {step} of 3
           </span>
         </div>
@@ -198,7 +198,7 @@ export default function UploadXRay() {
                 flex: 1,
                 height: "4px",
                 borderRadius: "2px",
-                background: s <= step ? "#38bdf8" : "rgba(255, 255, 255, 0.1)",
+                background: s <= step ? "#065f46" : "#cbd5e1",
                 transition: "background 0.3s ease",
               }}
             />
@@ -209,10 +209,10 @@ export default function UploadXRay() {
           <div
             style={{
               padding: "10px 12px",
-              background: "rgba(239, 68, 68, 0.12)",
-              border: "1px solid rgba(239, 68, 68, 0.3)",
+              background: "#fef2f2",
+              border: "1px solid #fecaca",
               borderRadius: "10px",
-              color: "#f87171",
+              color: "#991b1b",
               fontSize: "12px",
               display: "flex",
               alignItems: "center",
@@ -250,8 +250,8 @@ export default function UploadXRay() {
                 <div
                   onClick={() => fileInputRef.current?.click()}
                   style={{
-                    border: "2px dashed rgba(56, 189, 248, 0.35)",
-                    background: "rgba(56, 189, 248, 0.03)",
+                    border: "2px dashed #065f46",
+                    background: "#eef6f2",
                     borderRadius: "20px",
                     padding: "36px 20px",
                     textAlign: "center",
@@ -260,6 +260,7 @@ export default function UploadXRay() {
                     flexDirection: "column",
                     alignItems: "center",
                     gap: "12px",
+                    boxShadow: "0 2px 10px rgba(6, 95, 70, 0.05)",
                   }}
                 >
                   <div
@@ -267,20 +268,20 @@ export default function UploadXRay() {
                       width: "64px",
                       height: "64px",
                       borderRadius: "50%",
-                      background: "rgba(56, 189, 248, 0.1)",
+                      background: "#dcfce7",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      color: "#38bdf8",
+                      color: "#065f46",
                     }}
                   >
                     <Camera size={32} />
                   </div>
                   <div>
-                    <div style={{ fontSize: "16px", fontWeight: "700", color: "#fff", marginBottom: "4px" }}>
+                    <div style={{ fontSize: "16px", fontWeight: "700", color: "#081d15", marginBottom: "4px" }}>
                       Take Photo or Select X-Ray
                     </div>
-                    <div style={{ fontSize: "12px", color: "#94a3b8" }}>
+                    <div style={{ fontSize: "12px", color: "#526e62" }}>
                       Supports JPEG, PNG, WEBP (Max 15MB)
                     </div>
                   </div>
@@ -288,13 +289,15 @@ export default function UploadXRay() {
                     type="button"
                     style={{
                       marginTop: "6px",
-                      padding: "10px 20px",
-                      background: "rgba(255, 255, 255, 0.08)",
-                      border: "1px solid rgba(255, 255, 255, 0.15)",
-                      color: "#fff",
+                      padding: "10px 22px",
+                      background: "#065f46",
+                      border: "none",
+                      color: "#ffffff",
                       borderRadius: "10px",
                       fontSize: "13px",
-                      fontWeight: "600",
+                      fontWeight: "700",
+                      cursor: "pointer",
+                      boxShadow: "0 2px 8px rgba(6, 95, 70, 0.25)",
                     }}
                   >
                     Browse Files
@@ -303,14 +306,15 @@ export default function UploadXRay() {
               ) : (
                 <div
                   style={{
-                    background: "rgba(255, 255, 255, 0.03)",
-                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                    background: "#ffffff",
+                    border: "1.5px solid #e2ede6",
                     borderRadius: "20px",
                     padding: "16px",
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
                     gap: "12px",
+                    boxShadow: "0 2px 10px rgba(0, 0, 0, 0.04)",
                   }}
                 >
                   <div
@@ -319,11 +323,11 @@ export default function UploadXRay() {
                       height: "220px",
                       borderRadius: "14px",
                       overflow: "hidden",
-                      background: "#000",
+                      background: "#081d15",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      border: "1px solid rgba(255, 255, 255, 0.08)",
+                      border: "1px solid #e2ede6",
                     }}
                   >
                     <img
@@ -339,10 +343,10 @@ export default function UploadXRay() {
                       width: "100%",
                       alignItems: "center",
                       fontSize: "12px",
-                      color: "#94a3b8",
+                      color: "#526e62",
                     }}
                   >
-                    <span style={{ fontWeight: "600", color: "#e2e8f0" }}>
+                    <span style={{ fontWeight: "700", color: "#081d15" }}>
                       {selectedFile?.name?.slice(0, 24)}...
                     </span>
                     <span>{(selectedFile?.size / 1024 / 1024).toFixed(2)} MB</span>
@@ -356,9 +360,9 @@ export default function UploadXRay() {
                     style={{
                       background: "transparent",
                       border: "none",
-                      color: "#f87171",
+                      color: "#dc2626",
                       fontSize: "12px",
-                      fontWeight: "600",
+                      fontWeight: "700",
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
@@ -379,11 +383,20 @@ export default function UploadXRay() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              style={{ display: "flex", flexDirection: "column", gap: "14px" }}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "14px",
+                background: "#ffffff",
+                border: "1.5px solid #e2ede6",
+                borderRadius: "20px",
+                padding: "18px",
+                boxShadow: "0 2px 10px rgba(0, 0, 0, 0.03)",
+              }}
             >
               <div>
-                <label style={{ display: "block", fontSize: "11px", fontWeight: "700", color: "#94a3b8", marginBottom: "6px" }}>
-                  PATIENT FULL NAME *
+                <label style={{ display: "block", fontSize: "11px", fontWeight: "700", color: "#081d15", marginBottom: "6px", textTransform: "uppercase" }}>
+                  Patient Full Name *
                 </label>
                 <input
                   type="text"
@@ -393,20 +406,21 @@ export default function UploadXRay() {
                   style={{
                     width: "100%",
                     padding: "12px 14px",
-                    background: "rgba(255, 255, 255, 0.05)",
-                    border: "1px solid rgba(255, 255, 255, 0.12)",
+                    background: "#ffffff",
+                    border: "1.5px solid #cbd5e1",
                     borderRadius: "12px",
-                    color: "#fff",
+                    color: "#081d15",
                     fontSize: "14px",
                     boxSizing: "border-box",
+                    outline: "none",
                   }}
                 />
               </div>
 
               <div style={{ display: "flex", gap: "10px" }}>
                 <div style={{ flex: 1 }}>
-                  <label style={{ display: "block", fontSize: "11px", fontWeight: "700", color: "#94a3b8", marginBottom: "6px" }}>
-                    AGE *
+                  <label style={{ display: "block", fontSize: "11px", fontWeight: "700", color: "#081d15", marginBottom: "6px", textTransform: "uppercase" }}>
+                    Age *
                   </label>
                   <input
                     type="number"
@@ -418,19 +432,20 @@ export default function UploadXRay() {
                     style={{
                       width: "100%",
                       padding: "12px 14px",
-                      background: "rgba(255, 255, 255, 0.05)",
-                      border: "1px solid rgba(255, 255, 255, 0.12)",
+                      background: "#ffffff",
+                      border: "1.5px solid #cbd5e1",
                       borderRadius: "12px",
-                      color: "#fff",
+                      color: "#081d15",
                       fontSize: "14px",
                       boxSizing: "border-box",
+                      outline: "none",
                     }}
                   />
                 </div>
 
                 <div style={{ flex: 1.5 }}>
-                  <label style={{ display: "block", fontSize: "11px", fontWeight: "700", color: "#94a3b8", marginBottom: "6px" }}>
-                    GENDER *
+                  <label style={{ display: "block", fontSize: "11px", fontWeight: "700", color: "#081d15", marginBottom: "6px", textTransform: "uppercase" }}>
+                    Gender *
                   </label>
                   <div style={{ display: "flex", gap: "6px" }}>
                     {["Male", "Female", "Other"].map((g) => (
@@ -442,9 +457,9 @@ export default function UploadXRay() {
                           flex: 1,
                           padding: "12px 4px",
                           borderRadius: "10px",
-                          border: patientGender === g ? "1px solid #38bdf8" : "1px solid rgba(255, 255, 255, 0.1)",
-                          background: patientGender === g ? "rgba(56, 189, 248, 0.15)" : "rgba(255, 255, 255, 0.04)",
-                          color: patientGender === g ? "#38bdf8" : "#94a3b8",
+                          border: patientGender === g ? "1.5px solid #065f46" : "1.5px solid #e2ede6",
+                          background: patientGender === g ? "#ecfdf5" : "#ffffff",
+                          color: patientGender === g ? "#065f46" : "#526e62",
                           fontSize: "12px",
                           fontWeight: "700",
                           cursor: "pointer",
@@ -458,8 +473,8 @@ export default function UploadXRay() {
               </div>
 
               <div>
-                <label style={{ display: "block", fontSize: "11px", fontWeight: "700", color: "#94a3b8", marginBottom: "6px" }}>
-                  PATIENT / CONTACT EMAIL (OPTIONAL)
+                <label style={{ display: "block", fontSize: "11px", fontWeight: "700", color: "#081d15", marginBottom: "6px", textTransform: "uppercase" }}>
+                  Patient / Contact Email (Optional)
                 </label>
                 <input
                   type="email"
@@ -469,12 +484,13 @@ export default function UploadXRay() {
                   style={{
                     width: "100%",
                     padding: "12px 14px",
-                    background: "rgba(255, 255, 255, 0.05)",
-                    border: "1px solid rgba(255, 255, 255, 0.12)",
+                    background: "#ffffff",
+                    border: "1.5px solid #cbd5e1",
                     borderRadius: "12px",
-                    color: "#fff",
+                    color: "#081d15",
                     fontSize: "14px",
                     boxSizing: "border-box",
+                    outline: "none",
                   }}
                 />
               </div>
@@ -504,7 +520,7 @@ export default function UploadXRay() {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  background: "radial-gradient(circle, rgba(56,189,248,0.2) 0%, rgba(2,6,23,0) 70%)",
+                  background: "radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, rgba(244, 248, 246, 0) 70%)",
                   marginBottom: "24px",
                 }}
               >
@@ -516,17 +532,17 @@ export default function UploadXRay() {
                     inset: 0,
                     borderRadius: "50%",
                     border: "2px solid transparent",
-                    borderTopColor: "#38bdf8",
-                    borderRightColor: "#6366f1",
+                    borderTopColor: "#059669",
+                    borderRightColor: "#10b981",
                   }}
                 />
-                <Sparkles size={48} color="#38bdf8" />
+                <Sparkles size={48} color="#059669" />
               </div>
 
-              <div style={{ fontSize: "18px", fontWeight: "800", color: "#fff", marginBottom: "8px" }}>
+              <div style={{ fontSize: "18px", fontWeight: "800", color: "#081d15", marginBottom: "8px" }}>
                 Analyzing Chest X-Ray
               </div>
-              <div style={{ fontSize: "13px", color: "#94a3b8", marginBottom: "20px", minHeight: "20px" }}>
+              <div style={{ fontSize: "13px", color: "#526e62", marginBottom: "20px", minHeight: "20px" }}>
                 {analysisStatus}
               </div>
 
@@ -535,7 +551,7 @@ export default function UploadXRay() {
                   width: "100%",
                   maxWidth: "280px",
                   height: "6px",
-                  background: "rgba(255, 255, 255, 0.1)",
+                  background: "#e2ede6",
                   borderRadius: "3px",
                   overflow: "hidden",
                 }}
@@ -545,7 +561,7 @@ export default function UploadXRay() {
                   transition={{ ease: "easeOut", duration: 0.4 }}
                   style={{
                     height: "100%",
-                    background: "linear-gradient(90deg, #38bdf8, #6366f1)",
+                    background: "linear-gradient(90deg, #10b981, #065f46)",
                   }}
                 />
               </div>
@@ -555,7 +571,7 @@ export default function UploadXRay() {
       </div>
 
       {/* Bottom Action Buttons */}
-      <div style={{ paddingTop: "12px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+      <div style={{ paddingTop: "12px", borderTop: "1px solid #e2ede6" }}>
         {step === 1 && (
           <button
             type="button"
@@ -567,9 +583,9 @@ export default function UploadXRay() {
               borderRadius: "14px",
               border: "none",
               background: selectedFile
-                ? "linear-gradient(135deg, #38bdf8 0%, #6366f1 100%)"
-                : "rgba(255, 255, 255, 0.08)",
-              color: selectedFile ? "#fff" : "#64748b",
+                ? "linear-gradient(135deg, #059669 0%, #065f46 100%)"
+                : "#e2ede6",
+              color: selectedFile ? "#ffffff" : "#7a998c",
               fontWeight: "700",
               fontSize: "15px",
               cursor: selectedFile ? "pointer" : "not-allowed",
@@ -577,7 +593,7 @@ export default function UploadXRay() {
               alignItems: "center",
               justifyContent: "center",
               gap: "8px",
-              boxShadow: selectedFile ? "0 4px 15px rgba(56, 189, 248, 0.4)" : "none",
+              boxShadow: selectedFile ? "0 4px 15px rgba(6, 95, 70, 0.35)" : "none",
             }}
           >
             Continue to Patient Info <ArrowRight size={18} />
@@ -593,9 +609,9 @@ export default function UploadXRay() {
                 flex: 1,
                 padding: "16px",
                 borderRadius: "14px",
-                border: "1px solid rgba(255, 255, 255, 0.15)",
-                background: "transparent",
-                color: "#cbd5e1",
+                border: "1.5px solid #cbd5e1",
+                background: "#ffffff",
+                color: "#081d15",
                 fontWeight: "700",
                 fontSize: "14px",
                 cursor: "pointer",
@@ -611,8 +627,8 @@ export default function UploadXRay() {
                 padding: "16px",
                 borderRadius: "14px",
                 border: "none",
-                background: "linear-gradient(135deg, #38bdf8 0%, #6366f1 100%)",
-                color: "#fff",
+                background: "linear-gradient(135deg, #059669 0%, #065f46 100%)",
+                color: "#ffffff",
                 fontWeight: "700",
                 fontSize: "15px",
                 cursor: "pointer",
@@ -620,7 +636,7 @@ export default function UploadXRay() {
                 alignItems: "center",
                 justifyContent: "center",
                 gap: "8px",
-                boxShadow: "0 4px 15px rgba(56, 189, 248, 0.4)",
+                boxShadow: "0 4px 15px rgba(6, 95, 70, 0.35)",
               }}
             >
               Start AI Analysis <Sparkles size={18} />

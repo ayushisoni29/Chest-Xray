@@ -93,10 +93,10 @@ export default function History() {
       {/* Title */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
-          <h2 style={{ fontSize: "18px", fontWeight: "800", color: "#fff", margin: 0 }}>
+          <h2 style={{ fontSize: "18px", fontWeight: "800", color: "#081d15", margin: 0 }}>
             Scan History
           </h2>
-          <span style={{ fontSize: "11px", color: "#94a3b8" }}>
+          <span style={{ fontSize: "11px", color: "#526e62" }}>
             {items.length} records in database
           </span>
         </div>
@@ -107,14 +107,15 @@ export default function History() {
         style={{
           display: "flex",
           alignItems: "center",
-          background: "rgba(255, 255, 255, 0.04)",
-          border: "1px solid rgba(255, 255, 255, 0.08)",
+          background: "#ffffff",
+          border: "1.5px solid #cbd5e1",
           borderRadius: "12px",
           padding: "8px 12px",
           gap: "8px",
+          boxShadow: "0 2px 6px rgba(0, 0, 0, 0.02)",
         }}
       >
-        <Search size={16} color="#64748b" />
+        <Search size={16} color="#526e62" />
         <input
           type="text"
           placeholder="Search by diagnosis or filename..."
@@ -123,7 +124,7 @@ export default function History() {
           style={{
             background: "transparent",
             border: "none",
-            color: "#fff",
+            color: "#081d15",
             fontSize: "13px",
             outline: "none",
             width: "100%",
@@ -151,13 +152,14 @@ export default function History() {
               style={{
                 padding: "6px 12px",
                 borderRadius: "20px",
-                border: isActive ? "1px solid #38bdf8" : "1px solid rgba(255,255,255,0.08)",
-                background: isActive ? "rgba(56,189,248,0.2)" : "rgba(255,255,255,0.03)",
-                color: isActive ? "#38bdf8" : "#94a3b8",
+                border: isActive ? "1.5px solid #065f46" : "1.5px solid #e2ede6",
+                background: isActive ? "#065f46" : "#ffffff",
+                color: isActive ? "#ffffff" : "#526e62",
                 fontSize: "11px",
-                fontWeight: "600",
+                fontWeight: "700",
                 whiteSpace: "nowrap",
                 cursor: "pointer",
+                boxShadow: isActive ? "0 2px 6px rgba(6, 95, 70, 0.25)" : "none",
               }}
             >
               {cat.replace("_", " ")}
@@ -179,8 +181,8 @@ export default function History() {
       >
         {loading ? (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "180px" }}>
-            <Loader2 size={28} className="spin" color="#38bdf8" />
-            <span style={{ fontSize: "12px", color: "#94a3b8", marginTop: "8px" }}>Loading records...</span>
+            <Loader2 size={28} className="spin" color="#065f46" />
+            <span style={{ fontSize: "12px", color: "#526e62", marginTop: "8px" }}>Loading records...</span>
           </div>
         ) : filteredItems.length === 0 ? (
           <div
@@ -193,15 +195,15 @@ export default function History() {
               justifyContent: "center",
             }}
           >
-            <FolderOpen size={40} color="#475569" style={{ marginBottom: "12px" }} />
-            <div style={{ color: "#fff", fontWeight: "700", fontSize: "15px" }}>No Scans Found</div>
-            <div style={{ color: "#94a3b8", fontSize: "12px", marginTop: "4px" }}>
+            <FolderOpen size={40} color="#a7f3d0" style={{ marginBottom: "12px" }} />
+            <div style={{ color: "#081d15", fontWeight: "700", fontSize: "15px" }}>No Scans Found</div>
+            <div style={{ color: "#526e62", fontSize: "12px", marginTop: "4px" }}>
               Try another filter or scan an X-ray to start your history.
             </div>
           </div>
         ) : (
           filteredItems.map((item) => {
-            const classColor = CLASS_COLORS[item.predicted_class] || "#38bdf8";
+            const classColor = CLASS_COLORS[item.predicted_class] || "#065f46";
             const dateStr = item.timestamp
               ? new Date(item.timestamp).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })
               : "Recent";
@@ -211,8 +213,8 @@ export default function History() {
                 key={item.id}
                 onClick={() => navigate(`/results?id=${item.id}`)}
                 style={{
-                  background: "rgba(255, 255, 255, 0.03)",
-                  border: "1px solid rgba(255, 255, 255, 0.08)",
+                  background: "#ffffff",
+                  border: "1.5px solid #e2ede6",
                   borderRadius: "14px",
                   padding: "12px",
                   display: "flex",
@@ -220,6 +222,7 @@ export default function History() {
                   justifyContent: "space-between",
                   cursor: "pointer",
                   transition: "transform 0.15s ease",
+                  boxShadow: "0 2px 6px rgba(0, 0, 0, 0.02)",
                 }}
               >
                 {/* Left: Thumbnail & Details */}
@@ -229,9 +232,9 @@ export default function History() {
                       width: "44px",
                       height: "44px",
                       borderRadius: "10px",
-                      background: "#000",
+                      background: "#081d15",
                       overflow: "hidden",
-                      border: "1px solid rgba(255,255,255,0.1)",
+                      border: "1px solid #e2ede6",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -263,9 +266,9 @@ export default function History() {
                       <span
                         style={{
                           fontSize: "11px",
-                          fontWeight: "600",
-                          color: "#94a3b8",
-                          background: "rgba(255,255,255,0.05)",
+                          fontWeight: "700",
+                          color: "#065f46",
+                          background: "#ecfdf5",
                           padding: "1px 6px",
                           borderRadius: "4px",
                         }}
@@ -273,7 +276,7 @@ export default function History() {
                         {Math.round((item.confidence || 0) * 100)}%
                       </span>
                     </div>
-                    <div style={{ fontSize: "11px", color: "#64748b", marginTop: "2px" }}>
+                    <div style={{ fontSize: "11px", color: "#526e62", marginTop: "2px" }}>
                       {dateStr} • {item.image_filename?.slice(0, 16)}...
                     </div>
                   </div>
@@ -288,9 +291,9 @@ export default function History() {
                     style={{
                       padding: "8px",
                       borderRadius: "8px",
-                      border: "1px solid rgba(255,255,255,0.1)",
-                      background: "rgba(255,255,255,0.04)",
-                      color: "#38bdf8",
+                      border: "1px solid #a7f3d0",
+                      background: "#ecfdf5",
+                      color: "#065f46",
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
@@ -303,7 +306,7 @@ export default function History() {
                       <Download size={14} />
                     )}
                   </button>
-                  <ChevronRight size={18} color="#64748b" />
+                  <ChevronRight size={18} color="#94a3b8" />
                 </div>
               </div>
             );

@@ -127,8 +127,8 @@ export default function Results() {
   if (loading) {
     return (
       <div style={{ display: "flex", flexDirection: "column", height: "100%", alignItems: "center", justifyContent: "center" }}>
-        <Loader2 size={36} className="spin" color="#38bdf8" />
-        <span style={{ color: "#94a3b8", fontSize: "13px", marginTop: "12px" }}>Loading Clinical Findings...</span>
+        <Loader2 size={36} className="spin" color="#065f46" />
+        <span style={{ color: "#526e62", fontSize: "13px", marginTop: "12px" }}>Loading Clinical Findings...</span>
       </div>
     );
   }
@@ -136,19 +136,21 @@ export default function Results() {
   if (!analysisData) {
     return (
       <div style={{ padding: "20px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%" }}>
-        <AlertCircle size={48} color="#f87171" style={{ marginBottom: "12px" }} />
-        <h2 style={{ fontSize: "18px", color: "#fff", marginBottom: "8px" }}>No Analysis Available</h2>
-        <p style={{ color: "#94a3b8", fontSize: "13px", marginBottom: "20px" }}>Please scan an X-ray first to view results.</p>
+        <AlertCircle size={48} color="#ef4444" style={{ marginBottom: "12px" }} />
+        <h2 style={{ fontSize: "18px", color: "#081d15", marginBottom: "8px" }}>No Analysis Available</h2>
+        <p style={{ color: "#526e62", fontSize: "13px", marginBottom: "20px" }}>Please scan an X-ray first to view results.</p>
         <button
           onClick={() => navigate("/detection")}
           style={{
             padding: "12px 24px",
-            background: "linear-gradient(135deg, #38bdf8, #6366f1)",
+            background: "linear-gradient(135deg, #059669 0%, #065f46 100%)",
             color: "#fff",
             border: "none",
             borderRadius: "12px",
             fontWeight: "700",
             fontSize: "14px",
+            cursor: "pointer",
+            boxShadow: "0 4px 12px rgba(6, 95, 70, 0.3)",
           }}
         >
           New Scan
@@ -170,7 +172,7 @@ export default function Results() {
   } = analysisData;
 
   const confPercent = Math.round(confidence * 100);
-  const classColor = CLASS_COLORS[predicted_class] || "#38bdf8";
+  const classColor = CLASS_COLORS[predicted_class] || "#065f46";
   const isLowConfidence = confidence < 0.6;
 
   // Chart data for Recharts
@@ -199,7 +201,7 @@ export default function Results() {
     >
       {/* Disclaimer Banner — Always Visible */}
       <div className="disclaimer-banner">
-        <ShieldAlert size={16} color="#38bdf8" style={{ flexShrink: 0 }} />
+        <ShieldAlert size={16} color="#065f46" style={{ flexShrink: 0 }} />
         <span>AI-assisted preliminary screening — not a definitive medical diagnosis.</span>
       </div>
 
@@ -207,11 +209,11 @@ export default function Results() {
       {isLowConfidence && (
         <div
           style={{
-            background: "rgba(239, 68, 68, 0.12)",
-            border: "1px solid rgba(239, 68, 68, 0.3)",
+            background: "#fef2f2",
+            border: "1px solid #fecaca",
             borderRadius: "10px",
             padding: "8px 12px",
-            color: "#f87171",
+            color: "#991b1b",
             fontSize: "11px",
             display: "flex",
             alignItems: "center",
@@ -242,24 +244,24 @@ export default function Results() {
             {/* Big Classification Chip Card */}
             <div
               style={{
-                background: "rgba(255, 255, 255, 0.03)",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
+                background: "#ffffff",
+                border: "1.5px solid #e2ede6",
                 borderRadius: "18px",
                 padding: "16px",
-                textAlign: "center",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
+                boxShadow: "0 2px 10px rgba(0, 0, 0, 0.03)",
               }}
             >
               <div style={{ textAlign: "left" }}>
-                <span style={{ fontSize: "11px", color: "#94a3b8", fontWeight: "600", textTransform: "uppercase" }}>
+                <span style={{ fontSize: "11px", color: "#526e62", fontWeight: "700", textTransform: "uppercase" }}>
                   Primary Classification
                 </span>
                 <div style={{ fontSize: "24px", fontWeight: "800", color: classColor, marginTop: "2px" }}>
                   {predicted_class.replace("_", " ")}
                 </div>
-                <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "2px" }}>
+                <div style={{ fontSize: "11px", color: "#526e62", marginTop: "2px" }}>
                   Patient: {patient.patientName || "Anonymous"} ({patient.patientAge || "?"}y, {patient.patientGender || "?"})
                 </div>
               </div>
@@ -275,43 +277,44 @@ export default function Results() {
                   flexDirection: "column",
                   alignItems: "center",
                   justifyContent: "center",
-                  background: "rgba(0,0,0,0.3)",
-                  boxShadow: `0 0 16px ${classColor}33`,
+                  background: "#f4f8f6",
+                  boxShadow: `0 2px 8px rgba(0,0,0,0.06)`,
                 }}
               >
-                <span style={{ fontSize: "18px", fontWeight: "900", color: "#fff" }}>{confPercent}%</span>
-                <span style={{ fontSize: "9px", color: "#94a3b8", fontWeight: "600" }}>CONFIDENCE</span>
+                <span style={{ fontSize: "18px", fontWeight: "900", color: "#081d15" }}>{confPercent}%</span>
+                <span style={{ fontSize: "9px", color: "#526e62", fontWeight: "700" }}>CONFIDENCE</span>
               </div>
             </div>
 
             {/* Probability Breakdown (Compact Recharts) */}
             <div
               style={{
-                background: "rgba(255, 255, 255, 0.03)",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
+                background: "#ffffff",
+                border: "1.5px solid #e2ede6",
                 borderRadius: "18px",
                 padding: "12px 14px",
                 flex: 1,
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "center",
+                boxShadow: "0 2px 10px rgba(0, 0, 0, 0.03)",
               }}
             >
-              <span style={{ fontSize: "12px", color: "#94a3b8", fontWeight: "700", marginBottom: "8px" }}>
+              <span style={{ fontSize: "12px", color: "#081d15", fontWeight: "700", marginBottom: "8px" }}>
                 Multi-Class Confidence Distribution
               </span>
               <div style={{ width: "100%", height: "135px" }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 25, left: 10, bottom: 0 }}>
                     <XAxis type="number" domain={[0, 100]} hide />
-                    <YAxis dataKey="name" type="category" stroke="#94a3b8" fontSize={10} width={75} />
+                    <YAxis dataKey="name" type="category" stroke="#526e62" fontSize={10} width={75} />
                     <Tooltip
                       formatter={(val) => [`${val}%`, "Probability"]}
-                      contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", fontSize: "11px" }}
+                      contentStyle={{ background: "#ffffff", border: "1.5px solid #e2ede6", borderRadius: "8px", fontSize: "11px", color: "#081d15" }}
                     />
                     <Bar dataKey="prob" radius={[0, 4, 4, 0]}>
                       {chartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={CLASS_COLORS[entry.code] || "#38bdf8"} />
+                        <Cell key={`cell-${index}`} fill={CLASS_COLORS[entry.code] || "#065f46"} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -340,11 +343,12 @@ export default function Results() {
                 style={{
                   padding: "6px 14px",
                   borderRadius: "20px",
-                  border: !showHeatmapToggle ? "1px solid #38bdf8" : "1px solid rgba(255,255,255,0.1)",
-                  background: !showHeatmapToggle ? "rgba(56,189,248,0.2)" : "rgba(255,255,255,0.04)",
-                  color: !showHeatmapToggle ? "#38bdf8" : "#94a3b8",
+                  border: !showHeatmapToggle ? "1.5px solid #065f46" : "1.5px solid #e2ede6",
+                  background: !showHeatmapToggle ? "#ecfdf5" : "#ffffff",
+                  color: !showHeatmapToggle ? "#065f46" : "#526e62",
                   fontSize: "12px",
-                  fontWeight: "600",
+                  fontWeight: "700",
+                  cursor: "pointer",
                 }}
               >
                 Original Scan
@@ -355,11 +359,12 @@ export default function Results() {
                 style={{
                   padding: "6px 14px",
                   borderRadius: "20px",
-                  border: showHeatmapToggle ? "1px solid #a855f7" : "1px solid rgba(255,255,255,0.1)",
-                  background: showHeatmapToggle ? "rgba(168,85,247,0.2)" : "rgba(255,255,255,0.04)",
-                  color: showHeatmapToggle ? "#c084fc" : "#94a3b8",
+                  border: showHeatmapToggle ? "1.5px solid #065f46" : "1.5px solid #e2ede6",
+                  background: showHeatmapToggle ? "#ecfdf5" : "#ffffff",
+                  color: showHeatmapToggle ? "#065f46" : "#526e62",
                   fontSize: "12px",
-                  fontWeight: "600",
+                  fontWeight: "700",
+                  cursor: "pointer",
                 }}
               >
                 Grad-CAM Heatmap
@@ -371,10 +376,10 @@ export default function Results() {
               style={{
                 width: "100%",
                 height: "220px",
-                background: "#000",
+                background: "#081d15",
                 borderRadius: "16px",
                 overflow: "hidden",
-                border: "1px solid rgba(255,255,255,0.1)",
+                border: "1.5px solid #e2ede6",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -396,16 +401,17 @@ export default function Results() {
 
             <div
               style={{
-                background: "rgba(255, 255, 255, 0.03)",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
+                background: "#ffffff",
+                border: "1.5px solid #e2ede6",
                 borderRadius: "12px",
                 padding: "10px 12px",
                 fontSize: "11px",
-                color: "#94a3b8",
+                color: "#526e62",
                 lineHeight: "1.4",
+                boxShadow: "0 2px 6px rgba(0, 0, 0, 0.02)",
               }}
             >
-              <strong style={{ color: "#fff" }}>Grad-CAM Explanation:</strong> Warmer red/yellow regions
+              <strong style={{ color: "#081d15" }}>Grad-CAM Explanation:</strong> Warmer red/yellow regions
               highlight visual features that most heavily influenced the neural ensemble's classification.
             </div>
           </div>
@@ -425,42 +431,43 @@ export default function Results() {
             {/* Patient & Scan Info Card */}
             <div
               style={{
-                background: "rgba(255, 255, 255, 0.03)",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
+                background: "#ffffff",
+                border: "1.5px solid #e2ede6",
                 borderRadius: "16px",
                 padding: "14px",
                 fontSize: "12px",
                 display: "flex",
                 flexDirection: "column",
                 gap: "8px",
+                boxShadow: "0 2px 10px rgba(0, 0, 0, 0.03)",
               }}
             >
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ color: "#94a3b8" }}>Patient Name</span>
-                <strong style={{ color: "#fff" }}>{patient.patientName || "N/A"}</strong>
+                <span style={{ color: "#526e62" }}>Patient Name</span>
+                <strong style={{ color: "#081d15" }}>{patient.patientName || "N/A"}</strong>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ color: "#94a3b8" }}>Age / Gender</span>
-                <strong style={{ color: "#fff" }}>{patient.patientAge} yrs • {patient.patientGender}</strong>
+                <span style={{ color: "#526e62" }}>Age / Gender</span>
+                <strong style={{ color: "#081d15" }}>{patient.patientAge} yrs • {patient.patientGender}</strong>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ color: "#94a3b8" }}>File Name</span>
-                <strong style={{ color: "#fff" }}>{analysisData.fileName || "xray.png"}</strong>
+                <span style={{ color: "#526e62" }}>File Name</span>
+                <strong style={{ color: "#081d15" }}>{analysisData.fileName || "xray.png"}</strong>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ color: "#94a3b8" }}>Scan Timestamp</span>
-                <strong style={{ color: "#fff" }}>{analysisData.date} {analysisData.time}</strong>
+                <span style={{ color: "#526e62" }}>Scan Timestamp</span>
+                <strong style={{ color: "#081d15" }}>{analysisData.date} {analysisData.time}</strong>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ color: "#94a3b8" }}>Clinical Baseline Cutoff</span>
-                <strong style={{ color: "#38bdf8" }}>
+                <span style={{ color: "#526e62" }}>Clinical Baseline Cutoff</span>
+                <strong style={{ color: "#065f46" }}>
                   {(calibrated_thresholds[predicted_class] || 0.5) * 100}% (Standard Ref)
                 </strong>
               </div>
             </div>
 
             {downloadError && (
-              <div style={{ color: "#f87171", fontSize: "11px", textAlign: "center" }}>
+              <div style={{ color: "#dc2626", fontSize: "11px", textAlign: "center" }}>
                 {downloadError}
               </div>
             )}
@@ -473,7 +480,7 @@ export default function Results() {
               style={{
                 width: "100%",
                 padding: "16px",
-                background: "linear-gradient(135deg, #38bdf8 0%, #6366f1 100%)",
+                background: "linear-gradient(135deg, #059669 0%, #065f46 100%)",
                 border: "none",
                 borderRadius: "14px",
                 color: "#fff",
@@ -484,7 +491,7 @@ export default function Results() {
                 alignItems: "center",
                 justifyContent: "center",
                 gap: "8px",
-                boxShadow: "0 4px 15px rgba(56, 189, 248, 0.4)",
+                boxShadow: "0 4px 15px rgba(6, 95, 70, 0.35)",
               }}
             >
               {downloadingReport ? (
