@@ -3,8 +3,10 @@ import re
 import httpx
 from typing import Optional, Dict, Any, List
 
-# Check for Gemini API key
+# External API keys (Free tiers supported: Groq Qwen 2.5, Google Gemini, OpenRouter)
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "").strip()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "").strip()
 
 # Offline Clinical Knowledge Base for Chest Radiography & Pulmonary Conditions
 KNOWLEDGE_BASE = {
@@ -290,14 +292,93 @@ def generate_offline_response(
             )
 
 
+def get_active_keys():
+    """Dynamically read and refresh API keys from environment and .env."""
+    from dotenv import load_dotenv
+    env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
+    if os.path.exists(env_path):
+        load_dotenv(env_path, override=True)
+    return {
+        "groq": os.getenv("GROQ_API_KEY", "").strip(),
+        "gemini": os.getenv("GEMINI_API_KEY", "").strip(),
+        "openrouter": os.getenv("OPENROUTER_API_KEY", "").strip(),
+        "groq_model": os.getenv("GROQ_MODEL", "qwen/qwen3-32b").strip(),
+    }
+
+
+def is_app_or_health_related(message: str) -> bool:
+    """Checks if user query is strictly within Chest X-Ray and respiratory health domain."""
+    msg = message.lower().strip()
+    
+    # Common short conversational greetings/acknowledgments
+    greetings = ["hi", "hello", "hey", "namaste", "नमस्ते", "हैलो", "hlo", "ok", "okay", "thanks", "thank you", "धन्यवाद"]
+    if any(msg == g or msg.startswith(g + " ") for g in greetings):
+        return True
+
+    # Obvious non-medical off-topic keywords to instantly reject
+    off_topic_indicators = [
+        "python", "javascript", "code", "coding", "program", "java", "c++", "html", "css",
+        "prime minister", "president", "election", "politics", "cricket", "ipl", "football",
+        "movie", "film", "actor", "actress", "song", "lyrics", "capital of", "recipe",
+        "weather tomorrow", "stock market", "crypto", "bitcoin", "joke", "chutkula",
+        "game", "gaming", "cheat code", "solve math", "calculate", "history of", "essay on"
+    ]
+    if any(k in msg for k in off_topic_indicators):
+        return False
+
+    return True
+
+
+def get_out_of_scope_message(language: str = "en") -> str:
+    is_hi = language.lower().startswith("hi")
+    if is_hi:
+        return (
+            "⚠️ **असंबंधित प्रश्न (Out of Scope):**\n\n"
+            "क्षमा करें, मैं केवल **चेस्ट एक्स-रे (Chest X-Ray) और फेफड़ों के स्वास्थ्य** (जैसे निमोनिया, टीबी, कोविड-19, फेफड़ों में अपारदर्शिता, हीटमैप विश्लेषण और सावधानियां) से संबंधित प्रश्नों के उत्तर देने के लिए अधिकृत हूँ।\n\n"
+            "मैं अन्य सामान्य, तकनीकी या असंबंधित विषयों पर उत्तर देने में असमर्थ हूँ। कृपया अपनी एक्स-रे रिपोर्ट, लक्षणों या स्वास्थ्य से जुड़ा कोई प्रश्न पूछें!"
+        )
+    else:
+        return (
+            "⚠️ **Notice (Out of Domain Scope):**\n\n"
+            "I apologize, but as **Dr. AI**, I am strictly specialized and authorized exclusively for **Chest X-Ray screening and respiratory health** (such as Pneumonia, COVID-19, Tuberculosis, Lung Opacity, Grad-CAM heatmaps, and medical precautions).\n\n"
+            "I am unable to answer questions outside this medical scope. Please feel free to ask anything regarding your chest scan, symptoms, or clinical guidelines!"
+        )
+
+
+def build_system_instruction(patient_name: str, disease: str, confidence: float, is_hi: bool) -> str:
+    """Builds a strict domain-bounded clinical system prompt for LLM models."""
+    return (
+        f"You are Dr. AI, an empathetic, certified AI Pulmonologist and Radiologist Assistant on a "
+        f"clinical Chest X-Ray screening platform (MedScan AI).\n"
+        f"Current scan context: Patient Name: '{patient_name}', Predicted Condition: '{disease}', Confidence: '{confidence}%'.\n"
+        f"The platform uses a dual-ensemble deep neural network with 98.15% test accuracy and Grad-CAM explainability.\n\n"
+        f"STRICT SCOPE & DOMAIN BOUNDARY (MANDATORY RULE):\n"
+        f"1. You are ALLOWED to answer questions ONLY about:\n"
+        f"   - Chest X-rays, radiographic scan results, lung findings, and report explanations.\n"
+        f"   - Pulmonary and respiratory conditions: Pneumonia, COVID-19, Tuberculosis, Lung Opacities, Normal chest health, cough, chest pain, breathlessness, oxygen levels (SpO2).\n"
+        f"   - Clinical precautions, home care, respiratory exercises, lung recovery diet, emergency warning flags.\n"
+        f"   - MedScan AI app features (Grad-CAM heatmap colors, report download).\n\n"
+        f"2. You are STRICTLY FORBIDDEN from answering any unrelated questions outside this medical/pulmonary/chest scope "
+        f"(e.g., coding/programming, politics, movies, entertainment, sports, general knowledge trivia, mathematics, jokes, weather, finance, cooking, etc.).\n"
+        f"3. If the user asks ANY question outside this scope, you MUST NOT answer it. Decline politely and firmly:\n"
+        f"   - In English: 'I apologize, but as Dr. AI, I am specialized exclusively in Chest X-Ray screening and respiratory health. I cannot answer queries outside this medical domain. Please ask about your chest scan, symptoms, or report precautions.'\n"
+        f"   - In Hindi: 'क्षमा करें, मैं केवल चेस्ट एक्स-रे और फेफड़ों के स्वास्थ्य से संबंधित प्रश्नों के उत्तर देने के लिए अधिकृत हूँ। मैं अन्य असंबंधित विषयों पर उत्तर देने में असमर्थ हूँ। कृपया अपनी एक्स-रे रिपोर्ट या स्वास्थ्य से जुड़ा प्रश्न पूछें।'\n\n"
+        f"Format clinical answers with structured markdown bullet points.\n"
+        f"Language requirement: {'Reply purely in clean, warm Hindi (हिंदी)' if is_hi else 'Reply in clear English'}.\n"
+        f"Always conclude valid clinical guidance with a brief medical disclaimer advising consultation with an authorized physician."
+    )
+
+
 async def call_gemini_api(
     message: str,
     prediction_context: Optional[Dict[str, Any]],
     chat_history: Optional[List[Dict[str, str]]] = None,
     language: str = "en"
 ) -> Optional[str]:
-    """Invokes Google Gemini 1.5 Flash via REST API if an API key is available."""
-    if not GEMINI_API_KEY:
+    """Invokes Google Gemini (1.5 Flash / 2.0 Flash) via REST API if an API key is available."""
+    keys = get_active_keys()
+    gemini_key = keys["gemini"]
+    if not gemini_key:
         return None
 
     is_hi = language.lower().startswith("hi")
@@ -305,45 +386,160 @@ async def call_gemini_api(
     confidence = prediction_context.get("confidence", 95.0) if prediction_context else 95.0
     patient_name = prediction_context.get("patient_name", "Patient") if prediction_context else "Patient"
 
-    system_instruction = (
-        f"You are Dr. AI, an empathetic, highly skilled AI Pulmonologist and Radiologist Assistant on a "
-        f"clinical Chest X-Ray screening platform. "
-        f"Current scan context: Patient Name: '{patient_name}', Predicted Condition: '{disease}', Confidence: '{confidence}%'. "
-        f"The platform uses a dual-ensemble deep neural network with 98.15% test accuracy and Grad-CAM explainability. "
-        f"Provide empathetic, clear, medically rigorous explanations. "
-        f"Format with structured markdown bullet points. "
-        f"Language requirement: {'Reply purely in clean, warm Hindi (हिंदी)' if is_hi else 'Reply in clear English'}. "
-        f"Always conclude with a brief medical disclaimer advising consultation with an authorized physician."
-    )
+    system_instruction = build_system_instruction(patient_name, disease, confidence, is_hi)
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
-    
-    contents = []
-    # Add system prompt as initial turn
-    contents.append({"role": "user", "parts": [{"text": system_instruction}]})
-    contents.append({"role": "model", "parts": [{"text": "Understood. I will act as Dr. AI with the specified clinical context and language."}]})
+    models_to_try = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"]
+    contents = [
+        {"role": "user", "parts": [{"text": system_instruction}]},
+        {"role": "model", "parts": [{"text": "Understood. I will act strictly as Dr. AI with the specified clinical scope, language, and domain boundaries."}]}
+    ]
 
     if chat_history:
-        for turn in chat_history[-6:]:  # Keep last 3 turns
+        for turn in chat_history[-6:]:
             role = "user" if turn.get("role") == "user" else "model"
             contents.append({"role": role, "parts": [{"text": turn.get("content", "")}]})
 
     contents.append({"role": "user", "parts": [{"text": message}]})
 
-    try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.post(
-                url,
-                json={"contents": contents, "generationConfig": {"temperature": 0.4, "maxOutputTokens": 600}},
-                headers={"Content-Type": "application/json"}
-            )
-            if resp.status_code == 200:
-                data = resp.json()
-                text = data["candidates"][0]["content"]["parts"][0]["text"]
-                return text
-    except Exception as e:
-        print(f"[WARN] Gemini API call failed or timed out ({e}). Falling back to local clinical knowledge engine.")
+    for m in models_to_try:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={gemini_key}"
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                resp = await client.post(
+                    url,
+                    json={"contents": contents, "generationConfig": {"temperature": 0.4, "maxOutputTokens": 600}},
+                    headers={"Content-Type": "application/json"}
+                )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    return data["candidates"][0]["content"]["parts"][0]["text"]
+        except Exception as e:
+            continue
+
+    return None
+
+
+async def call_groq_api(
+    message: str,
+    prediction_context: Optional[Dict[str, Any]],
+    chat_history: Optional[List[Dict[str, str]]] = None,
+    language: str = "en"
+) -> Optional[str]:
+    """Invokes Qwen (or LLaMA 3.3) via Groq Cloud free tier with automatic model fallback."""
+    keys = get_active_keys()
+    groq_key = keys["groq"]
+    if not groq_key:
         return None
+
+    is_hi = language.lower().startswith("hi")
+    disease = prediction_context.get("predicted_class", "Normal") if prediction_context else "Normal"
+    confidence = prediction_context.get("confidence", 95.0) if prediction_context else 95.0
+    patient_name = prediction_context.get("patient_name", "Patient") if prediction_context else "Patient"
+
+    system_instruction = build_system_instruction(patient_name, disease, confidence, is_hi)
+
+    url = "https://api.groq.com/openai/v1/chat/completions"
+    messages = [{"role": "system", "content": system_instruction}]
+
+    if chat_history:
+        for turn in chat_history[-6:]:
+            role = "user" if turn.get("role") == "user" else "assistant"
+            messages.append({"role": role, "content": turn.get("content", "")})
+
+    messages.append({"role": "user", "content": message})
+
+    # Try preferred configured model first, then known free active Groq models (Qwen and GPT-OSS)
+    preferred = keys["groq_model"]
+    candidate_models = [preferred, "qwen/qwen3.8-27b", "openai/gpt-oss-120b", "openai/gpt-oss-20b"]
+    seen = set()
+    models_to_try = [m for m in candidate_models if m and not (m in seen or seen.add(m))]
+
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        for model in models_to_try:
+            try:
+                resp = await client.post(
+                    url,
+                    json={
+                        "model": model,
+                        "messages": messages,
+                        "temperature": 0.4,
+                        "max_tokens": 700,
+                    },
+                    headers={
+                        "Authorization": f"Bearer {groq_key}",
+                        "Content-Type": "application/json",
+                    }
+                )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    return data["choices"][0]["message"]["content"]
+                else:
+                    print(f"[DEBUG] Groq model '{model}' status: {resp.status_code}")
+            except Exception as e:
+                print(f"[WARN] Groq model '{model}' call failed: {e}")
+                continue
+
+    return None
+
+
+async def call_openrouter_api(
+    message: str,
+    prediction_context: Optional[Dict[str, Any]],
+    chat_history: Optional[List[Dict[str, str]]] = None,
+    language: str = "en"
+) -> Optional[str]:
+    """Invokes Qwen 2.5 72B via OpenRouter free tier."""
+    keys = get_active_keys()
+    openrouter_key = keys["openrouter"]
+    if not openrouter_key:
+        return None
+
+    is_hi = language.lower().startswith("hi")
+    disease = prediction_context.get("predicted_class", "Normal") if prediction_context else "Normal"
+    confidence = prediction_context.get("confidence", 95.0) if prediction_context else 95.0
+    patient_name = prediction_context.get("patient_name", "Patient") if prediction_context else "Patient"
+
+    system_instruction = build_system_instruction(patient_name, disease, confidence, is_hi)
+
+    url = "https://openrouter.ai/api/v1/chat/completions"
+    messages = [{"role": "system", "content": system_instruction}]
+
+    if chat_history:
+        for turn in chat_history[-6:]:
+            role = "user" if turn.get("role") == "user" else "assistant"
+            messages.append({"role": role, "content": turn.get("content", "")})
+
+    messages.append({"role": "user", "content": message})
+
+    free_models = [
+        "qwen/qwen-2.5-72b-instruct:free",
+        "qwen/qwen-2.5-coder-32b-instruct:free",
+        "meta-llama/llama-3.3-70b-instruct:free",
+    ]
+
+    async with httpx.AsyncClient(timeout=12.0) as client:
+        for model in free_models:
+            try:
+                resp = await client.post(
+                    url,
+                    json={
+                        "model": model,
+                        "messages": messages,
+                        "temperature": 0.4,
+                        "max_tokens": 700,
+                    },
+                    headers={
+                        "Authorization": f"Bearer {openrouter_key}",
+                        "HTTP-Referer": "http://localhost:5173",
+                        "X-Title": "Chest X-Ray AI Health Assistant",
+                        "Content-Type": "application/json",
+                    }
+                )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    return data["choices"][0]["message"]["content"]
+            except Exception as e:
+                continue
 
     return None
 
@@ -354,8 +550,32 @@ async def get_assistant_response(
     chat_history: Optional[List[Dict[str, str]]] = None,
     language: str = "en"
 ) -> Dict[str, Any]:
-    """Hybrid orchestrator: attempts Gemini 1.5 Flash first, then seamlessly falls back to offline knowledge engine."""
-    # 1. Try Gemini if configured
+    """
+    Hybrid multi-provider orchestrator with strict clinical domain boundary:
+    1. Check domain boundary (refuse off-topic questions instantly)
+    2. Groq (Qwen 2.5 32B / LLaMA 3.3) -> if GROQ_API_KEY is present
+    3. Google Gemini 1.5 Flash -> if GEMINI_API_KEY is present
+    4. OpenRouter (Qwen 2.5 72B Free) -> if OPENROUTER_API_KEY is present
+    5. Local Clinical Intelligence Engine -> 100% free offline fallback
+    """
+    # 0. Strict Domain Boundary Check
+    if not is_app_or_health_related(message):
+        return {
+            "reply": get_out_of_scope_message(language),
+            "source": "domain-guardrail",
+            "language": language
+        }
+
+    # 1. Try Groq (Qwen) if key configured
+    groq_text = await call_groq_api(message, prediction_context, chat_history, language)
+    if groq_text:
+        return {
+            "reply": groq_text,
+            "source": f"groq-{os.getenv('GROQ_MODEL', 'qwen-2.5-32b')}",
+            "language": language
+        }
+
+    # 2. Try Gemini Flash if key configured
     gemini_text = await call_gemini_api(message, prediction_context, chat_history, language)
     if gemini_text:
         return {
@@ -364,10 +584,20 @@ async def get_assistant_response(
             "language": language
         }
 
-    # 2. Local Clinical Engine Fallback
+    # 3. Try OpenRouter Qwen if key configured
+    openrouter_text = await call_openrouter_api(message, prediction_context, chat_history, language)
+    if openrouter_text:
+        return {
+            "reply": openrouter_text,
+            "source": "openrouter-qwen-2.5",
+            "language": language
+        }
+
+    # 4. Local Clinical Engine Fallback (Instant, 100% offline & free)
     local_text = generate_offline_response(message, prediction_context, language)
     return {
         "reply": local_text,
         "source": "offline-clinical-engine",
         "language": language
     }
+

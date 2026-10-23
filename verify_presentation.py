@@ -1,3 +1,4 @@
+
 import os
 from pptx import Presentation
 
@@ -9,9 +10,9 @@ print(f"Presentation validated! Total slides: {len(prs.slides)}")
 print(f"Dimensions: {prs.slide_width.inches:.2f} x {prs.slide_height.inches:.2f} inches (16:9 widescreen)")
 
 keywords_to_verify = [
-    "18,200", "12,740", "2,730", "97.40%", "Model V1", "Model V3",
+    "18,200", "12,740", "2,730", "98.15%", "97.40%", "Model V1", "Model V3",
     "Grad-CAM", "COVID-19", "Lung Opacity", "Normal", "Pneumonia",
-    "Tuberculosis", "675 ms", "825 ms", "1.50 seconds", "Nine exact",
+    "Tuberculosis", "Gemini", "675 ms", "825 ms", "1.50 seconds", "Nine exact",
     "academic prototype"
 ]
 

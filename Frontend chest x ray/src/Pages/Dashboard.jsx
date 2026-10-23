@@ -93,6 +93,8 @@ export default function Dashboard() {
         justifyContent: "space-between",
         gap: "14px",
         background: "#f4f8f6",
+        position: "relative",
+        overflow: "hidden",
       }}
     >
       {/* 1. Header Greeting */}
@@ -229,7 +231,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Ensemble Accuracy */}
+        {/* AI Engine Status (Replaces front accuracy to keep professional clinical UI) */}
         <div
           style={{
             background: "#ffffff",
@@ -241,73 +243,32 @@ export default function Dashboard() {
           }}
         >
           <div style={{ fontSize: "10px", color: "#526e62", fontWeight: "700", textTransform: "uppercase" }}>
-            {t("accuracy")}
+            {t("engine_status")}
           </div>
-          <div style={{ fontSize: "20px", fontWeight: "800", color: "#047857", marginTop: "4px" }}>
-            98.15%
-          </div>
-        </div>
-      </div>
-
-      {/* 3.5. Interactive AI Health Assistant Card */}
-      <div
-        onClick={() => setIsChatOpen(true)}
-        style={{
-          background: "linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%)",
-          border: "1.5px solid #bbf7d0",
-          borderRadius: "16px",
-          padding: "12px 14px",
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          boxShadow: "0 2px 8px rgba(6, 95, 70, 0.05)",
-          transition: "transform 0.15s ease",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <div
             style={{
-              width: "38px",
-              height: "38px",
-              borderRadius: "12px",
-              background: "linear-gradient(135deg, #059669 0%, #0d9488 100%)",
-              color: "#ffffff",
+              fontSize: "13px",
+              fontWeight: "800",
+              color: "#059669",
+              marginTop: "8px",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              boxShadow: "0 4px 10px rgba(5, 150, 105, 0.3)",
+              gap: "5px",
             }}
           >
-            <Bot size={20} className="animate-pulse" />
+            <span
+              style={{
+                width: "8px",
+                height: "8px",
+                borderRadius: "50%",
+                background: "#10b981",
+                display: "inline-block",
+                boxShadow: "0 0 8px #10b981",
+              }}
+            />
+            <span>{t("engine_active")}</span>
           </div>
-          <div>
-            <div style={{ fontSize: "13px", fontWeight: "800", color: "#065f46", display: "flex", alignItems: "center", gap: "6px" }}>
-              {t("chatbot_title")}
-              <span style={{ fontSize: "9px", padding: "1px 6px", borderRadius: "10px", background: "#dcfce7", color: "#166534", fontWeight: "700" }}>
-                Active
-              </span>
-            </div>
-            <div style={{ fontSize: "11px", color: "#526e62" }}>
-              {t("chatbot_subtitle")}
-            </div>
-          </div>
-        </div>
-        <div
-          style={{
-            padding: "6px 12px",
-            borderRadius: "20px",
-            background: "#059669",
-            color: "#ffffff",
-            fontSize: "11px",
-            fontWeight: "700",
-            display: "flex",
-            alignItems: "center",
-            gap: "4px",
-          }}
-        >
-          <span>{t("chatbot_btn")}</span>
-          <ArrowRight size={12} />
         </div>
       </div>
 
@@ -408,7 +369,35 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* AI Clinical Chatbot Modal */}
+      {/* Floating Bottom-Right Chatbot Launcher Button (Kept strictly inside app) */}
+      <button
+        type="button"
+        onClick={() => setIsChatOpen(true)}
+        style={{
+          position: "absolute",
+          bottom: "16px",
+          right: "16px",
+          padding: "9px 15px",
+          borderRadius: "30px",
+          background: "linear-gradient(135deg, #059669 0%, #064e3b 100%)",
+          color: "#ffffff",
+          border: "2px solid #ffffff",
+          boxShadow: "0 6px 18px rgba(5, 150, 105, 0.35)",
+          display: "flex",
+          alignItems: "center",
+          gap: "7px",
+          cursor: "pointer",
+          zIndex: 30,
+          fontWeight: "700",
+          fontSize: "12px",
+          transition: "transform 0.15s ease",
+        }}
+      >
+        <Bot size={17} className="animate-pulse" />
+        <span>{t("chatbot_btn")}</span>
+      </button>
+
+      {/* AI Clinical Chatbot Pop-up */}
       <AiChatAssistantModal
         isOpen={isChatOpen}
         onClose={() => setIsChatOpen(false)}

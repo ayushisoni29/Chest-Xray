@@ -262,3 +262,26 @@ input, textarea {
   gap: 8px;
   flex-shrink: 0;
 }
+
+/* Chatbot Floating Pop-up Styles */
+@keyframes popupSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 640px) {
+  .chatbot-popup-container {
+    right: 8px !important;
+    left: 8px !important;
+    width: auto !important;
+    max-width: none !important;
+    bottom: 74px !important;
+    height: 75vh !important;
+  }
+}

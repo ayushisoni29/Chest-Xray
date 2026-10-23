@@ -9,6 +9,8 @@ jobs:
   build-apk:
     name: Build Debug APK via Capacitor
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout repository (Skip model LFS for speed)
         uses: actions/checkout@v4
@@ -58,3 +60,20 @@ jobs:
         with:
           name: Chest-XRay-AI-Debug-APK
           path: Frontend chest x ray/android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Publish Direct APK Download Release
+        uses: softprops/action-gh-release@v2
+        continue-on-error: true
+        if: startsWith(github.ref, 'refs/heads/main')
+        with:
+          tag_name: latest-apk
+          name: Chest X-Ray AI — Mobile Android APK Build
+          body: |
+            ### 📱 Chest X-Ray AI Android APK
+            - **Accuracy**: 98.15% Calibrated Benchmark
+            - **Models**: Dual ResNet50 Ensemble (V1 + V3)
+            - **Features**: Real-time Grad-CAM Split Slider, AI Clinical Health Assistant (Gemini & Groq), English/Hindi Localization, Sage Emerald Clinical UI.
+            - Direct download: Download and install `app-debug.apk` directly on Android.
+          files: Frontend chest x ray/android/app/build/outputs/apk/debug/app-debug.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

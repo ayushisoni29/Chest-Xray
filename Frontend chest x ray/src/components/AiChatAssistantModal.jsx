@@ -3,18 +3,19 @@ import {
   Bot,
   Send,
   X,
-  Sparkles,
   RefreshCw,
   AlertCircle,
-  CheckCircle2,
-  User,
   Copy,
   Check,
-  ChevronDown,
   Stethoscope,
+  ChevronLeft,
+  Activity,
   HeartPulse,
+  Sparkles,
+  HelpCircle,
 } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
+import { getBaseUrl, getToken } from "../api";
 
 export default function AiChatAssistantModal({
   isOpen,
@@ -26,45 +27,76 @@ export default function AiChatAssistantModal({
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState(null);
-  const messagesEndRef = useRef(null);
+  const chatBodyRef = useRef(null);
+  const inputRef = useRef(null);
 
   const isHindi = lang === "hi";
 
-  // Initial welcome message when opened
+  const disease = predictionContext?.predicted_class || "Normal";
+  const confidence = predictionContext?.confidence
+    ? Number(predictionContext.confidence).toFixed(1)
+    : null;
+  const patientName = predictionContext?.patient_name || (isHindi ? "मरीज़" : "Patient");
+
+  // Initial Swiggy/Zomato style conversational welcome when opened
   useEffect(() => {
     if (isOpen && messages.length === 0) {
-      const disease = predictionContext?.predicted_class || "Normal";
-      const confidence = predictionContext?.confidence
-        ? Number(predictionContext.confidence).toFixed(1)
-        : "98.15";
-      const patientName = predictionContext?.patient_name || (isHindi ? "मरीज" : "Patient");
+      const initialGreeting = {
+        id: "greeting",
+        role: "assistant",
+        type: "welcome_card",
+        patientName,
+        disease: t(disease) || disease.replace("_", " "),
+        confidence,
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      };
 
-      let welcomeText = "";
-      if (isHindi) {
-        welcomeText = `नमस्ते ${patientName}! 👋\nमैं आपका **एआई मेडिकल हेल्थ असिस्टेंट** हूँ। 🩺\n\nआपकी हालिया चेस्ट एक्स-रे स्कैन रिपोर्ट के अनुसार **${t(disease)}** (विश्वसनीयता: **${confidence}%**) की पहचान हुई है।\n\nआप मुझसे रिपोर्ट का सरल अर्थ, सावधानियां, ग्रैड-कैम हीटमैप या आहार से जुड़े कोई भी सवाल पूछ सकते हैं!`;
-      } else {
-        welcomeText = `Hello ${patientName}! 👋\nI am your **AI Clinical Health Assistant** 🩺.\n\nYour chest X-ray screening detected **${t(disease)}** with **${confidence}%** confidence.\n\nFeel free to ask me about your diagnosis, recommended precautions, what the Grad-CAM heatmap means, or next clinical steps!`;
-      }
-
-      setMessages([
-        {
-          id: "welcome",
-          role: "assistant",
-          content: welcomeText,
-          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        },
-      ]);
+      setMessages([initialGreeting]);
     }
-  }, [isOpen, predictionContext, isHindi]);
+  }, [isOpen, predictionContext, isHindi, disease, confidence, patientName, t]);
 
-  // Auto-scroll on new message
+  // Smooth internal scroll that stays 100% strictly inside the chat container
   useEffect(() => {
-    if (isOpen) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (isOpen && chatBodyRef.current) {
+      setTimeout(() => {
+        if (chatBodyRef.current) {
+          chatBodyRef.current.scrollTo({
+            top: chatBodyRef.current.scrollHeight,
+            behavior: "smooth",
+          });
+        }
+      }, 50);
     }
-  }, [messages, isLoading, isOpen]);
+  }, [messages.length, isLoading, isOpen]);
 
   if (!isOpen) return null;
+
+  const quickOptions = [
+    {
+      id: "explain",
+      icon: "📋",
+      label: isHindi ? "मेरी रिपोर्ट का मतलब समझाएं" : "Explain my scan findings",
+      query: isHindi ? "मेरी चेस्ट एक्स-रे रिपोर्ट का सरल भाषा में मतलब विस्तार से समझाइए।" : "Please explain my chest X-ray findings in simple, easy-to-understand terms.",
+    },
+    {
+      id: "precautions",
+      icon: "🩺",
+      label: isHindi ? "क्या सावधानियां और उपाय बरतें?" : "What precautions should I take?",
+      query: isHindi ? "मुझे इस स्थिति में क्या-क्या सावधानियां, दवा और अगले कदम उठाने चाहिए?" : "What medical precautions, dietary habits, and next steps should I follow?",
+    },
+    {
+      id: "heatmap",
+      icon: "🔬",
+      label: isHindi ? "हीटमैप का क्या अर्थ है?" : "Explain the Grad-CAM heatmap",
+      query: isHindi ? "ग्रैड-कैम हीटमैप (Grad-CAM) में लाल और पीले रंग के निशानों का क्या मतलब है?" : "What do the red, yellow, and warm zones mean on my Grad-CAM heatmap overlay?",
+    },
+    {
+      id: "emergency",
+      icon: "🚨",
+      label: isHindi ? "क्या यह कोई आपात स्थिति है?" : "Is this an emergency?",
+      query: isHindi ? "क्या मुझे तुरंत अस्पताल या इमरजेंसी में जाना चाहिए? इसके खतरे के संकेत क्या हैं?" : "When does this condition require immediate emergency hospital care?",
+    },
+  ];
 
   const handleSendMessage = async (textToSend = null) => {
     const text = (textToSend || inputValue).trim();
@@ -82,21 +114,26 @@ export default function AiChatAssistantModal({
     setIsLoading(true);
 
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken() || localStorage.getItem("token") || localStorage.getItem("medscan_token");
       const headers = { "Content-Type": "application/json" };
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
-      const res = await fetch("http://127.0.0.1:8000/api/chat/assistant", {
+      const baseUrl = getBaseUrl();
+      const endpoint = baseUrl ? `${baseUrl}/api/chat/assistant` : "http://127.0.0.1:8000/api/chat/assistant";
+      const res = await fetch(endpoint, {
         method: "POST",
         headers,
         body: JSON.stringify({
           message: text,
           prediction_context: predictionContext,
           language: lang,
-          chat_history: messages.slice(-6).map((m) => ({
-            role: m.role,
-            content: m.content,
-          })),
+          chat_history: messages
+            .filter((m) => m.content)
+            .slice(-6)
+            .map((m) => ({
+              role: m.role,
+              content: m.content,
+            })),
         }),
       });
 
@@ -143,42 +180,33 @@ export default function AiChatAssistantModal({
   const handleResetChat = () => {
     setMessages([]);
     setTimeout(() => {
-      const disease = predictionContext?.predicted_class || "Normal";
-      const confidence = predictionContext?.confidence
-        ? Number(predictionContext.confidence).toFixed(1)
-        : "98.15";
-      const patientName = predictionContext?.patient_name || (isHindi ? "मरीज" : "Patient");
-
-      const welcomeText = isHindi
-        ? `बातचीत रीसेट कर दी गई है। नमस्ते ${patientName}! आप **${t(disease)}** स्कैन (सटीकता: **${confidence}%**) के विषय में कोई भी प्रश्न पूछ सकते हैं।`
-        : `Chat history cleared. Hello ${patientName}! You can ask any question regarding your **${t(disease)}** scan (confidence: **${confidence}%**).`;
-
-      setMessages([
-        {
-          id: "welcome-reset",
-          role: "assistant",
-          content: welcomeText,
-          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        },
-      ]);
-    }, 100);
+      const initialGreeting = {
+        id: "greeting-reset",
+        role: "assistant",
+        type: "welcome_card",
+        patientName,
+        disease: t(disease) || disease.replace("_", " "),
+        confidence,
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      };
+      setMessages([initialGreeting]);
+    }, 50);
   };
 
-  // Helper to render basic markdown text with badges & bullets
+  // Helper to render markdown text with bolding and clean structure
   const renderFormattedContent = (content) => {
     const lines = content.split("\n");
     return lines.map((line, idx) => {
       if (!line.trim()) {
-        return <div key={idx} className="h-2" />;
+        return <div key={idx} style={{ height: "6px" }} />;
       }
 
-      // Format bold text **bold**
       const formatBold = (str) => {
         const parts = str.split(/(\*\*.*?\*\*)/g);
         return parts.map((part, pIdx) => {
           if (part.startsWith("**") && part.endsWith("**")) {
             return (
-              <strong key={pIdx} className="font-semibold text-emerald-950">
+              <strong key={pIdx} style={{ fontWeight: "700", color: "#064e3b" }}>
                 {part.slice(2, -2)}
               </strong>
             );
@@ -191,8 +219,19 @@ export default function AiChatAssistantModal({
       if (line.trim().startsWith("•") || line.trim().startsWith("-")) {
         const clean = line.trim().replace(/^[•\-]\s*/, "");
         return (
-          <div key={idx} className="flex items-start gap-2 text-xs md:text-sm text-slate-700 my-1 pl-1">
-            <span className="text-emerald-600 mt-1 flex-shrink-0">•</span>
+          <div
+            key={idx}
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: "6px",
+              margin: "4px 0",
+              fontSize: "12.5px",
+              lineHeight: "1.5",
+              color: "#1e293b",
+            }}
+          >
+            <span style={{ color: "#059669", fontWeight: "800", flexShrink: 0 }}>•</span>
             <div>{formatBold(clean)}</div>
           </div>
         );
@@ -202,248 +241,676 @@ export default function AiChatAssistantModal({
       const numMatch = line.trim().match(/^(\d+)\.\s*(.*)$/);
       if (numMatch) {
         return (
-          <div key={idx} className="flex items-start gap-2 text-xs md:text-sm text-slate-700 my-1 pl-1">
-            <span className="font-semibold text-emerald-700 min-w-[1.2rem] text-right">{numMatch[1]}.</span>
+          <div
+            key={idx}
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: "6px",
+              margin: "4px 0",
+              fontSize: "12.5px",
+              lineHeight: "1.5",
+              color: "#1e293b",
+            }}
+          >
+            <span style={{ fontWeight: "700", color: "#047857", minWidth: "16px" }}>{numMatch[1]}.</span>
             <div>{formatBold(numMatch[2])}</div>
           </div>
         );
       }
 
-      // Emergency alert lines
+      // Emergency alert
       if (line.includes("🚨") || line.includes("Alert:") || line.includes("चेतावनी:")) {
         return (
           <div
             key={idx}
-            className="my-2 p-2.5 rounded-xl bg-red-50 border border-red-200 text-xs md:text-sm text-red-800 flex items-start gap-2 shadow-sm font-medium"
+            style={{
+              margin: "8px 0",
+              padding: "8px 10px",
+              background: "#fef2f2",
+              border: "1px solid #fecaca",
+              borderRadius: "10px",
+              fontSize: "12px",
+              color: "#991b1b",
+              fontWeight: "600",
+              lineHeight: "1.4",
+              display: "flex",
+              alignItems: "flex-start",
+              gap: "6px",
+            }}
           >
-            <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+            <AlertCircle size={15} color="#dc2626" style={{ flexShrink: 0, marginTop: "2px" }} />
             <div>{formatBold(line)}</div>
           </div>
         );
       }
 
-      // Tip / Info
-      if (line.includes("💡") || line.includes("🔬") || line.includes("📊")) {
-        return (
-          <div
-            key={idx}
-            className="my-2 p-2 rounded-xl bg-emerald-50/80 border border-emerald-100 text-xs md:text-sm text-emerald-900 flex items-start gap-2 font-medium"
-          >
-            <div>{formatBold(line)}</div>
-          </div>
-        );
-      }
-
-      // Normal paragraph
+      // Regular paragraph
       return (
-        <p key={idx} className="text-xs md:text-sm text-slate-700 leading-relaxed my-1">
+        <p
+          key={idx}
+          style={{
+            margin: "4px 0",
+            fontSize: "12.5px",
+            lineHeight: "1.5",
+            color: "#1e293b",
+          }}
+        >
           {formatBold(line)}
         </p>
       );
     });
   };
 
-  const quickQuestions = [
-    { label: t("chatbot_quick_explain"), query: isHindi ? "मेरी रिपोर्ट का मतलब विस्तार से समझाइए" : "Explain my scan findings in simple terms" },
-    { label: t("chatbot_quick_precautions"), query: isHindi ? "मुझे क्या-क्या सावधानियां और उपाय करने चाहिए?" : "What medical precautions and next steps should I follow?" },
-    { label: t("chatbot_quick_heatmap"), query: isHindi ? "ग्रैड-कैम हीटमैप में लाल और पीले रंग का क्या मतलब है?" : "What do the red and warm zones mean on the Grad-CAM heatmap?" },
-    { label: t("chatbot_quick_emergency"), query: isHindi ? "क्या मुझे तुरंत अस्पताल या इमरजेंसी में जाना चाहिए?" : "When does this condition require immediate emergency care?" },
-  ];
-
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm transition-all duration-300">
-      <div className="relative w-full max-w-lg bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 flex flex-col h-[85vh] sm:h-[650px] overflow-hidden animate-in slide-in-from-bottom duration-200">
-        
-        {/* Header */}
-        <div className="px-4 py-3.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white flex items-center justify-between shadow-md flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="relative w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 flex items-center justify-center shadow-inner">
-              <Bot className="w-5 h-5 text-white animate-pulse" />
-              <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 border-2 border-emerald-800 rounded-full" />
+    <div
+      style={{
+        position: "absolute",
+        inset: 0,
+        zIndex: 100,
+        background: "#f8faf9",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+        animation: "chatSlideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1)",
+      }}
+    >
+      <style>{`
+        @keyframes chatSlideUp {
+          from { transform: translateY(100%); opacity: 0.7; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+      `}</style>
+
+      {/* 1. TOP HEADER (Zomato/Swiggy Style with Back button & Doctor Avatar) */}
+      <div
+        style={{
+          height: "56px",
+          background: "linear-gradient(135deg, #065f46 0%, #047857 100%)",
+          color: "#ffffff",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "0 12px",
+          boxShadow: "0 2px 8px rgba(6, 95, 70, 0.2)",
+          flexShrink: 0,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          {/* Back/Close Button */}
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Back"
+            style={{
+              background: "rgba(255, 255, 255, 0.15)",
+              border: "none",
+              borderRadius: "50%",
+              width: "32px",
+              height: "32px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#ffffff",
+              cursor: "pointer",
+            }}
+          >
+            <ChevronLeft size={20} />
+          </button>
+
+          {/* Dr. AI Avatar & Status */}
+          <div style={{ position: "relative" }}>
+            <div
+              style={{
+                width: "34px",
+                height: "34px",
+                borderRadius: "50%",
+                background: "#ffffff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: "0 2px 6px rgba(0, 0, 0, 0.15)",
+              }}
+            >
+              <Stethoscope size={18} color="#065f46" />
             </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <h3 className="font-bold text-sm tracking-wide text-white flex items-center gap-1">
-                  {t("chatbot_title")}
-                </h3>
-                <span className="text-[10px] uppercase font-semibold px-1.5 py-0.5 rounded-full bg-white/20 text-emerald-100 border border-white/20">
-                  AI Dr.
-                </span>
-              </div>
-              <p className="text-[11px] text-emerald-100 flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-emerald-200" />
-                {t("chatbot_subtitle")}
-              </p>
-            </div>
+            <span
+              style={{
+                position: "absolute",
+                bottom: "-1px",
+                right: "-1px",
+                width: "10px",
+                height: "10px",
+                borderRadius: "50%",
+                background: "#10b981",
+                border: "2px solid #ffffff",
+              }}
+            />
           </div>
 
-          <div className="flex items-center gap-1">
-            <button
-              onClick={handleResetChat}
-              title={t("chatbot_clear")}
-              className="p-2 rounded-xl text-emerald-100 hover:text-white hover:bg-white/10 transition-colors"
-            >
-              <RefreshCw className="w-4 h-4" />
-            </button>
-            <button
-              onClick={onClose}
-              className="p-2 rounded-xl text-emerald-100 hover:text-white hover:bg-white/10 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
+          <div>
+            <div style={{ fontSize: "14px", fontWeight: "700", display: "flex", alignItems: "center", gap: "6px" }}>
+              <span>Dr. AI</span>
+              <span
+                style={{
+                  fontSize: "9px",
+                  padding: "1px 6px",
+                  borderRadius: "10px",
+                  background: "rgba(255, 255, 255, 0.2)",
+                  fontWeight: "600",
+                }}
+              >
+                Qwen 2.5
+              </span>
+            </div>
+            <div style={{ fontSize: "10.5px", color: "#a7f3d0", fontWeight: "500" }}>
+              {isHindi ? "त्वरित नैदानिक परामर्श" : "Instant Clinical Guidance"}
+            </div>
           </div>
         </div>
 
-        {/* Prediction Context Banner */}
-        {predictionContext && (
-          <div className="px-4 py-2 bg-emerald-50/90 border-b border-emerald-100 flex items-center justify-between text-xs text-emerald-900 flex-shrink-0">
-            <div className="flex items-center gap-1.5 font-medium truncate">
-              <HeartPulse className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
-              <span className="truncate">
-                {t("primary_classification")}: <strong>{t(predictionContext.predicted_class || "Normal")}</strong>
-              </span>
-            </div>
-            <span className="px-2 py-0.5 rounded-full bg-emerald-200/80 font-bold text-[10px] text-emerald-900 flex-shrink-0 ml-2">
-              {predictionContext.confidence ? Number(predictionContext.confidence).toFixed(1) : "98.15"}%
-            </span>
-          </div>
-        )}
+        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+          <button
+            type="button"
+            onClick={handleResetChat}
+            title={t("chatbot_clear")}
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "#d1fae5",
+              cursor: "pointer",
+              padding: "6px",
+              borderRadius: "8px",
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            <RefreshCw size={16} />
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            title="Close"
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "#d1fae5",
+              cursor: "pointer",
+              padding: "6px",
+              borderRadius: "8px",
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            <X size={18} />
+          </button>
+        </div>
+      </div>
 
-        {/* Chat Message List */}
-        <div className="flex-1 p-4 overflow-y-auto space-y-3.5 bg-slate-50/50">
-          {messages.map((msg, index) => {
-            const isUser = msg.role === "user";
+      {/* 2. CHAT MESSAGES BODY (Isolated clean scroll) */}
+      <div
+        ref={chatBodyRef}
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          padding: "14px 12px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "12px",
+          WebkitOverflowScrolling: "touch",
+        }}
+      >
+        {messages.map((msg, index) => {
+          // A. SPECIAL WELCOME / ORDER-STYLE DETAILS CARD (Swiggy/Zomato style)
+          if (msg.type === "welcome_card") {
             return (
-              <div
-                key={msg.id || index}
-                className={`flex gap-2.5 ${isUser ? "justify-end" : "justify-start"}`}
-              >
-                {!isUser && (
-                  <div className="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm mt-0.5">
-                    <Stethoscope className="w-3.5 h-3.5" />
-                  </div>
-                )}
-
-                <div
-                  className={`group relative max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm shadow-sm transition-all ${
-                    isUser
-                      ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-br-none"
-                      : "bg-white text-slate-800 border border-slate-200/80 rounded-bl-none"
-                  }`}
-                >
-                  <div className="relative">
-                    {isUser ? (
-                      <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
-                    ) : (
-                      renderFormattedContent(msg.content)
-                    )}
+              <div key={msg.id} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                {/* Greeting Speech Bubble */}
+                <div style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
+                  <div
+                    style={{
+                      width: "28px",
+                      height: "28px",
+                      borderRadius: "50%",
+                      background: "#065f46",
+                      color: "#fff",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Bot size={16} />
                   </div>
 
                   <div
-                    className={`mt-1.5 flex items-center justify-between gap-3 text-[10px] ${
-                      isUser ? "text-emerald-100" : "text-slate-400"
-                    }`}
+                    style={{
+                      background: "#ffffff",
+                      borderRadius: "14px 14px 14px 2px",
+                      padding: "12px 14px",
+                      border: "1.5px solid #e2ede6",
+                      boxShadow: "0 2px 6px rgba(0, 0, 0, 0.04)",
+                      maxWidth: "88%",
+                    }}
                   >
-                    <span>{msg.timestamp}</span>
+                    <div style={{ fontSize: "13px", fontWeight: "700", color: "#065f46", marginBottom: "4px" }}>
+                      {isHindi ? `नमस्ते ${msg.patientName}! 👋` : `Hello ${msg.patientName}! 👋`}
+                    </div>
+                    <div style={{ fontSize: "12.5px", color: "#334155", lineHeight: "1.4" }}>
+                      {isHindi
+                        ? "मैंने आपकी हालिया चेस्ट एक्स-रे स्कैन रिपोर्ट की समीक्षा कर ली है। आपके स्कैन का विवरण नीचे दिया गया है:"
+                        : "I have reviewed your latest chest X-ray screening. Here are your record details:"}
+                    </div>
 
-                    {!isUser && (
-                      <button
-                        onClick={() => handleCopy(index, msg.content)}
-                        className="opacity-70 hover:opacity-100 transition-opacity p-0.5 flex items-center gap-1 text-[10px]"
-                        title="Copy response"
-                      >
-                        {copiedIndex === index ? (
-                          <>
-                            <Check className="w-3 h-3 text-emerald-600" />
-                            <span className="text-emerald-600">Copied</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3 h-3" />
-                            <span>Copy</span>
-                          </>
-                        )}
-                      </button>
-                    )}
+                    {/* Report Summary Card (Like Swiggy Order Summary) */}
+                    <div
+                      style={{
+                        marginTop: "10px",
+                        background: "#f0fdf4",
+                        border: "1.5px solid #bbf7d0",
+                        borderRadius: "10px",
+                        padding: "10px 12px",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "6px",
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontSize: "11px", color: "#526e62", fontWeight: "600" }}>
+                          {isHindi ? "पहचाना गया रोग" : "Predicted Finding"}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: "11.5px",
+                            fontWeight: "800",
+                            color: "#065f46",
+                            background: "#dcfce7",
+                            padding: "2px 8px",
+                            borderRadius: "12px",
+                          }}
+                        >
+                          {msg.disease}
+                        </span>
+                      </div>
+
+                      {msg.confidence && (
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <span style={{ fontSize: "11px", color: "#526e62", fontWeight: "600" }}>
+                            {isHindi ? "विश्वास स्तर (Confidence)" : "Confidence"}
+                          </span>
+                          <strong style={{ fontSize: "11.5px", color: "#047857" }}>
+                            {msg.confidence}%
+                          </strong>
+                        </div>
+                      )}
+
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontSize: "11px", color: "#526e62", fontWeight: "600" }}>
+                          {isHindi ? "मरीज़ का नाम" : "Patient Name"}
+                        </span>
+                        <span style={{ fontSize: "11px", color: "#081d15", fontWeight: "700" }}>
+                          {msg.patientName}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div style={{ fontSize: "12px", color: "#475569", marginTop: "10px", fontWeight: "500" }}>
+                      {isHindi
+                        ? "आप मुझसे इस रिपोर्ट के बारे में क्या जानना चाहते हैं? नीचे दिए गए विकल्पों में से चुनें:"
+                        : "How can I assist you with this report? Choose an option below or type your question:"}
+                    </div>
                   </div>
                 </div>
 
-                {isUser && (
-                  <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center flex-shrink-0 shadow-sm mt-0.5">
-                    <User className="w-3.5 h-3.5" />
+                {/* Quick Option Pills (Directly Clickable like Swiggy Support) */}
+                <div style={{ paddingLeft: "36px", display: "flex", flexDirection: "column", gap: "6px" }}>
+                  {quickOptions.map((opt) => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => handleSendMessage(opt.query)}
+                      disabled={isLoading}
+                      style={{
+                        textAlign: "left",
+                        padding: "8px 12px",
+                        background: "#ffffff",
+                        border: "1.5px solid #a7f3d0",
+                        borderRadius: "12px",
+                        color: "#065f46",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        cursor: isLoading ? "not-allowed" : "pointer",
+                        boxShadow: "0 1px 3px rgba(6, 95, 70, 0.05)",
+                        transition: "all 0.15s ease",
+                      }}
+                    >
+                      <span style={{ fontSize: "14px" }}>{opt.icon}</span>
+                      <span style={{ flex: 1 }}>{opt.label}</span>
+                      <span style={{ color: "#10b981", fontSize: "14px" }}>→</span>
+                    </button>
+                  ))}
+
+                  {/* Ask another question button */}
+                  <button
+                    type="button"
+                    onClick={() => inputRef.current?.focus()}
+                    style={{
+                      textAlign: "left",
+                      padding: "8px 12px",
+                      background: "#f1f5f9",
+                      border: "1.5px dashed #cbd5e1",
+                      borderRadius: "12px",
+                      color: "#475569",
+                      fontSize: "12px",
+                      fontWeight: "600",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <span>✍️</span>
+                    <span>{isHindi ? "कोई अन्य प्रश्न पूछें..." : "Ask another custom question..."}</span>
+                  </button>
+                </div>
+              </div>
+            );
+          }
+
+          // B. REGULAR USER / ASSISTANT MESSAGES
+          const isUser = msg.role === "user";
+          return (
+            <div
+              key={msg.id || index}
+              style={{
+                display: "flex",
+                justifyContent: isUser ? "flex-end" : "flex-start",
+                gap: "8px",
+              }}
+            >
+              {!isUser && (
+                <div
+                  style={{
+                    width: "28px",
+                    height: "28px",
+                    borderRadius: "50%",
+                    background: "#065f46",
+                    color: "#fff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                    marginTop: "2px",
+                  }}
+                >
+                  <Bot size={15} />
+                </div>
+              )}
+
+              <div
+                style={{
+                  maxWidth: "84%",
+                  borderRadius: isUser ? "14px 14px 2px 14px" : "14px 14px 14px 2px",
+                  padding: "10px 12px",
+                  background: isUser ? "linear-gradient(135deg, #059669 0%, #064e3b 100%)" : "#ffffff",
+                  color: isUser ? "#ffffff" : "#081d15",
+                  border: isUser ? "none" : "1.5px solid #e2ede6",
+                  boxShadow: "0 2px 6px rgba(0, 0, 0, 0.04)",
+                  fontSize: "12.5px",
+                }}
+              >
+                <div>
+                  {isUser ? (
+                    <p style={{ margin: 0, lineHeight: "1.45", wordBreak: "break-word" }}>
+                      {msg.content}
+                    </p>
+                  ) : (
+                    renderFormattedContent(msg.content)
+                  )}
+                </div>
+
+                <div
+                  style={{
+                    marginTop: "6px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    fontSize: "9.5px",
+                    color: isUser ? "rgba(255, 255, 255, 0.75)" : "#94a3b8",
+                  }}
+                >
+                  <span>{msg.timestamp}</span>
+
+                  {!isUser && (
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(index, msg.content)}
+                      style={{
+                        background: "transparent",
+                        border: "none",
+                        color: copiedIndex === index ? "#059669" : "#64748b",
+                        fontSize: "9.5px",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "3px",
+                        padding: "2px 4px",
+                      }}
+                    >
+                      {copiedIndex === index ? (
+                        <>
+                          <Check size={11} color="#059669" />
+                          <span>Copied</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy size={11} />
+                          <span>Copy</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+
+                {/* Follow-up Quick Pills after bot response */}
+                {!isUser && index === messages.length - 1 && (
+                  <div
+                    style={{
+                      marginTop: "10px",
+                      paddingTop: "8px",
+                      borderTop: "1px dashed #e2ede6",
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: "5px",
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => handleSendMessage(quickOptions[1].query)}
+                      style={{
+                        padding: "4px 8px",
+                        borderRadius: "12px",
+                        background: "#ecfdf5",
+                        border: "1px solid #a7f3d0",
+                        color: "#065f46",
+                        fontSize: "10.5px",
+                        fontWeight: "600",
+                        cursor: "pointer",
+                      }}
+                    >
+                      🩺 {isHindi ? "सावधानियां" : "Precautions"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSendMessage(quickOptions[2].query)}
+                      style={{
+                        padding: "4px 8px",
+                        borderRadius: "12px",
+                        background: "#ecfdf5",
+                        border: "1px solid #a7f3d0",
+                        color: "#065f46",
+                        fontSize: "10.5px",
+                        fontWeight: "600",
+                        cursor: "pointer",
+                      }}
+                    >
+                      🔬 {isHindi ? "हीटमैप" : "Heatmap"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => inputRef.current?.focus()}
+                      style={{
+                        padding: "4px 8px",
+                        borderRadius: "12px",
+                        background: "#f1f5f9",
+                        border: "1px solid #cbd5e1",
+                        color: "#475569",
+                        fontSize: "10.5px",
+                        fontWeight: "600",
+                        cursor: "pointer",
+                      }}
+                    >
+                      ✍️ {isHindi ? "अन्य प्रश्न..." : "Ask another..."}
+                    </button>
                   </div>
                 )}
               </div>
-            );
-          })}
-
-          {/* Typing Indicator */}
-          {isLoading && (
-            <div className="flex gap-2.5 items-center">
-              <div className="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm">
-                <Bot className="w-3.5 h-3.5 animate-spin" />
-              </div>
-              <div className="bg-white px-3.5 py-2 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: "0ms" }} />
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: "150ms" }} />
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: "300ms" }} />
-                <span className="text-xs text-slate-500 ml-1.5 font-medium">{t("chatbot_typing")}</span>
-              </div>
             </div>
-          )}
+          );
+        })}
 
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Quick Suggestion Chips */}
-        <div className="px-3 py-2 bg-white/90 border-t border-slate-100 flex items-center gap-1.5 overflow-x-auto no-scrollbar flex-shrink-0">
-          <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider pl-1 flex-shrink-0">
-            {isHindi ? "सुझाव:" : "Quick:"}
-          </span>
-          {quickQuestions.map((q, idx) => (
-            <button
-              key={idx}
-              onClick={() => handleSendMessage(q.query)}
-              disabled={isLoading}
-              className="px-2.5 py-1 rounded-full bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 text-[11px] text-emerald-800 font-medium whitespace-nowrap transition-all active:scale-95 disabled:opacity-50"
+        {/* Typing indicator */}
+        {isLoading && (
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <div
+              style={{
+                width: "28px",
+                height: "28px",
+                borderRadius: "50%",
+                background: "#065f46",
+                color: "#fff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
             >
-              {q.label}
-            </button>
-          ))}
-        </div>
+              <Bot size={15} />
+            </div>
+            <div
+              style={{
+                background: "#ffffff",
+                border: "1.5px solid #e2ede6",
+                borderRadius: "14px",
+                padding: "8px 12px",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+            >
+              <span
+                style={{
+                  width: "6px",
+                  height: "6px",
+                  borderRadius: "50%",
+                  background: "#059669",
+                  animation: "bounce 1s infinite",
+                }}
+              />
+              <span
+                style={{
+                  width: "6px",
+                  height: "6px",
+                  borderRadius: "50%",
+                  background: "#059669",
+                  animation: "bounce 1s infinite 0.2s",
+                }}
+              />
+              <span
+                style={{
+                  width: "6px",
+                  height: "6px",
+                  borderRadius: "50%",
+                  background: "#059669",
+                  animation: "bounce 1s infinite 0.4s",
+                }}
+              />
+              <span style={{ fontSize: "11px", color: "#64748b", marginLeft: "4px", fontWeight: "500" }}>
+                {t("chatbot_typing")}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
 
-        {/* Input Bar */}
-        <div className="p-3 bg-white border-t border-slate-200 flex-shrink-0">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSendMessage();
+      {/* 3. BOTTOM INPUT BAR (Zomato/Swiggy Crisp Bar) */}
+      <div
+        style={{
+          background: "#ffffff",
+          borderTop: "1.5px solid #e2ede6",
+          padding: "10px 12px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "6px",
+          flexShrink: 0,
+        }}
+      >
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSendMessage();
+          }}
+          style={{ display: "flex", alignItems: "center", gap: "8px" }}
+        >
+          <input
+            ref={inputRef}
+            type="text"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            placeholder={isHindi ? "अपना कोई भी स्वास्थ्य संबंधी प्रश्न पूछें..." : "Ask Dr. AI anything about your scan..."}
+            disabled={isLoading}
+            style={{
+              flex: 1,
+              height: "40px",
+              padding: "0 14px",
+              fontSize: "12.5px",
+              borderRadius: "20px",
+              border: "1.5px solid #cbd5e1",
+              background: "#f8fafc",
+              color: "#0f172a",
+              outline: "none",
+              boxSizing: "border-box",
             }}
-            className="flex items-center gap-2"
+          />
+          <button
+            type="submit"
+            disabled={!inputValue.trim() || isLoading}
+            style={{
+              width: "40px",
+              height: "40px",
+              borderRadius: "50%",
+              background: inputValue.trim() && !isLoading ? "#059669" : "#cbd5e1",
+              border: "none",
+              color: "#ffffff",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: inputValue.trim() && !isLoading ? "pointer" : "default",
+              boxShadow: inputValue.trim() ? "0 2px 8px rgba(5, 150, 105, 0.35)" : "none",
+              flexShrink: 0,
+              transition: "all 0.15s ease",
+            }}
           >
-            <input
-              type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder={t("chatbot_placeholder")}
-              disabled={isLoading}
-              className="flex-1 px-4 py-2.5 text-sm rounded-xl border border-slate-300 bg-slate-50/70 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all placeholder:text-slate-400"
-            />
-            <button
-              type="submit"
-              disabled={!inputValue.trim() || isLoading}
-              className="p-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-md shadow-emerald-600/20 disabled:opacity-40 disabled:hover:bg-emerald-600 transition-all active:scale-95"
-            >
-              <Send className="w-4 h-4" />
-            </button>
-          </form>
+            <Send size={16} />
+          </button>
+        </form>
 
-          {/* Disclaimer footer */}
-          <p className="mt-1.5 text-[10px] text-center text-slate-400 leading-tight">
-            {t("chatbot_disclaimer")}
-          </p>
+        <div style={{ fontSize: "9.5px", color: "#94a3b8", textAlign: "center", lineHeight: "1.2" }}>
+          {t("chatbot_disclaimer")}
         </div>
-
       </div>
     </div>
   );
