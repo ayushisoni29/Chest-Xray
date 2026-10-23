@@ -87,7 +87,11 @@ from schemas import (
     TokenResponse,
     PredictionHistoryItem,
     PredictionHistoryResponse,
+    ChatAssistantRequest,
+    ChatAssistantResponse,
 )
+from src.chatbot import get_assistant_response
+
 
 
 # ==========================================
@@ -1124,6 +1128,39 @@ async def download_prediction_report(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to generate the PDF report. Check backend terminal logs.",
+        )
+
+
+# ==========================================
+# AI Health Assistant Chatbot endpoint
+# ==========================================
+
+@app.post("/api/chat/assistant", response_model=ChatAssistantResponse)
+async def chat_assistant(
+    request: ChatAssistantRequest,
+    current_user: Optional[dict] = Depends(get_current_user_optional),
+):
+    """
+    Intelligent clinical chatbot assistant powered by Gemini 1.5 Flash
+    with an automated offline clinical knowledge base fallback.
+    """
+    try:
+        context = request.prediction_context or {}
+        if current_user and "name" in current_user and not context.get("patient_name"):
+            context["patient_name"] = current_user["name"]
+
+        response = await get_assistant_response(
+            message=request.message,
+            prediction_context=context,
+            chat_history=request.chat_history,
+            language=request.language or "en",
+        )
+        return response
+    except Exception as exc:
+        print(f"[CHATBOT ERROR] {type(exc).__name__}: {str(exc)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error processing assistant inquiry.",
         )
 
 

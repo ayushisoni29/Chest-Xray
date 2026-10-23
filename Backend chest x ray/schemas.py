@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr, Field
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 from datetime import datetime
+
 
 
 class PredictionResponse(BaseModel):
@@ -58,3 +59,17 @@ class PredictionHistoryResponse(BaseModel):
     total: int
     limit: int
     skip: int
+
+
+class ChatAssistantRequest(BaseModel):
+    message: str = Field(..., min_length=1, max_length=1000)
+    prediction_context: Optional[Dict[str, Any]] = None
+    language: Optional[str] = "en"
+    chat_history: Optional[list[Dict[str, str]]] = None
+
+
+class ChatAssistantResponse(BaseModel):
+    reply: str
+    source: str
+    language: str
+

@@ -13,9 +13,12 @@ import {
   AlertCircle,
   CheckCircle2,
   FileText,
+  Bot,
 } from "lucide-react";
 import { getStoredUser, checkHealth, getPredictionHistory, getStaticUrl } from "../api";
 import { useLanguage } from "../context/LanguageContext";
+import AiChatAssistantModal from "../components/AiChatAssistantModal";
+
 
 const CLASS_COLORS = {
   COVID: "#ef4444",
@@ -36,6 +39,7 @@ export default function Dashboard() {
   const [lastScan, setLastScan] = useState(null);
   const [recentScans, setRecentScans] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -245,6 +249,68 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* 3.5. Interactive AI Health Assistant Card */}
+      <div
+        onClick={() => setIsChatOpen(true)}
+        style={{
+          background: "linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%)",
+          border: "1.5px solid #bbf7d0",
+          borderRadius: "16px",
+          padding: "12px 14px",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          boxShadow: "0 2px 8px rgba(6, 95, 70, 0.05)",
+          transition: "transform 0.15s ease",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div
+            style={{
+              width: "38px",
+              height: "38px",
+              borderRadius: "12px",
+              background: "linear-gradient(135deg, #059669 0%, #0d9488 100%)",
+              color: "#ffffff",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 4px 10px rgba(5, 150, 105, 0.3)",
+            }}
+          >
+            <Bot size={20} className="animate-pulse" />
+          </div>
+          <div>
+            <div style={{ fontSize: "13px", fontWeight: "800", color: "#065f46", display: "flex", alignItems: "center", gap: "6px" }}>
+              {t("chatbot_title")}
+              <span style={{ fontSize: "9px", padding: "1px 6px", borderRadius: "10px", background: "#dcfce7", color: "#166534", fontWeight: "700" }}>
+                Active
+              </span>
+            </div>
+            <div style={{ fontSize: "11px", color: "#526e62" }}>
+              {t("chatbot_subtitle")}
+            </div>
+          </div>
+        </div>
+        <div
+          style={{
+            padding: "6px 12px",
+            borderRadius: "20px",
+            background: "#059669",
+            color: "#ffffff",
+            fontSize: "11px",
+            fontWeight: "700",
+            display: "flex",
+            alignItems: "center",
+            gap: "4px",
+          }}
+        >
+          <span>{t("chatbot_btn")}</span>
+          <ArrowRight size={12} />
+        </div>
+      </div>
+
       {/* 4. Recent Analyses Horizontal Carousel */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
         <div
@@ -341,6 +407,25 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      {/* AI Clinical Chatbot Modal */}
+      <AiChatAssistantModal
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        predictionContext={
+          lastScan
+            ? {
+                predicted_class: lastScan.predicted_class,
+                confidence: Math.round((lastScan.confidence || 0) * 100),
+                patient_name: user?.name,
+              }
+            : {
+                predicted_class: "Normal",
+                confidence: 98.15,
+                patient_name: user?.name,
+              }
+        }
+      />
     </div>
   );
 }

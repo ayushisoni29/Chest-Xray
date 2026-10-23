@@ -86,6 +86,19 @@ export const translations = {
     backend_service: "Backend Service",
     developer_server: "Developer Server URL",
     sign_out: "Sign Out",
+
+    // Chatbot Assistant
+    chatbot_title: "AI Medical Assistant",
+    chatbot_subtitle: "Instant clinical insights & report guidance",
+    chatbot_btn: "Ask AI Assistant",
+    chatbot_placeholder: "Ask anything about your chest X-ray...",
+    chatbot_quick_explain: "Explain my result",
+    chatbot_quick_precautions: "What precautions to take?",
+    chatbot_quick_heatmap: "Explain the heatmap",
+    chatbot_quick_emergency: "Is this an emergency?",
+    chatbot_clear: "Clear Chat",
+    chatbot_typing: "Dr. AI is analyzing...",
+    chatbot_disclaimer: "Educational AI guidance. Consult a certified physician for medical decisions.",
   },
 
   hi: {
@@ -171,6 +184,19 @@ export const translations = {
     backend_service: "बैकएंड सेवा",
     developer_server: "डेवलपर सर्वर पता",
     sign_out: "लॉग आउट करें",
+
+    // Chatbot Assistant
+    chatbot_title: "एआई मेडिकल सहायक",
+    chatbot_subtitle: "त्वरित स्वास्थ्य परामर्श एवं रिपोर्ट विश्लेषण",
+    chatbot_btn: "एआई सहायक से पूछें",
+    chatbot_placeholder: "अपनी रिपोर्ट या स्वास्थ्य से संबंधित प्रश्न पूछें...",
+    chatbot_quick_explain: "रिपोर्ट का मतलब समझाएं",
+    chatbot_quick_precautions: "क्या सावधानियां बरतें?",
+    chatbot_quick_heatmap: "हीटमैप का क्या अर्थ है?",
+    chatbot_quick_emergency: "क्या यह कोई आपात स्थिति है?",
+    chatbot_clear: "बातचीत साफ करें",
+    chatbot_typing: "डॉ. एआई विश्लेषण कर रहे हैं...",
+    chatbot_disclaimer: "यह एआई सलाह केवल जानकारी के लिए है। कृपया प्रमाणित डॉक्टर से परामर्श लें।",
   },
 };
 

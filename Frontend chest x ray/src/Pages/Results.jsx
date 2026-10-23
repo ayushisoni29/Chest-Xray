@@ -16,11 +16,16 @@ import {
   ChevronLeft,
   ChevronsLeftRight,
   SlidersHorizontal,
+  Bot,
+  Sparkles,
+  MessageSquare,
 } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from "recharts";
 import Tabs from "../components/Tabs";
 import { getPredictionById, getStaticUrl, downloadPredictionReport } from "../api";
 import { useLanguage } from "../context/LanguageContext";
+import AiChatAssistantModal from "../components/AiChatAssistantModal";
+
 
 const CLASS_COLORS = {
   COVID: "#ef4444",
@@ -40,6 +45,7 @@ export default function Results() {
   const [loading, setLoading] = useState(true);
   const [downloadingReport, setDownloadingReport] = useState(false);
   const [downloadError, setDownloadError] = useState("");
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   // Interactive Split Slider (Grad-CAM vs Original)
   const [sliderPos, setSliderPos] = useState(50); // 0 to 100%
@@ -338,6 +344,52 @@ export default function Results() {
                 </ResponsiveContainer>
               </div>
             </div>
+
+            {/* Ask AI Assistant Interactive Action Banner */}
+            <button
+              type="button"
+              onClick={() => setIsChatOpen(true)}
+              style={{
+                width: "100%",
+                padding: "10px 14px",
+                background: "linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)",
+                border: "1.5px solid #a7f3d0",
+                borderRadius: "14px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                boxShadow: "0 2px 6px rgba(6, 95, 70, 0.06)",
+                transition: "all 0.2s ease",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", textAlign: "left" }}>
+                <div
+                  style={{
+                    width: "32px",
+                    height: "32px",
+                    borderRadius: "10px",
+                    background: "#059669",
+                    color: "#ffffff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: "0 2px 6px rgba(5, 150, 105, 0.25)",
+                  }}
+                >
+                  <Bot size={18} />
+                </div>
+                <div>
+                  <div style={{ fontSize: "12px", fontWeight: "800", color: "#065f46" }}>
+                    {t("chatbot_btn")}
+                  </div>
+                  <div style={{ fontSize: "10.5px", color: "#047857" }}>
+                    {t("chatbot_subtitle")}
+                  </div>
+                </div>
+              </div>
+              <Sparkles size={16} color="#059669" />
+            </button>
           </div>
         )}
 
@@ -659,6 +711,47 @@ export default function Results() {
           </div>
         )}
       </div>
+
+      {/* Floating AI Health Assistant Trigger */}
+      <button
+        type="button"
+        onClick={() => setIsChatOpen(true)}
+        aria-label="Open AI Clinical Assistant"
+        style={{
+          position: "fixed",
+          bottom: "74px",
+          right: "16px",
+          padding: "9px 14px",
+          borderRadius: "30px",
+          background: "linear-gradient(135deg, #059669 0%, #064e3b 100%)",
+          color: "#ffffff",
+          border: "2px solid #ffffff",
+          boxShadow: "0 6px 18px rgba(5, 150, 105, 0.4)",
+          display: "flex",
+          alignItems: "center",
+          gap: "6px",
+          cursor: "pointer",
+          zIndex: 40,
+          fontWeight: "700",
+          fontSize: "11.5px",
+        }}
+      >
+        <Bot size={16} className="animate-pulse" />
+        <span>{t("chatbot_title")}</span>
+      </button>
+
+      {/* AI Clinical Chatbot Modal */}
+      <AiChatAssistantModal
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        predictionContext={{
+          predicted_class,
+          confidence: confPercent,
+          patient_name: patient.patientName,
+          patient_age: patient.patientAge,
+          patient_gender: patient.patientGender,
+        }}
+      />
     </div>
   );
 }
