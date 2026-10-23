@@ -221,7 +221,7 @@ export default function Splash() {
             textAlign: "center",
           }}
         >
-          Chest X-ray screening for clinicians
+          AI-Powered Chest X-ray Health Screening
         </motion.p>
       </div>
 

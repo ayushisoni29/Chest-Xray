@@ -35,11 +35,11 @@ export default function Register() {
   // Password validation: min 8 chars with letters & numbers
   const validate = () => {
     if (!name.trim()) {
-      setError("Please enter your full clinical name.");
+      setError("Please enter your full name.");
       return false;
     }
     if (!email.trim() || !email.includes("@") || !email.includes(".")) {
-      setError("Please enter a valid hospital email address.");
+      setError("Please enter a valid email address.");
       return false;
     }
     if (!password || password.length < 8) {
@@ -243,7 +243,7 @@ export default function Register() {
           {/* Email */}
           <div>
             <label style={{ display: "block", fontSize: "11px", fontWeight: "700", color: "#081d15", marginBottom: "4px" }}>
-              HOSPITAL EMAIL
+              EMAIL
             </label>
             <input
               type="email"
@@ -379,7 +379,7 @@ export default function Register() {
       </div>
 
       <div style={{ textAlign: "center", fontSize: "10.5px", color: "#64748b", marginTop: "10px" }}>
-        Encrypted clinical registration · SSIPMT Major Project
+        Secure registration · MedScan AI Health Screening
       </div>
 
       {/* Server Config Modal */}

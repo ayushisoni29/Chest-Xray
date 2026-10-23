@@ -40,7 +40,7 @@ export default function Login() {
   // Validation
   const validate = () => {
     if (!email.trim() || !email.includes("@") || !email.includes(".")) {
-      setError("Please enter a valid hospital email address.");
+      setError("Please enter a valid email address.");
       return false;
     }
     if (!password || password.length < 6) {
@@ -277,7 +277,7 @@ export default function Login() {
             Sign in
           </h2>
           <p style={{ fontSize: "12.5px", color: "#476356", margin: 0, fontWeight: "400" }}>
-            Use your hospital credentials to open chest X-ray screening.
+            Sign in to your account to open chest X-ray screening.
           </p>
         </div>
 
@@ -328,7 +328,7 @@ export default function Login() {
                 marginBottom: "5px",
               }}
             >
-              Hospital email
+              Email
             </label>
             <input
               type="email"
@@ -439,7 +439,7 @@ export default function Login() {
               <span>Remember me</span>
             </label>
             <span
-              onClick={() => alert("Please contact your hospital system administrator to reset credentials.")}
+              onClick={() => alert("Please contact support to reset your password.")}
               style={{ color: "#065f46", fontWeight: "700", cursor: "pointer" }}
             >
               Forgot password?
@@ -473,7 +473,7 @@ export default function Login() {
 
           {/* Create Account Link */}
           <div style={{ textAlign: "center", fontSize: "12.5px", color: "#475569", marginTop: "4px" }}>
-            New clinician?{" "}
+            New user?{" "}
             <Link to="/register" style={{ color: "#065f46", fontWeight: "700", textDecoration: "none" }}>
               Create account
             </Link>
@@ -491,7 +491,7 @@ export default function Login() {
           paddingBottom: "4px",
         }}
       >
-        Encrypted connection · For authorised hospital staff only
+        Secure & Private · AI-Powered Health Screening
       </div>
 
       {/* Server Config Modal */}

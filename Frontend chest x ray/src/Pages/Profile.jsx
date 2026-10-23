@@ -99,7 +99,7 @@ export default function Profile() {
       {/* 1. Header & User Info Card */}
       <div>
         <h2 style={{ fontSize: "18px", fontWeight: "800", color: "#081d15", marginBottom: "14px" }}>
-          Clinician Profile
+          My Profile
         </h2>
 
         <div
@@ -134,10 +134,10 @@ export default function Profile() {
 
           <div>
             <div style={{ fontSize: "16px", fontWeight: "800", color: "#081d15" }}>
-              {user.name || "Medical Practitioner"}
+              {user.name || "Account User"}
             </div>
             <div style={{ fontSize: "12px", color: "#526e62", marginTop: "2px" }}>
-              {user.email || "practitioner@hospital.org"}
+              {user.email || "user@example.com"}
             </div>
             <div
               style={{
@@ -152,7 +152,7 @@ export default function Profile() {
                 fontWeight: "700",
               }}
             >
-              AUTHORIZED CLINICIAN
+              ACTIVE USER
             </div>
           </div>
         </div>
